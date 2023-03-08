@@ -31,11 +31,26 @@ pub fn apply_velocity(current_grid: &Box<[[Cell; ROWS]; COLS]>, f_grid: &mut Box
 		return false;
 	}
 	
-	let (force_x, force_y) = (current_grid[i][j].velocity.x / dist, current_grid[i][j].velocity.y / dist);
+	let (mut force_x, force_y) = (current_grid[i][j].velocity.x / dist, current_grid[i][j].velocity.y / dist);
+
+	if force_x > 0. && f_grid[i + 1][j].velocity.x == 0. && f_grid[i + 1][j].element != Element::Air {
+		f_grid[i][j].velocity.x = 0.;
+		force_x = 0.;
+	} else if force_x < 0. && f_grid[i - 1][j].velocity.x == 0. && f_grid[i - 1][j].element != Element::Air {
+		f_grid[i][j].velocity.x = 0.;
+		force_x = 0.;
+	}
+	if f_grid[i][j].velocity.x != 0. {
+		if f_grid[i][j].velocity.x.abs() > 0.5 {
+			f_grid[i][j].velocity.x /= 1.05;
+		} else {
+			f_grid[i][j].velocity.x = 0.;
+		}
+	}
 
 	let (mut dx, mut dy) = (i as i32, j as i32);
-	for m in 1..=dist as i32 {
-		let (x, y) = ((i as f32 + (force_x * m as f32)) as i32, (j as f32 + (force_y * m as f32)) as i32);
+	for m in 1..=dist.round() as i32 {
+		let (x, y) = ((i as f32 + (force_x * m as f32)).round() as i32, (j as f32 + (force_y * m as f32)).round() as i32);
 
 		if !(x >= 0 && y >= 0 && x < COLS as i32 && y < ROWS as i32) {
 			return false;
@@ -57,7 +72,9 @@ pub fn apply_gravity(future_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: u
 			future_grid[i][j].velocity.y += 1.;
 		}
 	} else {
-		future_grid[i][j].velocity.y = 0.;
+		if future_grid[i][j + 1].velocity.y == 0. {
+			future_grid[i][j].velocity.y = 0.;
+		}
 	}
 }
 

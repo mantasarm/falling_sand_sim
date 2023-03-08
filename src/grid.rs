@@ -61,9 +61,7 @@ impl Grid {
 						apply_gravity(&mut self.future_grid, i, j);
 						
 						if !apply_velocity(&self.grid, &mut self.future_grid, i, j) {
-							if !downward(&mut self.future_grid, i, j) {
-								downward_sides(&mut self.future_grid, i, j);
-							}
+							downward_sides(&mut self.future_grid, i, j);
 						}
 					},
 					_ => ()

@@ -44,6 +44,7 @@ fn update(app: &mut App, state: &mut State) {
         state.selected_element = solid_element();
     } else if app.keyboard.was_pressed(KeyCode::Key3) {
         state.selected_element = sand_element();
+        println!("{}", app.timer.fps());
     }
 }
 

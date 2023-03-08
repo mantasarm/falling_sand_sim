@@ -27,7 +27,7 @@ pub fn sand_element() -> Cell {
 	Cell {
 		element: Element::Sand,
 		color: [243, 239, 118, 255],
-		velocity: Vec2::new(0., -0.),
+		velocity: Vec2::new(-10., -8.),
 	}
 }
 
