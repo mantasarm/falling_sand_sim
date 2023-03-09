@@ -27,11 +27,19 @@ pub fn sand_element() -> Cell {
 	Cell {
 		element: Element::Sand,
 		color: [243, 239, 118, 255],
-		velocity: Vec2::new(-10., -8.),
+		velocity: Vec2::new(-0., -0.),
+	}
+}
+
+pub fn sawdust_element() -> Cell {
+	Cell {
+		element: Element::SawDust,
+		color: [181, 137, 100, 255],
+		velocity: Vec2::default()
 	}
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Element {
-	Air, Solid, Sand
+	Air, Solid, Sand, SawDust
 }

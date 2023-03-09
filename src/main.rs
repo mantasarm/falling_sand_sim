@@ -16,7 +16,7 @@ struct State {
 #[notan_main]
 fn main() -> Result<(), String> {
     notan::init_with(init)
-        .add_config(WindowConfig::new().size(1280, 720).vsync(true))
+        .add_config(WindowConfig::new().size(1920, 1080).vsync(true))
         .add_config(DrawConfig)
         .update(update)
         .draw(draw)
@@ -38,6 +38,10 @@ fn update(app: &mut App, state: &mut State) {
         state.grid.modify_elements(mouse.0, mouse.1, 30, &state.selected_element);
     }
 
+    if app.mouse.right_is_down() {
+        state.grid.explode(mouse.0, mouse.1, 100, 15.);
+    }
+
     if app.keyboard.was_pressed(KeyCode::Key1) {
         state.selected_element = air_element();
     } else if app.keyboard.was_pressed(KeyCode::Key2) {
@@ -45,6 +49,8 @@ fn update(app: &mut App, state: &mut State) {
     } else if app.keyboard.was_pressed(KeyCode::Key3) {
         state.selected_element = sand_element();
         println!("{}", app.timer.fps());
+    } else if app.keyboard.was_pressed(KeyCode::Key4) {
+        state.selected_element = sawdust_element();
     }
 }
 

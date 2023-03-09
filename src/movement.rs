@@ -15,10 +15,10 @@ pub fn downward_sides(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize
 		} else {
 			swap(f_grid, i, j, i + 1, j + 1);
 		}
-	} else if f_grid[i - 1][j + 1].element == Element::Air {
-		swap(f_grid, i, j, i - 1, j + 1);
 	} else if f_grid[i + 1][j + 1].element == Element::Air {
 		swap(f_grid, i, j, i + 1, j + 1);
+	} else if f_grid[i - 1][j + 1].element == Element::Air {
+		swap(f_grid, i, j, i - 1, j + 1);
 	}
 	
 	false
@@ -73,6 +73,13 @@ pub fn apply_gravity(future_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: u
 		}
 	} else {
 		if future_grid[i][j + 1].velocity.y == 0. {
+			if future_grid[i][j].velocity.x == 0. {
+				if fastrand::bool() {
+					future_grid[i][j].velocity.x += future_grid[i][j].velocity.y / 3.;
+				} else {
+					future_grid[i][j].velocity.x -= future_grid[i][j].velocity.y / 3.;
+				}
+			}
 			future_grid[i][j].velocity.y = 0.;
 		}
 	}

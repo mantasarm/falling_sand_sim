@@ -1,4 +1,4 @@
-use notan::{graphics::Texture, draw::{Draw, DrawImages}, prelude::Graphics};
+use notan::{graphics::Texture, draw::{Draw, DrawImages}, prelude::Graphics, math::Vec2};
 
 use crate::{element::*, movement::{downward, downward_sides, apply_velocity, apply_gravity}};
 
@@ -61,7 +61,22 @@ impl Grid {
 						apply_gravity(&mut self.future_grid, i, j);
 						
 						if !apply_velocity(&self.grid, &mut self.future_grid, i, j) {
-							downward_sides(&mut self.future_grid, i, j);
+							if !downward(&mut self.future_grid, i, j) {
+								if !downward_sides(&mut self.future_grid, i, j) {
+									self.future_grid[i][j].velocity = Vec2::ZERO;
+								}
+							}
+						}
+					},
+					Element::SawDust => {
+						apply_gravity(&mut self.future_grid, i, j);
+						
+						if !apply_velocity(&self.grid, &mut self.future_grid, i, j) {
+							if !downward(&mut self.future_grid, i, j) {
+								if !downward_sides(&mut self.future_grid, i, j) {
+									self.future_grid[i][j].velocity = Vec2::ZERO;
+								}
+							}
 						}
 					},
 					_ => ()
@@ -101,6 +116,21 @@ impl Grid {
 	pub fn modify_element(&mut self, i: usize, j: usize, cell: &Cell) {
 		if in_bound(i, j) {
 			self.grid[i][j] = cell.to_owned();
+		}
+	}
+
+	pub fn explode(&mut self, i: usize, j: usize, radius: i32, force: f32) {
+		for x in -radius / 2..=radius / 2 {
+			for y in -radius / 2..radius / 2 {
+				if ((i as i32 - (i as i32 - x)).pow(2) + (j as i32 - (j as i32 - y)).pow(2)) <= (radius / 2).pow(2)  {
+					if in_bound((i as i32 - x) as usize, (j as i32 - y) as usize) {
+						let mut angle = Vec2::new(x as f32, y as f32);
+						angle = angle.normalize() * force * -1.;
+
+						self.grid[(i as i32 - x) as usize][(j as i32 - y) as usize].velocity += angle;
+					}
+				}
+			}
 		}
 	}
 }
