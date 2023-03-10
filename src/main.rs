@@ -35,11 +35,11 @@ fn update(app: &mut App, state: &mut State) {
     
     let mouse = mouse_in_sim(app);
     if app.mouse.left_is_down() {
-        state.grid.modify_elements(mouse.0, mouse.1, 30, &state.selected_element);
+        state.grid.modify_elements(mouse.0, mouse.1, 31, &state.selected_element);
     }
 
     if app.mouse.right_is_down() {
-        state.grid.explode(mouse.0, mouse.1, 100, 15.);
+        state.grid.explode(mouse.0, mouse.1, 100, 4.);
     }
 
     if app.keyboard.was_pressed(KeyCode::Key1) {

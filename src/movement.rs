@@ -48,19 +48,25 @@ pub fn apply_velocity(current_grid: &Box<[[Cell; ROWS]; COLS]>, f_grid: &mut Box
 		}
 	}
 
+	if force_x == 0. && force_y == 0. {
+		return false;
+	}
+
 	let (mut dx, mut dy) = (i as i32, j as i32);
 	for m in 1..=dist.round() as i32 {
 		let (x, y) = ((i as f32 + (force_x * m as f32)).round() as i32, (j as f32 + (force_y * m as f32)).round() as i32);
 
 		if !(x >= 0 && y >= 0 && x < COLS as i32 && y < ROWS as i32) {
-			return false;
+			 return false;
 		}
 		if f_grid[x as usize][y as usize].element == Element::Air {
 			swap(f_grid, dx as usize, dy as usize, x as usize, y as usize);
-		} else {
-			return false;
+			(dx, dy) = (x, y);
+		} else if f_grid[x as usize][y as usize].element != Element::Air {
+			if m == 1 {
+				return false;
+			}
 		}
-		(dx, dy) = (x, y);
 	}
 
 	true
