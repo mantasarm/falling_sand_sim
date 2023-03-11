@@ -51,6 +51,10 @@ fn update(app: &mut App, state: &mut State) {
         println!("{}", app.timer.fps());
     } else if app.keyboard.was_pressed(KeyCode::Key4) {
         state.selected_element = sawdust_element();
+    } else if app.keyboard.was_pressed(KeyCode::Key5) {
+        state.selected_element = water_element();
+    } else if app.keyboard.was_pressed(KeyCode::Key6) {
+        state.selected_element = smoke_element();
     }
 }
 

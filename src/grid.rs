@@ -1,9 +1,9 @@
 use notan::{graphics::Texture, draw::{Draw, DrawImages}, prelude::Graphics, math::Vec2};
 
-use crate::{element::*, movement::{downward, downward_sides, apply_velocity, apply_gravity}};
+use crate::{element::*, movement::{downward, downward_sides, apply_velocity, apply_gravity, upward, sideways_gas}};
 
-pub const COLS: usize = 1280 / 2;
-pub const ROWS: usize = 720 / 2;
+pub const COLS: usize = (1280. / 2.) as usize;
+pub const ROWS: usize = (720. / 2.) as usize;
 
 pub struct Grid {
 	grid: Box<[[Cell; ROWS]; COLS]>,
@@ -56,30 +56,61 @@ impl Grid {
 				if flip_y {
 					i = COLS - i - 1;
 				}
-				match self.grid[i][j].element {
-					Element::Sand => {
-						apply_gravity(&mut self.future_grid, i, j);
-						
-						if !apply_velocity(&self.grid, &mut self.future_grid, i, j) {
-							if !downward(&mut self.future_grid, i, j) {
-								if !downward_sides(&mut self.future_grid, i, j) {
-									self.future_grid[i][j].velocity = Vec2::ZERO;
+				if self.grid[i][j].element == self.future_grid[i][j].element {
+					match self.grid[i][j].element {
+						Element::Sand => {
+							apply_gravity(&mut self.future_grid, i, j);
+							
+							if !apply_velocity(&mut self.future_grid, i, j) {
+								if !downward(&mut self.future_grid, i, j) {
+									if !downward_sides(&mut self.future_grid, i, j) {
+										self.future_grid[i][j].velocity = Vec2::ZERO;
+									}
 								}
 							}
-						}
-					},
-					Element::SawDust => {
-						apply_gravity(&mut self.future_grid, i, j);
-						
-						if !apply_velocity(&self.grid, &mut self.future_grid, i, j) {
-							if !downward(&mut self.future_grid, i, j) {
-								if !downward_sides(&mut self.future_grid, i, j) {
-									self.future_grid[i][j].velocity = Vec2::ZERO;
+						},
+						Element::SawDust => {
+							apply_gravity(&mut self.future_grid, i, j);
+							
+							if !apply_velocity(&mut self.future_grid, i, j) {
+								if !downward(&mut self.future_grid, i, j) {
+									if !downward_sides(&mut self.future_grid, i, j) {
+										self.future_grid[i][j].velocity = Vec2::ZERO;
+									}
 								}
 							}
+						},
+
+						Element::Water => {
+							apply_gravity(&mut self.future_grid, i, j);
+							
+							if !apply_velocity(&mut self.future_grid, i, j) {
+								if !downward(&mut self.future_grid, i, j) {
+									self.future_grid[i][j].velocity = Vec2::ZERO;
+
+									let mut dir = 0.;
+
+									if self.future_grid[i - 1][j].density < self.future_grid[i][j].density {
+										dir = -1.;
+									} else if self.future_grid[i + 1][j].density < self.future_grid[i][j].density {
+										dir = 1.;
+									}
+
+									
+									if dir != 0. {	
+										self.future_grid[i][j].velocity.x = 5. * dir;
+										self.future_grid[i][j].velocity.y = 1.;
+									}
+								}
+							}
+						},
+						Element::Smoke => {
+							if !upward(&mut self.future_grid, i, j) {
+								sideways_gas(&mut self.future_grid, i, j, 10);
+							}
 						}
-					},
-					_ => ()
+						_ => ()
+					}
 				}
 			}
 		}
@@ -115,7 +146,16 @@ impl Grid {
 
 	pub fn modify_element(&mut self, i: usize, j: usize, cell: &Cell) {
 		if in_bound(i, j) {
-			self.grid[i][j] = cell.to_owned();
+			let mut c_cell = cell.to_owned();
+			let amount = 40;
+			let mut c = fastrand::u8(0..=amount);
+
+			if c_cell.color[0] < c || c_cell.color[1] < c || c_cell.color[2] < c {
+				c = 0;
+			}
+			
+			c_cell.color = [cell.color[0] - c, cell.color[1] - c, cell.color[2] - c, 255];
+			self.grid[i][j] = c_cell;
 		}
 	}
 
@@ -125,13 +165,17 @@ impl Grid {
 				if ((i as i32 - (i as i32 - x)).pow(2) + (j as i32 - (j as i32 - y)).pow(2)) <= (radius / 2).pow(2)  {
 					if in_bound((i as i32 - x) as usize, (j as i32 - y) as usize) {
 						let mut angle = Vec2::new(x as f32, y as f32);
-						angle = angle.normalize() * force * -1.;
+						angle = angle.normalize_or_zero() * force * -1.;
 
 						self.grid[(i as i32 - x) as usize][(j as i32 - y) as usize].velocity += angle;
 					}
-				}
+				} 
 			}
 		}
+	}
+
+	pub fn get_cell(&self, i: usize, j: usize) -> &Cell {
+		&self.grid[i][j]
 	}
 }
 
