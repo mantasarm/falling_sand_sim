@@ -63,6 +63,7 @@ pub fn apply_velocity(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize
 			 return false;
 		}
 		if f_grid[x as usize][y as usize].density < d {
+			f_grid[dx as usize][dy as usize].velocity *= f_grid[x as usize][y as usize].drag;
 			swap(f_grid, dx as usize, dy as usize, x as usize, y as usize);
 			(dx, dy) = (x, y);
 		} else {
@@ -80,10 +81,6 @@ pub fn apply_gravity(future_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: u
 	if future_grid[i][j + 1].density < future_grid[i][j].density {
 		let mut limit = 6.;
 
-		if future_grid[i][j + 1].state != State::Gas {
-			limit = 1.;
-		}
-		
 		if future_grid[i][j].velocity.y <= limit {
 			let g = 1.;
 			future_grid[i][j].velocity.y += g;
@@ -115,7 +112,13 @@ pub fn upward(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize) -> boo
 pub fn sideways_gas(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, amount: i32) -> bool {
 	let d = f_grid[i][j].density;
 	
-	let dir = if f_grid[i - 1][j].density > d && f_grid[i - 1][j].state == State::Gas {
+	let dir = if f_grid[i - 1][j].density > d && f_grid[i - 1][j].state == State::Gas && f_grid[i + 1][j].density > d && f_grid[i + 1][j].state == State::Gas {
+		if fastrand::bool() {
+			1
+		} else {
+			-1
+		}
+	} else if f_grid[i - 1][j].density > d && f_grid[i - 1][j].state == State::Gas {
 		-1
 	} else if f_grid[i + 1][j].density > d && f_grid[i + 1][j].state == State::Gas {
 		1

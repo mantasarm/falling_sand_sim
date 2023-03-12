@@ -35,7 +35,7 @@ fn update(app: &mut App, state: &mut State) {
     
     let mouse = mouse_in_sim(app);
     if app.mouse.left_is_down() {
-        state.grid.modify_elements(mouse.0, mouse.1, 31, &state.selected_element);
+        state.grid.modify_elements(mouse.0, mouse.1, 32, &state.selected_element);
     }
 
     if app.mouse.right_is_down() {

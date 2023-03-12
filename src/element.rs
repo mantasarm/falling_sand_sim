@@ -7,6 +7,7 @@ pub struct Cell {
 	pub state: State,
 	pub color: [u8; 4],
 	pub velocity: Vec2,
+	pub drag: f32
 }
 
 pub fn air_element() -> Cell {
@@ -16,6 +17,7 @@ pub fn air_element() -> Cell {
 		state: State::Gas,
 		color: [0, 0, 0, 255],
 		velocity: Vec2::ZERO,
+		drag: 1.
 	}
 }
 
@@ -26,6 +28,7 @@ pub fn solid_element() -> Cell {
 		state: State::Solid,
 		color: [69, 62, 66, 255],
 		velocity: Vec2::ZERO,
+		drag: 0.
 	}
 }
 
@@ -36,6 +39,7 @@ pub fn sand_element() -> Cell {
 		state: State::Solid,
 		color: [243, 239, 118, 255],
 		velocity: Vec2::ZERO,
+		drag: 0.9
 	}
 }
 
@@ -45,7 +49,8 @@ pub fn sawdust_element() -> Cell {
 		density: 40.,
 		state: State::Solid,
 		color: [181, 137, 100, 255],
-		velocity: Vec2::ZERO
+		velocity: Vec2::ZERO,
+		drag: 0.9
 	}
 }
 
@@ -55,7 +60,8 @@ pub fn water_element() -> Cell {
 		density: 50.,
 		state:State::Liquid,
 		color: [55, 46, 229, 255],
-		velocity: Vec2::ZERO
+		velocity: Vec2::ZERO,
+		drag: 0.5
 	}
 }
 
@@ -65,7 +71,8 @@ pub fn smoke_element() -> Cell {
 		density: -10.,
 		state: State::Gas,
 		color: [42, 42, 42, 255],
-		velocity: Vec2::ZERO
+		velocity: Vec2::ZERO,
+		drag: 1.
 	}
 }
 
