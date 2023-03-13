@@ -1,4 +1,4 @@
-use crate::{element::{Cell, Element, State}, grid::{ROWS, COLS}};
+use crate::{element::{Cell, State}, grid::{ROWS, COLS}};
 
 pub fn downward(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize) -> bool {
 	if f_grid[i][j + 1].density <  f_grid[i][j].density {
@@ -79,7 +79,7 @@ pub fn apply_velocity(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize
 
 pub fn apply_gravity(future_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize) {
 	if future_grid[i][j + 1].density < future_grid[i][j].density {
-		let mut limit = 6.;
+		let limit = 6.;
 
 		if future_grid[i][j].velocity.y <= limit {
 			let g = 1.;

@@ -16,7 +16,7 @@ struct State {
 #[notan_main]
 fn main() -> Result<(), String> {
     notan::init_with(init)
-        .add_config(WindowConfig::new().size(1920, 1080).vsync(true))
+        .add_config(WindowConfig::new().size(1280, 720).vsync(true))
         .add_config(DrawConfig)
         .update(update)
         .draw(draw)
@@ -25,7 +25,7 @@ fn main() -> Result<(), String> {
 
 fn init(_app: &mut App, gfx: &mut Graphics) -> State {
     State {
-        grid: Grid::new(gfx),
+        grid: Grid::new(0., 0., gfx),
         selected_element: sand_element()
     }
 }
@@ -33,7 +33,7 @@ fn init(_app: &mut App, gfx: &mut Graphics) -> State {
 fn update(app: &mut App, state: &mut State) {
     state.grid.update();
     
-    let mouse = mouse_in_sim(app);
+    let mouse = state.grid.mouse_in_sim(app);
     if app.mouse.left_is_down() {
         state.grid.modify_elements(mouse.0, mouse.1, 32, &state.selected_element);
     }
@@ -56,10 +56,6 @@ fn update(app: &mut App, state: &mut State) {
     } else if app.keyboard.was_pressed(KeyCode::Key6) {
         state.selected_element = smoke_element();
     }
-}
-
-fn mouse_in_sim(app: &mut App) -> (usize, usize) {
-    ((app.mouse.x / (app.window().width() as f32 / COLS as f32)) as usize, (app.mouse.y / (app.window().height() as f32 / ROWS as f32)) as usize)
 }
 
 fn draw(gfx: &mut Graphics, state: &mut State) {

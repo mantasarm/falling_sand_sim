@@ -84,5 +84,5 @@ pub enum Element {
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum State {
-	Solid, Liquid, Gas
+	Solid, Liquid, Gas, Plasma
 }

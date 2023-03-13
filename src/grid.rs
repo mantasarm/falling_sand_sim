@@ -1,4 +1,4 @@
-use notan::{graphics::Texture, draw::{Draw, DrawImages}, prelude::Graphics, math::Vec2};
+use notan::{graphics::Texture, draw::{Draw, DrawImages}, prelude::{Graphics, App}, math::Vec2};
 
 use crate::{element::*, movement::{downward, downward_sides, apply_velocity, apply_gravity, upward, sideways_gas}};
 
@@ -6,6 +6,7 @@ pub const COLS: usize = (1280. / 2.) as usize;
 pub const ROWS: usize = (720. / 2.) as usize;
 
 pub struct Grid {
+	pos: (f32, f32),
 	grid: Box<[[Cell; ROWS]; COLS]>,
 	future_grid: Box<[[Cell; ROWS]; COLS]>,
 	texture: Texture,
@@ -13,7 +14,7 @@ pub struct Grid {
 }
 
 impl Grid {
-	pub fn new(gfx: &mut Graphics) -> Self {
+	pub fn new(x: f32, y: f32, gfx: &mut Graphics) -> Self {
 		let bytes = vec![0; COLS * ROWS * 4];
 
 		let texture = gfx
@@ -36,6 +37,7 @@ impl Grid {
 		let future_grid = grid.clone();
 		
 		Self {
+			pos: (x, y),
 			grid,
 			future_grid,
 			texture,
@@ -125,13 +127,13 @@ impl Grid {
         	.update()
         	.unwrap();
 		
-		draw.image(&self.texture).size(gfx.device.size().0 as f32, gfx.device.size().1 as f32);
+		draw.image(&self.texture).size(gfx.device.size().0 as f32, gfx.device.size().1 as f32).position(self.pos.0, self.pos.1);
 	}
 
 	fn update_bytes(&mut self) {
-    	for i in 0..self.bytes.len() / 4 {
-        	self.bytes[i * 4..i * 4 + 4].copy_from_slice(&self.grid[i % COLS][i / COLS].color);
-    	}
+		for i in 0..self.bytes.len() / 4 {
+			self.bytes[i * 4..i * 4 + 4].copy_from_slice(&self.grid[i % COLS][i / COLS].color);
+		}
 	}
 
 	pub fn modify_elements(&mut self, i: usize, j: usize, brush_size: i32, cell: &Cell) {
@@ -176,6 +178,10 @@ impl Grid {
 
 	pub fn get_cell(&self, i: usize, j: usize) -> &Cell {
 		&self.grid[i][j]
+	}
+
+	pub fn mouse_in_sim(&self, app: &mut App) -> (usize, usize) {
+		(((app.mouse.x - self.pos.0) / (app.window().width() as f32 / COLS as f32)) as usize, (app.mouse.y / (app.window().height() as f32 / ROWS as f32)) as usize)
 	}
 }
 
