@@ -58,11 +58,13 @@ fn update(app: &mut App, state: &mut State) {
     }
 }
 
-fn draw(gfx: &mut Graphics, state: &mut State) {
+fn draw(app: &mut App, gfx: &mut Graphics, state: &mut State) {
     let mut draw = gfx.create_draw();
     draw.clear(Color::BLACK);
 
     state.grid.render(gfx, &mut draw); 
+
+    draw.ellipse((app.mouse.x, app.mouse.y), (32., 32.)).stroke_color(Color::WHITE).fill_color(Color::from_rgba(0., 0., 0., 0.)).stroke(1.);
     
     gfx.render(&draw);
 }

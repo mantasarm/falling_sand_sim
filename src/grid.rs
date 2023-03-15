@@ -1,4 +1,4 @@
-use notan::{graphics::Texture, draw::{Draw, DrawImages}, prelude::{Graphics, App}, math::Vec2};
+use notan::{graphics::Texture, draw::{Draw, DrawImages, DrawShapes}, prelude::{Graphics, App, Color}, math::Vec2};
 
 use crate::{element::*, movement::{downward, downward_sides, apply_velocity, apply_gravity, upward, sideways_gas}};
 
@@ -10,7 +10,7 @@ pub struct Grid {
 	grid: Box<[[Cell; ROWS]; COLS]>,
 	future_grid: Box<[[Cell; ROWS]; COLS]>,
 	texture: Texture,
-	bytes: Vec<u8>
+	bytes: Vec<u8>,
 }
 
 impl Grid {
@@ -41,28 +41,28 @@ impl Grid {
 			grid,
 			future_grid,
 			texture,
-			bytes
+			bytes,
 		}
 	}
 
 	pub fn update(&mut self) {
 		self.future_grid = self.grid.clone();
-
-		let flip_y = fastrand::bool();
+		
+		let flip_x = fastrand::bool();
 		for mut i in 0..COLS {
-			let flip_x = fastrand::bool();
+			let flip_y = fastrand::bool();
 			for mut j in 0..ROWS {
 				if flip_x {
-					j = ROWS - j - 1;
+					i = COLS - i - 1;
 				}
 				if flip_y {
-					i = COLS - i - 1;
+					j = ROWS - j - 1;
 				}
 				if self.grid[i][j].element == self.future_grid[i][j].element {
 					match self.grid[i][j].element {
 						Element::Sand => {
 							apply_gravity(&mut self.future_grid, i, j);
-							
+
 							if !apply_velocity(&mut self.future_grid, i, j) {
 								if !downward(&mut self.future_grid, i, j) {
 									if !downward_sides(&mut self.future_grid, i, j) {
@@ -92,16 +92,23 @@ impl Grid {
 
 									let mut dir = 0.;
 
-									if self.future_grid[i - 1][j].density < self.future_grid[i][j].density {
-										dir = -1.;
-									} else if self.future_grid[i + 1][j].density < self.future_grid[i][j].density {
-										dir = 1.;
+									if fastrand::bool() {
+										if self.future_grid[i - 1][j].density <= self.future_grid[i][j].density {
+											dir = -1.;
+										} else if self.future_grid[i + 1][j].density <= self.future_grid[i][j].density {
+											dir = 1.;
+										}
+									} else {
+										if self.future_grid[i + 1][j].density <= self.future_grid[i][j].density {
+											dir = 1.;
+										} else if self.future_grid[i - 1][j].density <= self.future_grid[i][j].density {
+											dir = -1.;
+										}	
 									}
 
 									
 									if dir != 0. {	
-										self.future_grid[i][j].velocity.x = 5. * dir;
-										self.future_grid[i][j].velocity.y = 1.;
+										self.future_grid[i][j].velocity.x += 5. * dir;
 									}
 								}
 							}
