@@ -11,6 +11,8 @@ pub struct Grid {
 	future_grid: Box<[[Cell; ROWS]; COLS]>,
 	texture: Texture,
 	bytes: Vec<u8>,
+	// current_rect: DirtyRect,
+	// working_rect: DirtyRect
 }
 
 impl Grid {
@@ -42,12 +44,14 @@ impl Grid {
 			future_grid,
 			texture,
 			bytes,
+			// current_rect: DirtyRect::new(COLS, ROWS, 0, 0),
+			// working_rect: DirtyRect::new(COLS, ROWS, 0, 0)
 		}
 	}
 
 	pub fn update(&mut self) {
 		self.future_grid = self.grid.clone();
-		
+
 		let flip_x = fastrand::bool();
 		for mut i in 0..COLS {
 			let flip_y = fastrand::bool();
@@ -135,6 +139,12 @@ impl Grid {
         	.unwrap();
 		
 		draw.image(&self.texture).size(gfx.device.size().0 as f32, gfx.device.size().1 as f32).position(self.pos.0, self.pos.1);
+
+		// let pos = (self.current_rect.x as f32, self.current_rect.y as f32);
+		// draw.rect((pos.0 * 2., pos.1 * 2.) , ((pos.0 + self.current_rect.w as f32) * 2., (pos.1 + self.current_rect.h as f32) * 2.))
+		// 	.fill_color(Color::from_rgba(0., 0., 0., 0.))
+		// 	.stroke_color(Color::RED)
+		// 	.stroke(1.);
 	}
 
 	fn update_bytes(&mut self) {
@@ -191,6 +201,35 @@ impl Grid {
 		(((app.mouse.x - self.pos.0) / (app.window().width() as f32 / COLS as f32)) as usize, (app.mouse.y / (app.window().height() as f32 / ROWS as f32)) as usize)
 	}
 }
+
+// #[derive(Clone, Copy)]
+// struct DirtyRect {
+// 	pub x: usize,
+// 	pub y: usize,
+// 	pub w: usize,
+// 	pub h: usize
+// }
+
+// impl DirtyRect {
+// 	pub fn new(x: usize, y: usize, w: usize, h: usize) -> DirtyRect {
+// 		DirtyRect { x, y, w, h }
+// 	}
+
+// 	pub fn update(&mut self, i: usize, j: usize) {
+// 		if i < self.x {
+// 			self.x = i - 1;
+// 		}
+// 		if j < self.y {
+// 			self.y = j - 1;
+// 		}
+// 		if i > self.x + self.w {
+// 			self.w = i - self.x + 1;
+// 		}
+// 		if j > self.y + self.h {
+// 			self.h = j - self.y + 1;
+// 		}
+// 	}
+// }
 
 fn in_bound(i: usize, j: usize) -> bool {
 	return i > 0 && j > 0 && i < COLS - 1 && j < ROWS - 1
