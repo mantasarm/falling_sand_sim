@@ -15,7 +15,7 @@ pub fn air_element() -> Cell {
 		element: Element::Air,
 		density: 0.,
 		state: State::Gas,
-		color: [0, 0, 0, 255],
+		color: [0, 0, 0, 0],
 		velocity: Vec2::ZERO,
 		drag: 1.
 	}
@@ -36,7 +36,7 @@ pub fn sand_element() -> Cell {
 	Cell {
 		element: Element::Sand,
 		density: 60.,
-		state: State::Solid,
+		state: State::Powder,
 		color: [243, 239, 118, 255],
 		velocity: Vec2::ZERO,
 		drag: 0.9
@@ -47,7 +47,7 @@ pub fn sawdust_element() -> Cell {
 	Cell {
 		element: Element::SawDust,
 		density: 40.,
-		state: State::Solid,
+		state: State::Powder,
 		color: [181, 137, 100, 255],
 		velocity: Vec2::ZERO,
 		drag: 0.9
@@ -84,5 +84,5 @@ pub enum Element {
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum State {
-	Solid, Liquid, Gas, Plasma
+	Solid, Powder, Liquid, Gas, Plasma
 }

@@ -1,4 +1,4 @@
-use crate::{element::{Cell, State}, grid::{ROWS, COLS}};
+use crate::{element::{Cell, State, Element}, grid::{ROWS, COLS}};
 
 pub fn downward(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize) -> bool {
 	if f_grid[i][j + 1].density <  f_grid[i][j].density {
@@ -35,14 +35,6 @@ pub fn apply_velocity(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize
 	
 	let (mut force_x, force_y) = (f_grid[i][j].velocity.x / dist, f_grid[i][j].velocity.y / dist);
 
-	let d = f_grid[i][j].density;
-	if force_x > 0. && f_grid[i + 1][j].velocity.x == 0. && f_grid[i + 1][j].density >= d {
-		f_grid[i][j].velocity.x = 0.;
-		force_x = 0.;
-	} else if force_x < 0. && f_grid[i - 1][j].velocity.x == 0. && f_grid[i - 1][j].density >= d {
-		f_grid[i][j].velocity.x = 0.;
-		force_x = 0.;
-	}
 	if f_grid[i][j].velocity.x != 0. {
 		if f_grid[i][j].velocity.x.abs() > 0.5 {
 			f_grid[i][j].velocity.x /= 1.05;
@@ -55,6 +47,7 @@ pub fn apply_velocity(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize
 		return false;
 	}
 
+	let d = f_grid[i][j].density;
 	let (mut dx, mut dy) = (i as i32, j as i32);
 	for m in 1..=dist.round() as i32 {
 		let (x, y) = ((i as f32 + (force_x * m as f32)).round() as i32, (j as f32 + (force_y * m as f32)).round() as i32);
@@ -68,9 +61,16 @@ pub fn apply_velocity(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize
 			(dx, dy) = (x, y);
 		} else {
 			if m == 1 {
+				f_grid[dx as usize][dy as usize].velocity.x = 0.;
+				f_grid[dx as usize][dy as usize].velocity.y = 0.;
 				return false;
 			}
-			// break;
+
+			if f_grid[x as usize][y as usize].state == State::Solid {
+				f_grid[dx as usize][dy as usize].velocity.x = 0.;
+				f_grid[dx as usize][dy as usize].velocity.y = 0.;
+				break;
+			}
 		}
 	}
 

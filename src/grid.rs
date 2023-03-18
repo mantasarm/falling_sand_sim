@@ -2,8 +2,9 @@ use notan::{graphics::Texture, draw::{Draw, DrawImages, DrawShapes}, prelude::{G
 
 use crate::{element::*, movement::{downward, downward_sides, apply_velocity, apply_gravity, upward, sideways_gas}};
 
-pub const COLS: usize = (1280. / 2.) as usize;
-pub const ROWS: usize = (720. / 2.) as usize;
+pub const COLS: usize = 350;
+pub const ROWS: usize = 350;
+pub const UPSCALE_FACTOR: f32 = 2.;
 
 pub struct Grid {
 	pos: (f32, f32),
@@ -138,7 +139,7 @@ impl Grid {
         	.update()
         	.unwrap();
 		
-		draw.image(&self.texture).size(gfx.device.size().0 as f32, gfx.device.size().1 as f32).position(self.pos.0, self.pos.1);
+		draw.image(&self.texture).size(COLS as f32 * UPSCALE_FACTOR, ROWS as f32 * UPSCALE_FACTOR).position(self.pos.0, self.pos.1);
 
 		// let pos = (self.current_rect.x as f32, self.current_rect.y as f32);
 		// draw.rect((pos.0 * 2., pos.1 * 2.) , ((pos.0 + self.current_rect.w as f32) * 2., (pos.1 + self.current_rect.h as f32) * 2.))
@@ -173,7 +174,7 @@ impl Grid {
 				c = 0;
 			}
 			
-			c_cell.color = [cell.color[0] - c, cell.color[1] - c, cell.color[2] - c, 255];
+			c_cell.color = [cell.color[0] - c, cell.color[1] - c, cell.color[2] - c, cell.color[3]];
 			self.grid[i][j] = c_cell;
 		}
 	}
@@ -197,8 +198,15 @@ impl Grid {
 		&self.grid[i][j]
 	}
 
-	pub fn mouse_in_sim(&self, app: &mut App) -> (usize, usize) {
-		(((app.mouse.x - self.pos.0) / (app.window().width() as f32 / COLS as f32)) as usize, (app.mouse.y / (app.window().height() as f32 / ROWS as f32)) as usize)
+	pub fn mouse_in_sim(&self, mouse_world: (f32, f32), app: &mut App) -> Option<(usize, usize)> {
+		if mouse_world.0 > self.pos.0 && mouse_world.1 > self.pos.1 && mouse_world.0 < self.pos.0 + COLS as f32 * UPSCALE_FACTOR as f32 && mouse_world.1 < self.pos.1 + ROWS as f32 * UPSCALE_FACTOR as f32 {
+			let mut mouse_pos = (0, 0);
+			mouse_pos.0 = ((mouse_world.0 - self.pos.0) / UPSCALE_FACTOR) as usize;
+			mouse_pos.1 = ((mouse_world.1 - self.pos.1) / UPSCALE_FACTOR) as usize;
+
+			return Some(mouse_pos);
+		}
+		None
 	}
 }
 
