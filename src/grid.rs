@@ -122,7 +122,12 @@ impl Grid {
 							if !upward(&mut self.future_grid, i, j) {
 								sideways_gas(&mut self.future_grid, i, j, 10);
 							}
-						}
+						},
+						Element::Steam => {
+							if !upward(&mut self.future_grid, i, j) {
+								sideways_gas(&mut self.future_grid, i, j, 10);
+							}
+						},
 						_ => ()
 					}
 				}

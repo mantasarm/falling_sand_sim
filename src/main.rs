@@ -126,6 +126,9 @@ fn draw(app: &mut App, gfx: &mut Graphics, plugins: &mut Plugins, state: &mut St
                 if ui.button("Smoke").clicked() {
                     state.selected_element = smoke_element();
                 }
+                if ui.button("Steam").clicked() {
+                    state.selected_element = steam_element();
+                }
             });
             ui.add_space(5.);
 
