@@ -1,4 +1,4 @@
-use notan::{graphics::Texture, draw::{Draw, DrawImages, DrawShapes}, prelude::{Graphics, App, Color}, math::Vec2};
+use notan::{graphics::Texture, draw::{Draw, DrawImages}, prelude::{Graphics}, math::Vec2};
 
 use crate::{element::*, movement::{downward, downward_sides, apply_velocity, apply_gravity, upward, sideways_gas}};
 
@@ -53,8 +53,8 @@ impl Grid {
 	pub fn update(&mut self) {
 		self.future_grid = self.grid.clone();
 
-		let flip_x = fastrand::bool();
 		for mut i in 0..COLS {
+			let flip_x = fastrand::bool();
 			let flip_y = fastrand::bool();
 			for mut j in 0..ROWS {
 				if flip_x {
@@ -203,7 +203,7 @@ impl Grid {
 		&self.grid[i][j]
 	}
 
-	pub fn mouse_in_sim(&self, mouse_world: (f32, f32), app: &mut App) -> Option<(usize, usize)> {
+	pub fn mouse_in_sim(&self, mouse_world: (f32, f32)) -> Option<(usize, usize)> {
 		if mouse_world.0 > self.pos.0 && mouse_world.1 > self.pos.1 && mouse_world.0 < self.pos.0 + COLS as f32 * UPSCALE_FACTOR as f32 && mouse_world.1 < self.pos.1 + ROWS as f32 * UPSCALE_FACTOR as f32 {
 			let mut mouse_pos = (0, 0);
 			mouse_pos.0 = ((mouse_world.0 - self.pos.0) / UPSCALE_FACTOR) as usize;

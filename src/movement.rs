@@ -1,4 +1,4 @@
-use crate::{element::{Cell, State, Element}, grid::{ROWS, COLS}};
+use crate::{element::{Cell, State}, grid::{ROWS, COLS}};
 
 pub fn downward(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize) -> bool {
 	if f_grid[i][j + 1].density <  f_grid[i][j].density {
@@ -33,7 +33,7 @@ pub fn apply_velocity(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize
 		return false;
 	}
 	
-	let (mut force_x, force_y) = (f_grid[i][j].velocity.x / dist, f_grid[i][j].velocity.y / dist);
+	let (force_x, force_y) = (f_grid[i][j].velocity.x / dist, f_grid[i][j].velocity.y / dist);
 
 	if f_grid[i][j].velocity.x != 0. {
 		if f_grid[i][j].velocity.x.abs() > 0.5 {
