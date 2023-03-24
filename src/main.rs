@@ -25,7 +25,7 @@ struct State {
 #[notan_main]
 fn main() -> Result<(), String> {
     notan::init_with(init)
-        .add_config(WindowConfig::new().size(1920, 1080).vsync(true).title("arm's sandbox"))
+        .add_config(WindowConfig::new().size(800, 800).vsync(true).title("arm's sandbox"))
         .add_config(DrawConfig)
         .add_config(EguiConfig)
         .update(update)
@@ -80,7 +80,7 @@ fn draw(app: &mut App, gfx: &mut Graphics, plugins: &mut Plugins, state: &mut St
     gfx.render(&draw);
 
     let output = plugins.egui(|ctx| {
-        Window::new("Editor").resizable(false).collapsible(false).title_bar(false).open(&mut state.editor_open).show(ctx, |ui| {
+        Window::new("Editor").resizable(false).collapsible(false).title_bar(true).open(&mut state.editor_open).show(ctx, |ui| {
             state.chunk_manager.modify = !ctx.is_pointer_over_area();
 
             ui.label(format!("fps: {}", app.timer.fps().round()));

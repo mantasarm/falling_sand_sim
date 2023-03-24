@@ -12,7 +12,7 @@ pub struct ChunkManager {
 impl ChunkManager {
 	pub fn new(gfx: &mut Graphics) -> Self {
 		Self {
-			grid: Grid::new(200., 200., gfx),
+			grid: Grid::new(50., 50., gfx),
 	        selected_element: sand_element(),
 	        modify: true,
 			brush_size: 32,
@@ -35,7 +35,6 @@ impl ChunkManager {
 	        },
 	        _ => ()
 	    }
-
 		
 		self.grid.update();
 	}

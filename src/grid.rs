@@ -93,8 +93,6 @@ impl Grid {
 							
 							if !apply_velocity(&mut self.future_grid, i, j) {
 								if !downward(&mut self.future_grid, i, j) {
-									self.future_grid[i][j].velocity = Vec2::ZERO;
-
 									let mut dir = 0.;
 
 									if fastrand::bool() {
@@ -113,7 +111,10 @@ impl Grid {
 
 									
 									if dir != 0. {	
-										self.future_grid[i][j].velocity.x += 5. * dir;
+										self.future_grid[i][j].velocity.x += 5.5 * dir;
+										// self.future_grid[i][j].velocity.y += 0.;
+									} else {
+										self.future_grid[i][j].velocity = Vec2::ZERO;
 									}
 								}
 							}
