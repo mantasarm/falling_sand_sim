@@ -7,4 +7,4 @@ edition = "2021"
 
 [dependencies]
 fastrand = "1.9.0"
-notan = "0.9.4"
+notan = { version = "0.9.4", features = ["egui"] }
