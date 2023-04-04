@@ -87,19 +87,19 @@ impl Grid {
 								if !downward(&mut self.future_grid, i, j, &chunks, self.index, &mut chunk_swaps) {
 									let mut dir = 0.;
 
-									// if fastrand::bool() {
-									// 	if self.future_grid[i - 1][j].density <= self.future_grid[i][j].density {
-									// 		dir = -1.;
-									// 	} else if self.future_grid[i + 1][j].density <= self.future_grid[i][j].density {
-									// 		dir = 1.;
-									// 	}
-									// } else {
-									// 	if self.future_grid[i + 1][j].density <= self.future_grid[i][j].density {
-									// 		dir = 1.;
-									// 	} else if self.future_grid[i - 1][j].density <= self.future_grid[i][j].density {
-									// 		dir = -1.;
-									// 	}	
-									// }
+									if fastrand::bool() {
+										if self.future_grid[i - 1][j].density <= self.future_grid[i][j].density {
+											dir = -1.;
+										} else if self.future_grid[i + 1][j].density <= self.future_grid[i][j].density {
+											dir = 1.;
+										}
+									} else {
+										if self.future_grid[i + 1][j].density <= self.future_grid[i][j].density {
+											dir = 1.;
+										} else if self.future_grid[i - 1][j].density <= self.future_grid[i][j].density {
+											dir = -1.;
+										}	
+									}
 
 									
 									if dir != 0. {	

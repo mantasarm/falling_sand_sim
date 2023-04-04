@@ -34,17 +34,16 @@ pub fn downward_sides(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize
 pub fn apply_velocity(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, chunks: &HashMap<(i32, i32), Box<[[Cell; ROWS]; COLS]>>, index: (i32, i32), c_swaps: &mut Vec<(i32, i32, usize, usize, Cell)>) -> bool {
 	let dist = (f_grid[i][j].velocity.x.powf(2.) + f_grid[i][j].velocity.y.powf(2.)).sqrt();
 
-	if dist <= 0. {
+	if dist < 0.5 {
 		return false;
 	}
-	
 
 	f_grid[i][j].velocity.x /= 1.05;
-	if f_grid[i][j].velocity.x.abs() < 0.5 {
+	if f_grid[i][j].velocity.x.abs() < 1.0 {
 		f_grid[i][j].velocity.x = 0.;
 	}
 
-	if f_grid[i][j].velocity.y.abs() < 0.5 {
+	if f_grid[i][j].velocity.y.abs() < 0. {
 		f_grid[i][j].velocity.y = 0.;
 	}
 
@@ -60,11 +59,14 @@ pub fn apply_velocity(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize
 		let (x, y) = ((i as f32 + (force_x * m as f32)).round() as i32, (j as f32 + (force_y * m as f32)).round() as i32);
 		let get_el = get(i, j, x, y, f_grid, chunks, index);
 
-		if !(get_el.density < d) {
+		if m == dist.round() as i32 {
+			swap(f_grid, i, j, dx, dy, chunks, index, c_swaps);
+			return true;
+		} else if !(get_el.density < d) {
 
 			if m == 1 {
-				// f_grid[i][j].velocity.x = 0.;
-				// f_grid[i][j].velocity.y = 0.;
+				f_grid[i][j].velocity.x = 0.;
+				f_grid[i][j].velocity.y = 0.;
 				return false;
 			}
 			// f_grid[dx as usize][dy as usize].velocity *= f_grid[x as usize][y as usize].drag;
@@ -74,31 +76,12 @@ pub fn apply_velocity(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize
 			}
 			swap(f_grid, i, j, dx, dy, chunks, index, c_swaps);
 			return true;
-		} else if m == dist.round() as i32 {
-			swap(f_grid, i, j, dx, dy, chunks, index, c_swaps);
-			return true;
 		}
 		
 		(dx, dy) = (x, y);
-		
-		//else {
-		// 	if m == 1 {
-		// 		f_grid[dx as usize][dy as usize].velocity.x = 0.;
-		// 		f_grid[dx as usize][dy as usize].velocity.y = 0.;
-		// 		return false;
-		// 	} else {
-		// 		swap(f_grid, i, j, dx, dy, chunks, index, c_swaps);
-		// 	}
-
-		// 	// if f_grid[x as usize][y as usize].state == State::Solid {
-		// 	// 	f_grid[dx as usize][dy as usize].velocity.x = 0.;
-		// 	// 	f_grid[dx as usize][dy as usize].velocity.y = 0.;
-		// 	// 	break;
-		// 	// }
-		// }
 	}
 
-	true
+	false
 }
 
 pub fn apply_gravity(future_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, chunks: &HashMap<(i32, i32), Box<[[Cell; ROWS]; COLS]>>, index: (i32, i32)) {
@@ -116,11 +99,17 @@ pub fn apply_gravity(future_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: u
 	} else {
 		if below_element.velocity.y.abs() < 0.5 {
 			if future_grid[i][j].velocity.x == 0. {
-				// if fastrand::bool() {
-				// 	future_grid[i][j].velocity.x += future_grid[i][j].velocity.y / 3.;
-				// } else {
-				// 	future_grid[i][j].velocity.x -= future_grid[i][j].velocity.y / 3.;
-				// }
+				if fastrand::bool() {
+					future_grid[i][j].velocity.x += future_grid[i][j].velocity.y / 3.;
+				} else {
+					future_grid[i][j].velocity.x -= future_grid[i][j].velocity.y / 3.;
+				}
+			} else {
+				if future_grid[i][j].velocity.x < 0. {
+					future_grid[i][j].velocity.x -= (future_grid[i][j].velocity.y / 3.).abs();
+				} else {
+					future_grid[i][j].velocity.x += (future_grid[i][j].velocity.y / 3.).abs();
+				}
 			}
 			future_grid[i][j].velocity.y = 0.;
 		}
@@ -141,7 +130,7 @@ pub fn sideways_gas(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, 
 
 	let left_element = get(i, j, i as i32 - 1, j as i32, f_grid, chunks, index);
 	let right_element = get(i, j, i as i32 + 1, j as i32, f_grid, chunks, index);
-	let mut dir = if left_element.density > d && left_element.state == State::Gas && right_element.density > d && right_element.state == State::Gas {
+	let dir = if left_element.density > d && left_element.state == State::Gas && right_element.density > d && right_element.state == State::Gas {
 		if fastrand::bool() {
 			1
 		} else {
@@ -160,13 +149,13 @@ pub fn sideways_gas(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, 
 	}
 
 	let (mut dx, mut dy) = (i as i32 + dir, j as i32);
-	for x in 1..amount {
+	for x in 1..=amount {
 		let el = get(i, j, i as i32 + x * dir, j as i32, f_grid, chunks, index);
 		if !(el.density > d && el.state == State::Gas) {
 			swap(f_grid, i, j, dx, dy, chunks, index, c_swaps);
 			return true;
-		}  else if x == amount - 1 {
-			 swap(f_grid, i, j, i as i32 + x * dir, j as i32, chunks, index, c_swaps);
+		} else if x == amount {
+			swap(f_grid, i, j, i as i32 + x * dir, j as i32, chunks, index, c_swaps);
 			return true;
 		}
 		(dx, dy) = (i as i32 + x * dir, j as i32)
