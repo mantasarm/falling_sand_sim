@@ -87,24 +87,24 @@ impl Grid {
 								if !downward(&mut self.future_grid, i, j, &chunks, self.index, &mut chunk_swaps) {
 									let mut dir = 0.;
 
-									if fastrand::bool() {
-										if self.future_grid[i - 1][j].density <= self.future_grid[i][j].density {
+									let left_element = get(i, j, i as i32 - 1, j as i32, &mut self.future_grid, &chunks, self.index);
+									let right_element = get(i, j, i as i32 + 1, j as i32, &mut self.future_grid, &chunks, self.index);
+
+									if left_element.density <= self.future_grid[i][j].density && right_element.density <= self.future_grid[i][j].density {
+										if fastrand::bool() {
 											dir = -1.;
-										} else if self.future_grid[i + 1][j].density <= self.future_grid[i][j].density {
+										} else {
 											dir = 1.;
 										}
-									} else {
-										if self.future_grid[i + 1][j].density <= self.future_grid[i][j].density {
-											dir = 1.;
-										} else if self.future_grid[i - 1][j].density <= self.future_grid[i][j].density {
-											dir = -1.;
-										}	
+									} else if left_element.density <= self.future_grid[i][j].density {
+										dir = -1.;
+									} else if right_element.density <= self.future_grid[i][j].density{
+										dir = 1.;
 									}
 
 									
 									if dir != 0. {	
 										self.future_grid[i][j].velocity.x += 5.5 * dir;
-										// self.future_grid[i][j].velocity.y += 0.;
 									} else {
 										self.future_grid[i][j].velocity = Vec2::ZERO;
 									}

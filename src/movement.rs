@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use notan::math::Vec2;
+
 use crate::{element::{Cell, State, solid_element}, grid::{ROWS, COLS, in_bound}};
 
 pub fn downward(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, chunks: &HashMap<(i32, i32), Box<[[Cell; ROWS]; COLS]>>, index: (i32, i32), c_swaps: &mut Vec<(i32, i32, usize, usize, Cell)>) -> bool {
@@ -57,25 +59,26 @@ pub fn apply_velocity(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize
 	let (mut dx, mut dy) = (i as i32, j as i32);
 	for m in 1..=dist.round() as i32 {
 		let (x, y) = ((i as f32 + (force_x * m as f32)).round() as i32, (j as f32 + (force_y * m as f32)).round() as i32);
+
 		let get_el = get(i, j, x, y, f_grid, chunks, index);
 
 		if m == dist.round() as i32 {
 			swap(f_grid, i, j, dx, dy, chunks, index, c_swaps);
 			return true;
 		} else if !(get_el.density < d) {
-
 			if m == 1 {
-				f_grid[i][j].velocity.x = 0.;
-				f_grid[i][j].velocity.y = 0.;
+				f_grid[i][j].velocity = Vec2::ZERO;
 				return false;
 			}
-			// f_grid[dx as usize][dy as usize].velocity *= f_grid[x as usize][y as usize].drag;
 			if get_el.state == State::Solid {
-				f_grid[i][j].velocity.x = 0.;
-				f_grid[i][j].velocity.y = 0.;
+				f_grid[i][j].velocity = Vec2::ZERO;
 			}
+
 			swap(f_grid, i, j, dx, dy, chunks, index, c_swaps);
 			return true;
+		} else {
+			let drag = get(i, j, x, y, f_grid, chunks, index).drag;
+			f_grid[i][j].velocity *= drag;
 		}
 		
 		(dx, dy) = (x, y);
@@ -86,10 +89,10 @@ pub fn apply_velocity(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize
 
 pub fn apply_gravity(future_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, chunks: &HashMap<(i32, i32), Box<[[Cell; ROWS]; COLS]>>, index: (i32, i32)) {
 	let below_element = get(i, j, i as i32, j as i32 + 1, future_grid, chunks, index);
+	let below_below_element = get(i, j, i as i32, j as i32 + 2, future_grid, chunks, index);
 	
-	if below_element.density < future_grid[i][j].density {
+	if below_element.density < future_grid[i][j].density && below_below_element.density < future_grid[i][j].density {
 		let limit = 7.;
-
 		if future_grid[i][j].velocity.y < limit {
 			let g = 1.;
 			future_grid[i][j].velocity.y += g;
@@ -163,7 +166,7 @@ pub fn sideways_gas(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, 
 	false
 }
 
-fn get(i1: usize, j1: usize, i2: i32, j2: i32, f_grid: &mut Box<[[Cell; ROWS]; COLS]>, chunks: &HashMap<(i32, i32), Box<[[Cell; ROWS]; COLS]>>, index: (i32, i32)) -> Cell {
+pub fn get(i1: usize, j1: usize, i2: i32, j2: i32, f_grid: &mut Box<[[Cell; ROWS]; COLS]>, chunks: &HashMap<(i32, i32), Box<[[Cell; ROWS]; COLS]>>, index: (i32, i32)) -> Cell {
 	if in_bound(i2, j2) {
 		return f_grid[i2 as usize][j2 as usize]
 	} else {
