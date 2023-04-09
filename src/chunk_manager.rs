@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use notan::{prelude::*, draw::*};
 
-use crate::{grid::Grid, camera::Camera2D, input_manager::get_mouse_in_world, element::{Cell, sand_element}};
+use crate::{grid::{Grid, UPSCALE_FACTOR, COLS, ROWS}, camera::Camera2D, input_manager::get_mouse_in_world, element::{Cell, sand_element}};
 
 pub struct ChunkManager {
 	chunks: HashMap<(i32, i32), Grid>,
@@ -10,7 +10,8 @@ pub struct ChunkManager {
     pub modify: bool,
     pub brush_size: i32,
 	pub update_chunks: bool,
-	pub hovering_cell: Cell
+	pub hovering_cell: Cell,
+	font: Font
 }
 
 impl ChunkManager {
@@ -28,7 +29,8 @@ impl ChunkManager {
 	        modify: true,
 			brush_size: 32,
 			update_chunks: true,
-			hovering_cell: sand_element()
+			hovering_cell: sand_element(),
+			font: gfx.create_font(include_bytes!("assets/Ubuntu-B.ttf")).unwrap()
 		}
 	}
 
@@ -74,6 +76,13 @@ impl ChunkManager {
 	}
 
 	pub fn render(&mut self, gfx: &mut Graphics, draw: &mut Draw, debug_render: bool) {
+		for index in self.chunks.keys() {
+			draw.text(&self.font, &format!("{:?}", index))
+				.position((COLS as f32 / 2. + (index.0 as f32 * COLS as f32)) * UPSCALE_FACTOR, (ROWS as f32 / 2. + (index.1 as f32 * ROWS as f32)) * UPSCALE_FACTOR)
+				.h_align_center()
+				.v_align_middle();
+		}
+
 		for chunk in self.chunks.values_mut() {
 			chunk.render(gfx, draw, debug_render);
 		}

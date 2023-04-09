@@ -10,7 +10,7 @@ pub const UPSCALE_FACTOR: f32 = 2.;
 
 pub struct Grid {
 	pos: (f32, f32),
-	index: (i32, i32),
+	pub index: (i32, i32),
 	pub grid: Box<[[Cell; ROWS]; COLS]>,
 	future_grid: Box<[[Cell; ROWS]; COLS]>,
 	texture: Texture,

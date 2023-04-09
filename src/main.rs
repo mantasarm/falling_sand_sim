@@ -19,7 +19,7 @@ struct State {
     camera: Camera2D,
     camera_zoom: f32,
     sky_gradient: Texture,
-    debug_render: bool
+    debug_render: bool,
 }
 
 #[notan_main]
@@ -40,7 +40,7 @@ fn init(app: &mut App, gfx: &mut Graphics) -> State {
         camera: Camera2D::new(app.window().width() as f32 / 2., app.window().height() as f32 / 2., app.window().width() as f32, app.window().height() as f32),
         camera_zoom: 1.0,
         sky_gradient: gfx.create_texture().from_image(include_bytes!("assets/sky_gradient.png")).with_filter(TextureFilter::Linear, TextureFilter::Linear).build().unwrap(),
-        debug_render: true
+        debug_render: true,
     }
 }
 
