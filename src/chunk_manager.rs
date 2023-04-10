@@ -2,10 +2,10 @@ use std::collections::HashMap;
 
 use notan::{prelude::*, draw::*};
 
-use crate::{grid::{Grid, UPSCALE_FACTOR, COLS, ROWS}, camera::Camera2D, input_manager::get_mouse_in_world, element::{Cell, sand_element}};
+use crate::{grid::*, camera::Camera2D, input_manager::get_mouse_in_world, element::{Cell, sand_element}};
 
 pub struct ChunkManager {
-	chunks: HashMap<(i32, i32), Grid>,
+	chunks: HashMap<(i32, i32), Chunk>,
     pub selected_element: Cell,
     pub modify: bool,
     pub brush_size: i32,
@@ -19,7 +19,7 @@ impl ChunkManager {
 		let mut chunks = HashMap::new();
 		for i in -1..=1 {
 			for j in -1..=1 {
-				chunks.insert((i, j), Grid::new(i, j, gfx));
+				chunks.insert((i, j), Chunk::new(i, j, gfx));
 			}
 		}
 		
@@ -50,23 +50,22 @@ impl ChunkManager {
 		for key in &keys {
 			let chunk = self.chunks.get_mut(key).unwrap();
 			
-		    let mouse = chunk.mouse_in_sim(mouse_world);
+		    let mouse = mouse_in_chunk(chunk, mouse_world);
 
             if app.mouse.left_is_down() && self.modify {
-                chunk.modify_elements(mouse.0, mouse.1, self.brush_size, &self.selected_element);
+                modify_chunk_elements(chunk, mouse.0, mouse.1, self.brush_size, &self.selected_element);
+            }
+			if app.mouse.right_is_down() && self.modify {
+                explode_chunk(chunk, mouse.0, mouse.1, self.brush_size * 2, 4.);
             }
 
-            if app.mouse.right_is_down() && self.modify {
-                chunk.explode(mouse.0, mouse.1, self.brush_size * 2, 4.);
-            }
-
-			match chunk.get_cell(mouse.0, mouse.1) {
+			match get_chunk_cell(chunk, mouse.0, mouse.1) {
 				Some(c) => self.hovering_cell = c.to_owned(),
 				_ => ()
 			}
 
 			if self.update_chunks {
-				for swap in &chunk.update(&grid_map) {
+				for swap in &update_chunk(chunk, &grid_map) {
 					if self.chunks.contains_key(&(swap.0, swap.1)) {
 						self.chunks.get_mut(&(swap.0, swap.1)).unwrap().grid[swap.2][swap.3] = swap.4;
 					}
@@ -84,7 +83,7 @@ impl ChunkManager {
 		}
 
 		for chunk in self.chunks.values_mut() {
-			chunk.render(gfx, draw, debug_render);
+			render_chunk(chunk, gfx, draw, debug_render);
 		}
 	}
 }
