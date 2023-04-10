@@ -19,7 +19,9 @@ struct State {
     camera: Camera2D,
     camera_zoom: f32,
     sky_gradient: Texture,
+    debug_window: bool,
     debug_render: bool,
+    debug_chunk_coords: bool
 }
 
 #[notan_main]
@@ -40,7 +42,9 @@ fn init(app: &mut App, gfx: &mut Graphics) -> State {
         camera: Camera2D::new(app.window().width() as f32 / 2., app.window().height() as f32 / 2., app.window().width() as f32, app.window().height() as f32),
         camera_zoom: 1.0,
         sky_gradient: gfx.create_texture().from_image(include_bytes!("assets/sky_gradient.png")).with_filter(TextureFilter::Linear, TextureFilter::Linear).build().unwrap(),
-        debug_render: true,
+        debug_window: false,
+        debug_render: false,
+        debug_chunk_coords: true
     }
 }
 
@@ -72,7 +76,7 @@ fn draw(app: &mut App, gfx: &mut Graphics, plugins: &mut Plugins, state: &mut St
 
     state.camera.apply(&mut draw);
 
-    state.chunk_manager.render(gfx, &mut draw, state.debug_render);
+    state.chunk_manager.render(gfx, &mut draw, state.debug_render, state.debug_chunk_coords);
 
     draw.transform().pop();
     draw.ellipse((app.mouse.x, app.mouse.y), (state.chunk_manager.brush_size as f32 * state.camera_zoom, state.chunk_manager.brush_size as f32 * state.camera_zoom)).stroke_color(Color::WHITE).fill_color(Color::from_rgba(0., 0., 0., 0.)).stroke(1.);
@@ -114,11 +118,15 @@ fn draw(app: &mut App, gfx: &mut Graphics, plugins: &mut Plugins, state: &mut St
             let brush_slider = Slider::new(&mut state.chunk_manager.brush_size, 2..=200);
             ui.add(brush_slider);
 
-            ui.checkbox(&mut state.debug_render, "Debug");
+            ui.checkbox(&mut state.debug_window, "Debug window");
 
-            ui.checkbox(&mut state.chunk_manager.update_chunks, "Update");
+            Window::new("Debug window").resizable(false).collapsible(false).title_bar(true).open(&mut state.debug_window).show(ctx, |ui| {
+                ui.checkbox(&mut state.chunk_manager.update_chunks, "Update");
+                ui.checkbox(&mut state.debug_render, "Chunk borders");
+                ui.checkbox(&mut state.debug_chunk_coords, "Chunk indices");
 
-            ui.label(format!("{:?}", state.chunk_manager.hovering_cell));
+                ui.label(format!("{:?}", state.chunk_manager.hovering_cell));
+            });
         });
         
         if !state.editor_open {

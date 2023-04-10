@@ -64,7 +64,7 @@ pub fn water_element() -> Cell {
 		element: Element::Water,
 		density: 50.,
 		state:State::Liquid,
-		color: [55, 46, 229, 200],
+		color: [55, 46, 229, 175],
 		velocity: Vec2::ZERO,
 		drag: 0.6,
 		sleeping: false
@@ -88,7 +88,7 @@ pub fn steam_element() -> Cell {
 		element: Element::Steam,
 		density: -10.,
 		state: State::Gas,
-		color: [143, 159, 234, 175],
+		color: [143, 159, 234, 140],
 		velocity: Vec2::ZERO,
 		drag: 1.,
 		sleeping: false

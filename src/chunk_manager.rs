@@ -74,12 +74,14 @@ impl ChunkManager {
 		}
 	}
 
-	pub fn render(&mut self, gfx: &mut Graphics, draw: &mut Draw, debug_render: bool) {
-		for index in self.chunks.keys() {
-			draw.text(&self.font, &format!("{:?}", index))
-				.position((COLS as f32 / 2. + (index.0 as f32 * COLS as f32)) * UPSCALE_FACTOR, (ROWS as f32 / 2. + (index.1 as f32 * ROWS as f32)) * UPSCALE_FACTOR)
-				.h_align_center()
-				.v_align_middle();
+	pub fn render(&mut self, gfx: &mut Graphics, draw: &mut Draw, debug_render: bool, debug_chunk_coords: bool) {
+		if debug_chunk_coords {
+			for index in self.chunks.keys() {
+				draw.text(&self.font, &format!("{:?}", index))
+					.position((COLS as f32 / 2. + (index.0 as f32 * COLS as f32)) * UPSCALE_FACTOR, (ROWS as f32 / 2. + (index.1 as f32 * ROWS as f32)) * UPSCALE_FACTOR)
+					.h_align_center()
+					.v_align_middle();
+			}
 		}
 
 		for chunk in self.chunks.values_mut() {
