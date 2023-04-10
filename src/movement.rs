@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use notan::math::Vec2;
 
-use crate::{element::{Cell, State, solid_element}, grid::{ROWS, COLS, in_bound}};
+use crate::{element::{Cell, State, solid_element}, chunk::{ROWS, COLS, in_bound}};
 
 pub fn downward(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, chunks: &HashMap<(i32, i32), Box<[[Cell; ROWS]; COLS]>>, index: (i32, i32), c_swaps: &mut Vec<(i32, i32, usize, usize, Cell)>) -> bool {
 	if get(i, j, i as i32, j as i32 + 1, f_grid, chunks, index).density <  f_grid[i][j].density {

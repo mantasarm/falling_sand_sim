@@ -1,4 +1,4 @@
-mod grid;
+mod chunk;
 mod element;
 pub mod movement;
 pub mod camera;

@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use notan::{prelude::*, draw::*};
 
-use crate::{grid::*, camera::Camera2D, input_manager::get_mouse_in_world, element::{Cell, sand_element}};
+use crate::{chunk::*, camera::Camera2D, input_manager::get_mouse_in_world, element::{Cell, sand_element}};
 
 pub struct ChunkManager {
 	chunks: HashMap<(i32, i32), Chunk>,
@@ -38,12 +38,9 @@ impl ChunkManager {
 	    let mouse_world = get_mouse_in_world(&(app.mouse.x, app.mouse.y), (app.window().width(), app.window().height()), &camera);
 
 		let mut grid_map = HashMap::new();
+		let mut keys = Vec::new();
 		for (key, chunk) in self.chunks.iter() {
 			grid_map.insert(key.to_owned(), chunk.grid.clone());
-		}
-
-		let mut keys = Vec::new();
-		for (key, _) in self.chunks.iter() {
 			keys.push(key.to_owned());
 		}
 		
@@ -63,6 +60,10 @@ impl ChunkManager {
 				Some(c) => self.hovering_cell = c.to_owned(),
 				_ => ()
 			}
+		}
+
+		for key in &keys {
+			let chunk = self.chunks.get_mut(key).unwrap();
 
 			if self.update_chunks {
 				for swap in &update_chunk(chunk, &grid_map) {
