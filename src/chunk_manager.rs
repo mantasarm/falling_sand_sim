@@ -30,7 +30,7 @@ impl ChunkManager {
 			brush_size: 32,
 			update_chunks: true,
 			hovering_cell: sand_element(),
-			font: gfx.create_font(include_bytes!("assets/Ubuntu-B.ttf")).unwrap()
+			font: gfx.create_font(include_bytes!("assets/UbuntuMono.ttf")).unwrap()
 		}
 	}
 
@@ -75,7 +75,7 @@ impl ChunkManager {
 		}
 	}
 
-	pub fn render(&mut self, gfx: &mut Graphics, draw: &mut Draw, debug_render: bool, debug_chunk_coords: bool) {
+	pub fn render(&mut self, gfx: &mut Graphics, draw: &mut Draw, debug_render_boundaries: bool, debug_chunk_coords: bool) {
 		if debug_chunk_coords {
 			for index in self.chunks.keys() {
 				draw.text(&self.font, &format!("{:?}", index))
@@ -85,8 +85,17 @@ impl ChunkManager {
 			}
 		}
 
+		if debug_render_boundaries {
+			for index in self.chunks.keys() {
+				draw.rect((index.0 as f32 * COLS as f32 * UPSCALE_FACTOR, index.1 as f32 * ROWS as f32 * UPSCALE_FACTOR), (COLS as f32 * UPSCALE_FACTOR, ROWS as f32 * UPSCALE_FACTOR))
+					.fill_color(Color::from_rgba(0., 0., 0., 0.))
+					.stroke_color(Color::RED)
+					.stroke(1.);
+			}
+		}
+
 		for chunk in self.chunks.values_mut() {
-			render_chunk(chunk, gfx, draw, debug_render);
+			render_chunk(chunk, gfx, draw);
 		}
 	}
 }

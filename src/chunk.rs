@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use notan::{graphics::Texture, draw::{Draw, DrawImages, DrawShapes}, prelude::{Graphics, Color}, math::Vec2};
+use notan::{graphics::Texture, draw::{Draw, DrawImages}, prelude::Graphics, math::Vec2};
 
 use crate::{element::*, movement::*};
 
@@ -63,7 +63,7 @@ pub fn update_chunk(chunk: &mut Chunk, chunks: &HashMap<(i32, i32), Box<[[Cell; 
 			if flip_y {
 				j = ROWS - j - 1;
 			}
-			if chunk.grid[i][j].element == chunk.future_grid[i][j].element && !chunk.grid[i][j].sleeping {
+			if chunk.grid[i][j].element == chunk.future_grid[i][j].element {
 				match chunk.grid[i][j].element {
 					Element::Sand => {
 						apply_gravity(&mut chunk.future_grid, i, j, &chunks, chunk.index);
@@ -193,7 +193,7 @@ pub fn in_bound(i: i32, j: i32) -> bool {
 	return i >= 0 && j >= 0 && i < COLS as i32 && j < ROWS as i32
 }
 
-pub fn render_chunk(chunk: &mut Chunk, gfx: &mut Graphics, draw: &mut Draw, debug_render: bool) {
+pub fn render_chunk(chunk: &mut Chunk, gfx: &mut Graphics, draw: &mut Draw) {
 	update_bytes(chunk);
 	gfx.update_texture(&mut chunk.texture)
     	.with_data(&chunk.bytes)
@@ -201,12 +201,6 @@ pub fn render_chunk(chunk: &mut Chunk, gfx: &mut Graphics, draw: &mut Draw, debu
     	.unwrap();
 	
 	draw.image(&chunk.texture).size(COLS as f32 * UPSCALE_FACTOR, ROWS as f32 * UPSCALE_FACTOR).position(chunk.pos.0, chunk.pos.1);
-	if debug_render {
-		draw.rect((chunk.pos.0, chunk.pos.1), (COLS as f32 * UPSCALE_FACTOR, ROWS as f32 * UPSCALE_FACTOR))
-			.fill_color(Color::from_rgba(0., 0., 0., 0.))
-			.stroke_color(Color::RED)
-			.stroke(1.);
-	}
 }
 
 fn update_bytes(chunk: &mut Chunk) {
