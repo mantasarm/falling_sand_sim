@@ -183,9 +183,7 @@ pub fn get(i1: usize, j1: usize, i2: i32, j2: i32, f_grid: &mut Box<[[Cell; ROWS
 
 pub fn swap(grid: &mut Box<[[Cell; ROWS]; COLS]>, i1: usize, j1: usize, i2: i32, j2: i32, chunks: &HashMap<(i32, i32), Box<[[Cell; ROWS]; COLS]>>, index: (i32, i32), c_swaps: &mut Vec<(i32, i32, usize, usize, Cell)>) -> bool {
 	if in_bound(i2, j2) {
-		let temp = grid[i1][j1].clone();
-		grid[i1][j1] = grid[i2 as usize][j2 as usize].clone();
-		grid[i2 as usize][j2 as usize] = temp;
+		(grid[i1][j1], grid[i2 as usize][j2 as usize]) = (grid[i2 as usize][j2 as usize], grid[i1][j1]);
 		return true;
 	} else {
 		let wanted_chunk = get_wanted_chunk(index, i2, j2);
@@ -236,6 +234,5 @@ fn get_new_element_coord(i1: usize, j1: usize, i2: i32, j2: i32) -> (i32, i32) {
 			y = ROWS as i32 + y + 1;
 		}
 	}
-
 	(x, y)
 }

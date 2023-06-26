@@ -3,9 +3,9 @@ use notan::prelude::{App, KeyCode};
 use crate::camera::Camera2D;
 
 pub fn camera_control(app: &mut App, camera: &mut Camera2D, camera_zoom: &mut f32) {
-    let mut speed = 5.;
+    let mut speed = 5. * app.timer.delta_f32() * 60.;
     if app.keyboard.shift() {
-        speed = 10.;
+        speed = 10.* app.timer.delta_f32() * 60.;
     }
     if app.keyboard.is_down(KeyCode::D) {
         camera.pos_add_x(speed);

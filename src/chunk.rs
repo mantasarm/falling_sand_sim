@@ -7,12 +7,15 @@ use crate::{element::*, movement::*};
 pub const COLS: usize = 200;
 pub const ROWS: usize = 150;
 pub const UPSCALE_FACTOR: f32 = 2.;
+const INACTIVE_F_NUM: i32 = 10;
 
 pub struct Chunk {
 	pub pos: (f32, f32),
 	pub index: (i32, i32),
 	pub grid: Box<[[Cell; ROWS]; COLS]>,
 	pub future_grid: Box<[[Cell; ROWS]; COLS]>,
+	pub active: bool,
+	pub inactive_f: i32,
 	bytes: Vec<u8>,
 	texture: Texture,
 }
@@ -35,6 +38,8 @@ impl Chunk {
 			index: (i, j),
 			grid,
 			future_grid,
+			active: true,
+			inactive_f: INACTIVE_F_NUM,
 			bytes,
 			texture
 		}
@@ -43,15 +48,20 @@ impl Chunk {
 
 fn create_cells_array() -> Box<[[Cell; ROWS]; COLS]> {
     let mut data = std::mem::ManuallyDrop::new(vec![air_element(); ROWS * COLS]);
-    
     unsafe {
         Box::from_raw(data.as_mut_ptr() as *mut [[Cell; ROWS]; COLS])
     }
 }
 
 pub fn update_chunk(chunk: &mut Chunk, chunks: &HashMap<(i32, i32), Box<[[Cell; ROWS]; COLS]>>) -> Vec<(i32, i32, usize, usize, Cell)> {
+	// if !chunk.active {
+	// 	return vec![];
+	// }
+
 	chunk.future_grid = chunk.grid.clone();
 	let mut chunk_swaps = Vec::new();
+
+	// let mut keep_active: bool = false;
 
 	for mut i in 0..COLS {
 		let flip_x = fastrand::bool();
@@ -66,71 +76,99 @@ pub fn update_chunk(chunk: &mut Chunk, chunks: &HashMap<(i32, i32), Box<[[Cell; 
 			if chunk.grid[i][j].element == chunk.future_grid[i][j].element {
 				match chunk.grid[i][j].element {
 					Element::Sand => {
-						apply_gravity(&mut chunk.future_grid, i, j, &chunks, chunk.index);
-						if !apply_velocity(&mut chunk.future_grid, i, j, &chunks, chunk.index, &mut chunk_swaps) {
-							if !downward(&mut chunk.future_grid, i, j, &chunks, chunk.index, &mut chunk_swaps) {
-								if !downward_sides(&mut chunk.future_grid, i, j, &chunks, chunk.index, &mut chunk_swaps) {
-									chunk.future_grid[i][j].velocity = Vec2::ZERO;
-								}
-							}
+						if falling_sand(&mut chunk.future_grid, i, j, chunks, chunk.index, &mut chunk_swaps) {
+							// keep_active = true;
 						}
 					},
 					Element::SawDust => {
-						apply_gravity(&mut chunk.future_grid, i, j, &chunks, chunk.index);
-						
-						if !apply_velocity(&mut chunk.future_grid, i, j, &chunks, chunk.index, &mut chunk_swaps) {
-							if !downward(&mut chunk.future_grid, i, j, &chunks, chunk.index, &mut chunk_swaps) {
-								if !downward_sides(&mut chunk.future_grid, i, j, &chunks, chunk.index, &mut chunk_swaps) {
-									chunk.future_grid[i][j].velocity = Vec2::ZERO;
-								}
-							}
+						if falling_sand(&mut chunk.future_grid, i, j, chunks, chunk.index, &mut chunk_swaps) {
+							// keep_active = true;
 						}
 					},
 					Element::Water => {
-						apply_gravity(&mut chunk.future_grid, i, j, &chunks, chunk.index);
-						
-						if !apply_velocity(&mut chunk.future_grid, i, j, &chunks, chunk.index, &mut chunk_swaps) {
-							if !downward(&mut chunk.future_grid, i, j, &chunks, chunk.index, &mut chunk_swaps) {
-								let mut dir = 0.;
-								let left_element = get(i, j, i as i32 - 1, j as i32, &mut chunk.future_grid, &chunks, chunk.index);
-								let right_element = get(i, j, i as i32 + 1, j as i32, &mut chunk.future_grid, &chunks, chunk.index);
-								if left_element.density <= chunk.future_grid[i][j].density && right_element.density <= chunk.future_grid[i][j].density {
-									if fastrand::bool() {
-										dir = -1.;
-									} else {
-										dir = 1.;
-									}
-								} else if left_element.density <= chunk.future_grid[i][j].density {
-									dir = -1.;
-								} else if right_element.density <= chunk.future_grid[i][j].density{
-									dir = 1.;
-								}
-								
-								if dir != 0. {	
-									chunk.future_grid[i][j].velocity.x += 5.5 * dir;
-								} else {
-									chunk.future_grid[i][j].velocity = Vec2::ZERO;
-								}
-							}
-						}
+						if liquid_movement(&mut chunk.future_grid, i, j, chunks, chunk.index, &mut chunk_swaps) {
+							// keep_active = true;
+						};
 					},
 					Element::Smoke => {
-						if !upward(&mut chunk.future_grid, i, j, &chunks, chunk.index, &mut chunk_swaps) {
-							sideways_gas(&mut chunk.future_grid, i, j, 10, &chunks, chunk.index, &mut chunk_swaps);
-						}
+						if gas_movement(&mut chunk.future_grid, i, j, chunks, chunk.index, &mut chunk_swaps) {
+							// keep_active = true;
+						};
 					},
 					Element::Steam => {
-						if !upward(&mut chunk.future_grid, i, j, &chunks, chunk.index, &mut chunk_swaps) {
-							sideways_gas(&mut chunk.future_grid, i, j, 10, &chunks, chunk.index, &mut chunk_swaps);
-						}
+						if gas_movement(&mut chunk.future_grid, i, j, chunks, chunk.index, &mut chunk_swaps) {
+							// keep_active = true;
+						};
 					},
 					_ => ()
 				}
 			}
 		}
 	}
+	// if !keep_active && chunk.inactive_f != 0 {
+	// 	chunk.inactive_f -= 1;
+	// } else if !keep_active && chunk.inactive_f == 0 {
+	// 	chunk.active = false;
+	// } else if keep_active {
+	// 	chunk.inactive_f = INACTIVE_F_NUM;
+	// }
 	chunk.grid = chunk.future_grid.clone();
+	
 	chunk_swaps
+}
+
+pub fn falling_sand(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, chunks: &HashMap<(i32, i32), Box<[[Cell; ROWS]; COLS]>>, index: (i32, i32), chunk_swaps: &mut Vec<(i32, i32, usize, usize, Cell)>) -> bool {
+	apply_gravity(f_grid, i, j, &chunks, index);
+	if !apply_velocity(f_grid, i, j, &chunks, index, chunk_swaps) {
+		if !downward(f_grid, i, j, &chunks, index, chunk_swaps) {
+			if !downward_sides(f_grid, i, j, &chunks, index, chunk_swaps) {
+				f_grid[i][j].velocity = Vec2::ZERO;
+
+				return false;
+			}
+		}
+	}
+	true
+}
+
+pub fn liquid_movement(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, chunks: &HashMap<(i32, i32), Box<[[Cell; ROWS]; COLS]>>, index: (i32, i32), chunk_swaps: &mut Vec<(i32, i32, usize, usize, Cell)>) -> bool {
+	apply_gravity(f_grid, i, j, &chunks, index);
+						
+	if !apply_velocity(f_grid, i, j, &chunks, index, chunk_swaps) {
+		if !downward(f_grid, i, j, &chunks, index, chunk_swaps) {
+			let mut dir = 0.;
+			let left_element = get(i, j, i as i32 - 1, j as i32, f_grid, &chunks, index);
+			let right_element = get(i, j, i as i32 + 1, j as i32, f_grid, &chunks, index);
+			if left_element.density <= f_grid[i][j].density && right_element.density <= f_grid[i][j].density {
+				if fastrand::bool() {
+					dir = -1.;
+				} else {
+					dir = 1.;
+				}
+			} else if left_element.density <= f_grid[i][j].density {
+				dir = -1.;
+			} else if right_element.density <= f_grid[i][j].density{
+				dir = 1.;
+			}
+			
+			if dir != 0. {	
+				f_grid[i][j].velocity.x += 5.5 * dir;
+			} else {
+				f_grid[i][j].velocity = Vec2::ZERO;
+				return false;
+			}
+		}
+	}
+	true
+}
+
+pub fn gas_movement(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, chunks: &HashMap<(i32, i32), Box<[[Cell; ROWS]; COLS]>>, index: (i32, i32), chunk_swaps: &mut Vec<(i32, i32, usize, usize, Cell)>) -> bool {
+	if !upward(f_grid, i, j, &chunks, index, chunk_swaps) {
+		if !sideways_gas(f_grid, i, j, 10, &chunks, index, chunk_swaps) {
+			return false;
+		}
+	}
+	true
 }
 
 pub fn modify_chunk_elements(chunk: &mut Chunk, i: i32, j: i32, brush_size: i32, cell: &Cell) {
@@ -147,7 +185,6 @@ pub fn modify_chunk_element(chunk: &mut Chunk, i: i32, j: i32, cell: &Cell) {
 	if in_bound(i, j) {
 		let mut c_cell = cell.to_owned();
 
-
 		let amount = 40;
 		let mut c = fastrand::u8(0..=amount);
 		if c_cell.color[0] < c || c_cell.color[1] < c || c_cell.color[2] < c {
@@ -156,6 +193,8 @@ pub fn modify_chunk_element(chunk: &mut Chunk, i: i32, j: i32, cell: &Cell) {
 		
 		c_cell.color = [cell.color[0] - c, cell.color[1] - c, cell.color[2] - c, cell.color[3]];
 		chunk.grid[i as usize][j as usize] = c_cell;
+
+		chunk.active = true;
 	}
 }
 
@@ -167,6 +206,9 @@ pub fn explode_chunk(chunk: &mut Chunk, i: i32, j: i32, radius: i32, force: f32)
 					let mut angle = Vec2::new(x as f32, y as f32);
 					angle = angle.normalize_or_zero() * force * -1.;
 					chunk.grid[(i as i32 - x) as usize][(j as i32 - y) as usize].velocity += angle;
+					if angle.x.abs() > 0.5 && angle.y.abs() > 0.5 {
+						chunk.active = true;
+					}
 				}
 			} 
 		}
@@ -194,11 +236,13 @@ pub fn in_bound(i: i32, j: i32) -> bool {
 }
 
 pub fn render_chunk(chunk: &mut Chunk, gfx: &mut Graphics, draw: &mut Draw) {
-	update_bytes(chunk);
-	gfx.update_texture(&mut chunk.texture)
-    	.with_data(&chunk.bytes)
-    	.update()
-    	.unwrap();
+	if chunk.active {
+		update_bytes(chunk);
+		gfx.update_texture(&mut chunk.texture)
+    		.with_data(&chunk.bytes)
+    		.update()
+    		.unwrap();
+	}
 	
 	draw.image(&chunk.texture).size(COLS as f32 * UPSCALE_FACTOR, ROWS as f32 * UPSCALE_FACTOR).position(chunk.pos.0, chunk.pos.1);
 }
