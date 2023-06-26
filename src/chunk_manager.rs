@@ -2,9 +2,9 @@ use std::collections::HashMap;
 
 use notan::{prelude::*, draw::*};
 
-use crate::{chunk::*, camera::Camera2D, input_manager::get_mouse_in_world, element::{Cell, sand_element}};
+use crate::{camera::Camera2D, input_manager::get_mouse_in_world, element::{Cell, sand_element}, chunk::{Chunk, self, COLS, UPSCALE_FACTOR, ROWS}};
 
-const CHUNK_UPDATE_FPS: f32 = 80.;
+const CHUNK_UPDATE_FPS: f32 = 60.;
 
 pub struct ChunkManager {
 	chunks: HashMap<(i32, i32), Chunk>,
@@ -42,25 +42,23 @@ impl ChunkManager {
 	    let mouse_world = get_mouse_in_world(&(app.mouse.x, app.mouse.y), (app.window().width(), app.window().height()), &camera);
 
 		let mut keys = Vec::new();
-		let mut grid_map = HashMap::new();
-		for (key, chunk) in self.chunks.iter() {
-			grid_map.insert(key.to_owned(), chunk.grid.clone());
+		for (key, _) in self.chunks.iter() {
 			keys.push(key.to_owned());
 		}
 		
 		for key in &keys {
 			let chunk = self.chunks.get_mut(key).unwrap();
 			
-		    let mouse = mouse_in_chunk(chunk, mouse_world);
+		    let mouse = chunk::mouse_in_chunk(chunk, mouse_world);
 
             if app.mouse.left_is_down() && self.modify {
-                modify_chunk_elements(chunk, mouse.0, mouse.1, self.brush_size, &self.selected_element);
+                chunk::modify_chunk_elements(chunk, mouse.0, mouse.1, self.brush_size, &self.selected_element);
             }
 			if app.mouse.right_is_down() && self.modify {
-                explode_chunk(chunk, mouse.0, mouse.1, self.brush_size * 2, 4. * app.timer.delta_f32() * 90.);
+                chunk::explode_chunk(chunk, mouse.0, mouse.1, self.brush_size * 2, 4. * app.timer.delta_f32() * 90.);
             }
 
-			match get_chunk_cell(chunk, mouse.0, mouse.1) {
+			match chunk::get_chunk_cell(chunk, mouse.0, mouse.1) {
 				Some(c) => self.hovering_cell = c.to_owned(),
 				_ => ()
 			}
@@ -70,14 +68,7 @@ impl ChunkManager {
 		if self.update_time >= 1. / CHUNK_UPDATE_FPS && self.update_chunks {
 			for key in &keys {
 				let mut chunk = self.chunks.remove(key).unwrap();
-	
-				for swap in &update_chunk(&mut chunk, &grid_map) {
-					if self.chunks.contains_key(&(swap.0, swap.1)) {
-						self.chunks.get_mut(&(swap.0, swap.1)).unwrap().grid[swap.2][swap.3] = swap.4;
-						self.chunks.get_mut(&(swap.0, swap.1)).unwrap().active = true;
-					}
-				}
-	
+				chunk::update_chunk(&mut chunk, &mut self.chunks);
 				self.chunks.insert(key.to_owned(), chunk);
 			}
 			self.update_time = 0.;
@@ -104,7 +95,7 @@ impl ChunkManager {
 		}
 
 		for chunk in self.chunks.values_mut() {
-			render_chunk(chunk, gfx, draw);
+			chunk::render_chunk(chunk, gfx, draw);
 		}
 	}
 }

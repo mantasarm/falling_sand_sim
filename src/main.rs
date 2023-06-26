@@ -6,6 +6,7 @@ pub mod input_manager;
 pub mod chunk_manager;
 
 use camera::Camera2D;
+use chunk::{UPSCALE_FACTOR, ROWS, COLS};
 use chunk_manager::ChunkManager;
 use element::*;
 use notan::draw::*;
@@ -28,7 +29,7 @@ struct State {
 #[notan_main]
 fn main() -> Result<(), String> {
     notan::init_with(init)
-        .add_config(WindowConfig::new().size(1920, 1080).vsync(false).title("arm'st sandbox").resizable(false))
+        .add_config(WindowConfig::new().size(1920, 1080).vsync(false).title("arm'st sandbox").resizable(true).multisampling(4))
         .add_config(DrawConfig)
         .add_config(EguiConfig)
         .update(update)
@@ -40,7 +41,7 @@ fn init(app: &mut App, gfx: &mut Graphics) -> State {
     State {
         chunk_manager: ChunkManager::new(gfx),
         editor_open: true,
-        camera: Camera2D::new(app.window().width() as f32 / 2., app.window().height() as f32 / 2., app.window().width() as f32, app.window().height() as f32),
+        camera: Camera2D::new(COLS as f32 / 2. * UPSCALE_FACTOR, ROWS as f32 / 2. * UPSCALE_FACTOR, app.window().width() as f32, app.window().height() as f32),
         camera_zoom: 1.0,
         sky_gradient: gfx.create_texture().from_image(include_bytes!("assets/sky_gradient.png")).with_filter(TextureFilter::Linear, TextureFilter::Linear).build().unwrap(),
         debug_window: false,
@@ -80,7 +81,10 @@ fn draw(app: &mut App, gfx: &mut Graphics, plugins: &mut Plugins, state: &mut St
     state.chunk_manager.render(gfx, &mut draw, state.debug_render, state.debug_chunk_coords);
 
     draw.transform().pop();
-    draw.ellipse((app.mouse.x, app.mouse.y), (state.chunk_manager.brush_size as f32 * state.camera_zoom, state.chunk_manager.brush_size as f32 * state.camera_zoom)).stroke_color(Color::WHITE).fill_color(Color::from_rgba(0., 0., 0., 0.)).stroke(1.);
+
+    draw.ellipse((app.mouse.x, app.mouse.y), (state.chunk_manager.brush_size as f32 * state.camera_zoom * 0.5 * UPSCALE_FACTOR, state.chunk_manager.brush_size as f32 * state.camera_zoom * 0.5 * UPSCALE_FACTOR,))
+        .stroke_color(Color::WHITE).fill_color(Color::from_rgba(0., 0., 0., 0.))
+        .stroke(1.);
 
     gfx.render(&draw);
 

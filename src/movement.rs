@@ -2,17 +2,17 @@ use std::collections::HashMap;
 
 use notan::math::Vec2;
 
-use crate::{element::{Cell, State, solid_element}, chunk::{ROWS, COLS, in_bound}};
+use crate::{element::{Cell, State, solid_element}, chunk::{ROWS, COLS, in_bound, Chunk, self}};
 
-pub fn downward(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, chunks: &HashMap<(i32, i32), Box<[[Cell; ROWS]; COLS]>>, index: (i32, i32), c_swaps: &mut Vec<(i32, i32, usize, usize, Cell)>) -> bool {
+pub fn downward(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32)) -> bool {
 	if get(i, j, i as i32, j as i32 + 1, f_grid, chunks, index).density <  f_grid[i][j].density {
-		swap(f_grid, i, j, i as i32, j as i32+ 1, chunks, index, c_swaps);
+		swap(f_grid, i, j, i as i32, j as i32+ 1, chunks, index);
 		return true;
 	}
 	false
 }
 
-pub fn downward_sides(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, chunks: &HashMap<(i32, i32), Box<[[Cell; ROWS]; COLS]>>, index: (i32, i32), c_swaps: &mut Vec<(i32, i32, usize, usize, Cell)>) -> bool {
+pub fn downward_sides(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32)) -> bool {
 	let d = f_grid[i][j].density;
 
 	let left_element = get(i, j, i as i32 - 1, j as i32 + 1, f_grid, chunks, index);
@@ -20,20 +20,20 @@ pub fn downward_sides(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize
 	
 	if left_element.density < d && right_element.density < d {
 		if fastrand::bool() {
-			swap(f_grid, i, j, i as i32 - 1, j as i32 + 1, chunks, index, c_swaps);
+			swap(f_grid, i, j, i as i32 - 1, j as i32 + 1, chunks, index);
 		} else {
-			swap(f_grid, i, j, i as i32 + 1, j as i32 + 1, chunks, index, c_swaps);
+			swap(f_grid, i, j, i as i32 + 1, j as i32 + 1, chunks, index);
 		}
 	} else if right_element.density < d {
-		swap(f_grid, i, j, i as i32 + 1, j as i32 + 1, chunks, index, c_swaps);
+		swap(f_grid, i, j, i as i32 + 1, j as i32 + 1, chunks, index);
 	} else if left_element.density < d {
-		swap(f_grid, i, j, i as i32 - 1, j as i32 + 1, chunks, index, c_swaps);
+		swap(f_grid, i, j, i as i32 - 1, j as i32 + 1, chunks, index);
 	}
 	
 	false
 }
 
-pub fn apply_velocity(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, chunks: &HashMap<(i32, i32), Box<[[Cell; ROWS]; COLS]>>, index: (i32, i32), c_swaps: &mut Vec<(i32, i32, usize, usize, Cell)>) -> bool {
+pub fn apply_velocity(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32)) -> bool {
 	let dist = (f_grid[i][j].velocity.x.powf(2.) + f_grid[i][j].velocity.y.powf(2.)).sqrt();
 
 	if dist < 0.5 {
@@ -63,7 +63,7 @@ pub fn apply_velocity(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize
 		let get_el = get(i, j, x, y, f_grid, chunks, index);
 
 		if m == dist.round() as i32 {
-			swap(f_grid, i, j, dx, dy, chunks, index, c_swaps);
+			swap(f_grid, i, j, dx, dy, chunks, index);
 			return true;
 		} else if !(get_el.density < d) {
 			if m == 1 {
@@ -74,7 +74,7 @@ pub fn apply_velocity(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize
 				f_grid[i][j].velocity = Vec2::ZERO;
 			}
 
-			swap(f_grid, i, j, dx, dy, chunks, index, c_swaps);
+			swap(f_grid, i, j, dx, dy, chunks, index);
 			return true;
 		} else {
 			let drag = get(i, j, x, y, f_grid, chunks, index).drag;
@@ -87,7 +87,7 @@ pub fn apply_velocity(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize
 	false
 }
 
-pub fn apply_gravity(future_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, chunks: &HashMap<(i32, i32), Box<[[Cell; ROWS]; COLS]>>, index: (i32, i32)) {
+pub fn apply_gravity(future_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32)) {
 	let below_element = get(i, j, i as i32, j as i32 + 1, future_grid, chunks, index);
 	let below_below_element = get(i, j, i as i32, j as i32 + 2, future_grid, chunks, index);
 	
@@ -119,16 +119,16 @@ pub fn apply_gravity(future_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: u
 	}
 }
 
-pub fn upward(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, chunks: &HashMap<(i32, i32), Box<[[Cell; ROWS]; COLS]>>, index: (i32, i32), c_swaps: &mut Vec<(i32, i32, usize, usize, Cell)>) -> bool {
+pub fn upward(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32)) -> bool {
 	let cell_to_check = get(i, j, i as i32, j as i32 - 1, f_grid, chunks, index);
 	if cell_to_check .density > f_grid[i][j].density && cell_to_check .state == State::Gas {
-		swap(f_grid, i, j, i as i32, j as i32 - 1, chunks, index, c_swaps);
+		swap(f_grid, i, j, i as i32, j as i32 - 1, chunks, index);
 		return true;
 	}
 	false
 }
 
-pub fn sideways_gas(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, amount: i32, chunks: &HashMap<(i32, i32), Box<[[Cell; ROWS]; COLS]>>, index: (i32, i32), c_swaps: &mut Vec<(i32, i32, usize, usize, Cell)>) -> bool {
+pub fn sideways_gas(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, amount: i32, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32)) -> bool {
 	let d = f_grid[i][j].density;
 
 	let left_element = get(i, j, i as i32 - 1, j as i32, f_grid, chunks, index);
@@ -155,10 +155,10 @@ pub fn sideways_gas(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, 
 	for x in 1..=amount {
 		let el = get(i, j, i as i32 + x * dir, j as i32, f_grid, chunks, index);
 		if !(el.density > d && el.state == State::Gas) {
-			swap(f_grid, i, j, dx, dy, chunks, index, c_swaps);
+			swap(f_grid, i, j, dx, dy, chunks, index);
 			return true;
 		} else if x == amount {
-			swap(f_grid, i, j, i as i32 + x * dir, j as i32, chunks, index, c_swaps);
+			swap(f_grid, i, j, i as i32 + x * dir, j as i32, chunks, index);
 			return true;
 		}
 		(dx, dy) = (i as i32 + x * dir, j as i32)
@@ -166,7 +166,7 @@ pub fn sideways_gas(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, 
 	false
 }
 
-pub fn get(i1: usize, j1: usize, i2: i32, j2: i32, f_grid: &mut Box<[[Cell; ROWS]; COLS]>, chunks: &HashMap<(i32, i32), Box<[[Cell; ROWS]; COLS]>>, index: (i32, i32)) -> Cell {
+pub fn get(i1: usize, j1: usize, i2: i32, j2: i32, f_grid: &mut Box<[[Cell; ROWS]; COLS]>, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32)) -> Cell {
 	if in_bound(i2, j2) {
 		return f_grid[i2 as usize][j2 as usize]
 	} else {
@@ -175,25 +175,49 @@ pub fn get(i1: usize, j1: usize, i2: i32, j2: i32, f_grid: &mut Box<[[Cell; ROWS
 		if chunks.contains_key(&wanted_chunk) {
 			let (x, y) = get_new_element_coord(i1, j1, i2, j2);
 			
-			return chunks.get(&wanted_chunk).unwrap()[x as usize][y as usize];
+			return chunks.get(&wanted_chunk).unwrap().grid[x as usize][y as usize];
 		}
 	}
 	solid_element()
 }
 
-pub fn swap(grid: &mut Box<[[Cell; ROWS]; COLS]>, i1: usize, j1: usize, i2: i32, j2: i32, chunks: &HashMap<(i32, i32), Box<[[Cell; ROWS]; COLS]>>, index: (i32, i32), c_swaps: &mut Vec<(i32, i32, usize, usize, Cell)>) -> bool {
+pub fn swap(grid: &mut Box<[[Cell; ROWS]; COLS]>, i1: usize, j1: usize, i2: i32, j2: i32, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32)) -> bool {
 	if in_bound(i2, j2) {
 		(grid[i1][j1], grid[i2 as usize][j2 as usize]) = (grid[i2 as usize][j2 as usize], grid[i1][j1]);
+
+		// INFO: Wake up neighboring sleeping chunks if chunk edge element moves
+		if i1 == 0 || i2 == 0 {
+			match chunks.get_mut(&(index.0 - 1, index.1)) {
+				Some(chunk) => chunk::activate(chunk),
+				_ => ()
+			}
+		} else if i1 == COLS - 1 || i2 == COLS as i32 - 1 {
+			match chunks.get_mut(&(index.0 + 1, index.1)) {
+				Some(chunk) => chunk::activate(chunk),
+				_ => ()
+			}
+		}
+		if j1 == 0 || j2 == 0{
+			match chunks.get_mut(&(index.0, index.1 - 1)) {
+				Some(chunk) => chunk::activate(chunk),
+				_ => ()
+			}
+		} else if j1 == ROWS - 1 || j2 == ROWS as i32 - 1 {
+			match chunks.get_mut(&(index.0, index.1 + 1)) {
+				Some(chunk) => chunk::activate(chunk),
+				_ => ()
+			}
+		}
+
 		return true;
 	} else {
 		let wanted_chunk = get_wanted_chunk(index, i2, j2);
 		
 		if chunks.contains_key(&wanted_chunk) {
 			let (x, y) = get_new_element_coord(i1, j1, i2, j2);
-						
-			let element_cell = chunks.get(&wanted_chunk).unwrap()[x as usize][y as usize];
-			c_swaps.push((wanted_chunk.0, wanted_chunk.1, x as usize, y as usize, grid[i1][j1].clone()));
-			grid[i1][j1] = element_cell;
+
+			(grid[i1][j1], chunks.get_mut(&wanted_chunk).unwrap().grid[x as usize][y as usize]) = (chunks.get(&wanted_chunk).unwrap().grid[x as usize][y as usize], grid[i1][j1]);
+			chunks.get_mut(&wanted_chunk).unwrap().active = true;
 			return true;
 		}
 	}

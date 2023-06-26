@@ -4,10 +4,10 @@ use notan::{graphics::Texture, draw::{Draw, DrawImages}, prelude::Graphics, math
 
 use crate::{element::*, movement::*};
 
-pub const COLS: usize = 200;
-pub const ROWS: usize = 150;
+pub const COLS: usize = 208 / 1;
+pub const ROWS: usize = 117 / 1;
 pub const UPSCALE_FACTOR: f32 = 2.;
-const INACTIVE_F_NUM: i32 = 10;
+const INACTIVE_F_NUM: i32 = 60;
 
 pub struct Chunk {
 	pub pos: (f32, f32),
@@ -53,15 +53,14 @@ fn create_cells_array() -> Box<[[Cell; ROWS]; COLS]> {
     }
 }
 
-pub fn update_chunk(chunk: &mut Chunk, chunks: &HashMap<(i32, i32), Box<[[Cell; ROWS]; COLS]>>) -> Vec<(i32, i32, usize, usize, Cell)> {
-	// if !chunk.active {
-	// 	return vec![];
-	// }
+pub fn update_chunk(chunk: &mut Chunk, chunks: &mut HashMap<(i32, i32), Chunk>) {
+	if !chunk.active {
+		return;
+	}
 
 	chunk.future_grid = chunk.grid.clone();
-	let mut chunk_swaps = Vec::new();
 
-	// let mut keep_active: bool = false;
+	let mut keep_active = false;
 
 	for mut i in 0..COLS {
 		let flip_x = fastrand::bool();
@@ -76,28 +75,28 @@ pub fn update_chunk(chunk: &mut Chunk, chunks: &HashMap<(i32, i32), Box<[[Cell; 
 			if chunk.grid[i][j].element == chunk.future_grid[i][j].element {
 				match chunk.grid[i][j].element {
 					Element::Sand => {
-						if falling_sand(&mut chunk.future_grid, i, j, chunks, chunk.index, &mut chunk_swaps) {
-							// keep_active = true;
+						if falling_sand(&mut chunk.future_grid, i, j, chunks, chunk.index) {
+							keep_active = true;
 						}
 					},
 					Element::SawDust => {
-						if falling_sand(&mut chunk.future_grid, i, j, chunks, chunk.index, &mut chunk_swaps) {
-							// keep_active = true;
+						if falling_sand(&mut chunk.future_grid, i, j, chunks, chunk.index) {
+							keep_active = true;
 						}
 					},
 					Element::Water => {
-						if liquid_movement(&mut chunk.future_grid, i, j, chunks, chunk.index, &mut chunk_swaps) {
-							// keep_active = true;
+						if liquid_movement(&mut chunk.future_grid, i, j, chunks, chunk.index) {
+							keep_active = true;
 						};
 					},
 					Element::Smoke => {
-						if gas_movement(&mut chunk.future_grid, i, j, chunks, chunk.index, &mut chunk_swaps) {
-							// keep_active = true;
+						if gas_movement(&mut chunk.future_grid, i, j, chunks, chunk.index) {
+							keep_active = true;
 						};
 					},
 					Element::Steam => {
-						if gas_movement(&mut chunk.future_grid, i, j, chunks, chunk.index, &mut chunk_swaps) {
-							// keep_active = true;
+						if gas_movement(&mut chunk.future_grid, i, j, chunks, chunk.index) {
+							keep_active = true;
 						};
 					},
 					_ => ()
@@ -105,23 +104,27 @@ pub fn update_chunk(chunk: &mut Chunk, chunks: &HashMap<(i32, i32), Box<[[Cell; 
 			}
 		}
 	}
-	// if !keep_active && chunk.inactive_f != 0 {
-	// 	chunk.inactive_f -= 1;
-	// } else if !keep_active && chunk.inactive_f == 0 {
-	// 	chunk.active = false;
-	// } else if keep_active {
-	// 	chunk.inactive_f = INACTIVE_F_NUM;
-	// }
+	if !keep_active && chunk.inactive_f != 0 {
+		chunk.inactive_f -= 1;
+	} else if !keep_active && chunk.inactive_f == 0 {
+		chunk.active = false;
+	} else if keep_active {
+		chunk.inactive_f = INACTIVE_F_NUM;
+		chunk.active = true;
+	}
 	chunk.grid = chunk.future_grid.clone();
-	
-	chunk_swaps
 }
 
-pub fn falling_sand(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, chunks: &HashMap<(i32, i32), Box<[[Cell; ROWS]; COLS]>>, index: (i32, i32), chunk_swaps: &mut Vec<(i32, i32, usize, usize, Cell)>) -> bool {
-	apply_gravity(f_grid, i, j, &chunks, index);
-	if !apply_velocity(f_grid, i, j, &chunks, index, chunk_swaps) {
-		if !downward(f_grid, i, j, &chunks, index, chunk_swaps) {
-			if !downward_sides(f_grid, i, j, &chunks, index, chunk_swaps) {
+pub fn activate(chunk: &mut Chunk) {
+	chunk.active = true;
+	chunk.inactive_f = INACTIVE_F_NUM;
+}
+
+pub fn falling_sand(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32)) -> bool {
+	apply_gravity(f_grid, i, j, chunks, index);
+	if !apply_velocity(f_grid, i, j, chunks, index) {
+		if !downward(f_grid, i, j, chunks, index) {
+			if !downward_sides(f_grid, i, j, chunks, index) {
 				f_grid[i][j].velocity = Vec2::ZERO;
 
 				return false;
@@ -131,14 +134,14 @@ pub fn falling_sand(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, 
 	true
 }
 
-pub fn liquid_movement(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, chunks: &HashMap<(i32, i32), Box<[[Cell; ROWS]; COLS]>>, index: (i32, i32), chunk_swaps: &mut Vec<(i32, i32, usize, usize, Cell)>) -> bool {
-	apply_gravity(f_grid, i, j, &chunks, index);
+pub fn liquid_movement(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32)) -> bool {
+	apply_gravity(f_grid, i, j, chunks, index);
 						
-	if !apply_velocity(f_grid, i, j, &chunks, index, chunk_swaps) {
-		if !downward(f_grid, i, j, &chunks, index, chunk_swaps) {
+	if !apply_velocity(f_grid, i, j, chunks, index) {
+		if !downward(f_grid, i, j, chunks, index) {
 			let mut dir = 0.;
-			let left_element = get(i, j, i as i32 - 1, j as i32, f_grid, &chunks, index);
-			let right_element = get(i, j, i as i32 + 1, j as i32, f_grid, &chunks, index);
+			let left_element = get(i, j, i as i32 - 1, j as i32, f_grid, chunks, index);
+			let right_element = get(i, j, i as i32 + 1, j as i32, f_grid, chunks, index);
 			if left_element.density <= f_grid[i][j].density && right_element.density <= f_grid[i][j].density {
 				if fastrand::bool() {
 					dir = -1.;
@@ -162,9 +165,9 @@ pub fn liquid_movement(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usiz
 	true
 }
 
-pub fn gas_movement(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, chunks: &HashMap<(i32, i32), Box<[[Cell; ROWS]; COLS]>>, index: (i32, i32), chunk_swaps: &mut Vec<(i32, i32, usize, usize, Cell)>) -> bool {
-	if !upward(f_grid, i, j, &chunks, index, chunk_swaps) {
-		if !sideways_gas(f_grid, i, j, 10, &chunks, index, chunk_swaps) {
+pub fn gas_movement(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32)) -> bool {
+	if !upward(f_grid, i, j, chunks, index) {
+		if !sideways_gas(f_grid, i, j, 10, chunks, index) {
 			return false;
 		}
 	}
@@ -194,7 +197,7 @@ pub fn modify_chunk_element(chunk: &mut Chunk, i: i32, j: i32, cell: &Cell) {
 		c_cell.color = [cell.color[0] - c, cell.color[1] - c, cell.color[2] - c, cell.color[3]];
 		chunk.grid[i as usize][j as usize] = c_cell;
 
-		chunk.active = true;
+		activate(chunk);
 	}
 }
 
@@ -207,7 +210,7 @@ pub fn explode_chunk(chunk: &mut Chunk, i: i32, j: i32, radius: i32, force: f32)
 					angle = angle.normalize_or_zero() * force * -1.;
 					chunk.grid[(i as i32 - x) as usize][(j as i32 - y) as usize].velocity += angle;
 					if angle.x.abs() > 0.5 && angle.y.abs() > 0.5 {
-						chunk.active = true;
+						activate(chunk)
 					}
 				}
 			} 
@@ -244,7 +247,9 @@ pub fn render_chunk(chunk: &mut Chunk, gfx: &mut Graphics, draw: &mut Draw) {
     		.unwrap();
 	}
 	
-	draw.image(&chunk.texture).size(COLS as f32 * UPSCALE_FACTOR, ROWS as f32 * UPSCALE_FACTOR).position(chunk.pos.0, chunk.pos.1);
+	draw.image(&chunk.texture)
+		.size(COLS as f32 * UPSCALE_FACTOR, ROWS as f32 * UPSCALE_FACTOR)
+		.position(chunk.pos.0, chunk.pos.1);
 }
 
 fn update_bytes(chunk: &mut Chunk) {
