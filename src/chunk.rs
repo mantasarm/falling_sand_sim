@@ -61,9 +61,9 @@ pub fn update_chunk(chunk: &mut Chunk, chunks: &mut HashMap<(i32, i32), Chunk>) 
 	chunk.future_grid = chunk.grid.clone();
 
 	let mut keep_active = false;
-
+	
+	let flip_x = fastrand::bool();
 	for mut i in 0..COLS {
-		let flip_x = fastrand::bool();
 		let flip_y = fastrand::bool();
 		for mut j in 0..ROWS {
 			if flip_x {
@@ -104,6 +104,7 @@ pub fn update_chunk(chunk: &mut Chunk, chunks: &mut HashMap<(i32, i32), Chunk>) 
 			}
 		}
 	}
+
 	if !keep_active && chunk.inactive_f != 0 {
 		chunk.inactive_f -= 1;
 	} else if !keep_active && chunk.inactive_f == 0 {
@@ -122,11 +123,10 @@ pub fn activate(chunk: &mut Chunk) {
 
 pub fn falling_sand(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32)) -> bool {
 	apply_gravity(f_grid, i, j, chunks, index);
-	if !apply_velocity(f_grid, i, j, chunks, index) {
-		if !downward(f_grid, i, j, chunks, index) {
+	if !downward(f_grid, i, j, chunks, index) {
+		if !apply_velocity(f_grid, i, j, chunks, index) {
 			if !downward_sides(f_grid, i, j, chunks, index) {
 				f_grid[i][j].velocity = Vec2::ZERO;
-
 				return false;
 			}
 		}
@@ -156,8 +156,9 @@ pub fn liquid_movement(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usiz
 			
 			if dir != 0. {	
 				f_grid[i][j].velocity.x += 5.5 * dir;
+				f_grid[i][j].velocity.y += 0.5;
 			} else {
-				f_grid[i][j].velocity = Vec2::ZERO;
+				f_grid[i][j].velocity.x = 0.;
 				return false;
 			}
 		}
@@ -239,6 +240,14 @@ pub fn in_bound(i: i32, j: i32) -> bool {
 }
 
 pub fn render_chunk(chunk: &mut Chunk, gfx: &mut Graphics, draw: &mut Draw) {
+	update_chunk_tex_data(chunk, gfx);
+
+	draw.image(&chunk.texture)
+		.size(COLS as f32 * UPSCALE_FACTOR, ROWS as f32 * UPSCALE_FACTOR)
+		.position(chunk.pos.0, chunk.pos.1);
+}
+
+fn update_chunk_tex_data(chunk: &mut Chunk, gfx: &mut Graphics) {
 	if chunk.active {
 		update_bytes(chunk);
 		gfx.update_texture(&mut chunk.texture)
@@ -246,10 +255,6 @@ pub fn render_chunk(chunk: &mut Chunk, gfx: &mut Graphics, draw: &mut Draw) {
     		.update()
     		.unwrap();
 	}
-	
-	draw.image(&chunk.texture)
-		.size(COLS as f32 * UPSCALE_FACTOR, ROWS as f32 * UPSCALE_FACTOR)
-		.position(chunk.pos.0, chunk.pos.1);
 }
 
 fn update_bytes(chunk: &mut Chunk) {

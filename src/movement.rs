@@ -5,7 +5,7 @@ use notan::math::Vec2;
 use crate::{element::{Cell, State, solid_element}, chunk::{ROWS, COLS, in_bound, Chunk, self}};
 
 pub fn downward(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32)) -> bool {
-	if get(i as i32, j as i32 + 1, f_grid, chunks, index).density <  f_grid[i][j].density {
+	if get(i as i32, j as i32 + 1, f_grid, chunks, index).density <  f_grid[i][j].density && get(i as i32, j as i32 + 2, f_grid, chunks, index).density >=  f_grid[i][j].density{
 		swap(f_grid, i, j, i as i32, j as i32+ 1, chunks, index);
 		return true;
 	}
@@ -89,7 +89,6 @@ pub fn apply_velocity(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize
 
 pub fn apply_gravity(future_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32)) {
 	let below_element = get(i as i32, j as i32 + 1, future_grid, chunks, index);
-	// let below_below_element = get(i as i32, j as i32 + 2, future_grid, chunks, index);
 	
 	if below_element.density < future_grid[i][j].density {
 		const LIMIT: f32 = 7.;

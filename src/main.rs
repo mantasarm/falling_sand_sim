@@ -11,7 +11,7 @@ use chunk_manager::ChunkManager;
 use element::*;
 use notan::draw::*;
 use notan::egui::epaint::Shadow;
-use notan::egui::{EguiConfig, EguiPluginSugar, Window, Slider, Visuals};
+use notan::egui::{EguiConfig, EguiPluginSugar, Window, Slider, Visuals, RichText, Color32};
 use notan::prelude::*;
 
 #[derive(AppState)]
@@ -100,25 +100,25 @@ fn draw(app: &mut App, gfx: &mut Graphics, plugins: &mut Plugins, state: &mut St
             ui.add_space(5.);
 
             ui.horizontal(|ui| {
-                if ui.button("Air").clicked() {
+                if ui.button(RichText::new("Air").color(Color32::from_rgb(255, 255, 255))).clicked() {
                     state.chunk_manager.selected_element = air_element();
                 }
-                if ui.button("Solid").clicked() {
+                if ui.button(RichText::new("Solid").color(Color32::from_rgb(169, 162, 166))).clicked() {
                     state.chunk_manager.selected_element = solid_element();
                 }
-                if ui.button("Sand").clicked() {
+                if ui.button(RichText::new("Sand").color(Color32::from_rgb(243, 239, 118))).clicked() {
                     state.chunk_manager.selected_element = sand_element();
                 }
-                if ui.button("SawDust").clicked() {
+                if ui.button(RichText::new("SawDust").color(Color32::from_rgb(181, 137, 100))).clicked() {
                     state.chunk_manager.selected_element = sawdust_element();
                 }
-                if ui.button("Water").clicked() {
+                if ui.button(RichText::new("Water").color(Color32::from_rgb(75, 66, 249))).clicked() {
                     state.chunk_manager.selected_element = water_element();
                 }
-                if ui.button("Smoke").clicked() {
+                if ui.button(RichText::new("Smoke").color(Color32::from_rgb(142, 142, 142))).clicked() {
                     state.chunk_manager.selected_element = smoke_element();
                 }
-                if ui.button("Steam").clicked() {
+                if ui.button(RichText::new("Steam").color(Color32::from_rgb(143, 159, 234))).clicked() {
                     state.chunk_manager.selected_element = steam_element();
                 }
             });
