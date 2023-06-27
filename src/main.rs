@@ -1,9 +1,10 @@
 mod chunk;
 mod element;
-pub mod movement;
+pub mod base_movement;
 pub mod camera;
 pub mod input_manager;
 pub mod chunk_manager;
+pub mod el_movement;
 
 use camera::Camera2D;
 use chunk::{UPSCALE_FACTOR, ROWS, COLS};
