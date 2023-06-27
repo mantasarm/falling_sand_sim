@@ -140,8 +140,8 @@ pub fn liquid_movement(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usiz
 	if !apply_velocity(f_grid, i, j, chunks, index) {
 		if !downward(f_grid, i, j, chunks, index) {
 			let mut dir = 0.;
-			let left_element = get(i, j, i as i32 - 1, j as i32, f_grid, chunks, index);
-			let right_element = get(i, j, i as i32 + 1, j as i32, f_grid, chunks, index);
+			let left_element = get(i as i32 - 1, j as i32, f_grid, chunks, index);
+			let right_element = get(i as i32 + 1, j as i32, f_grid, chunks, index);
 			if left_element.density <= f_grid[i][j].density && right_element.density <= f_grid[i][j].density {
 				if fastrand::bool() {
 					dir = -1.;

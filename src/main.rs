@@ -23,13 +23,13 @@ struct State {
     sky_gradient: Texture,
     debug_window: bool,
     debug_render: bool,
-    debug_chunk_coords: bool
+    debug_chunk_coords: bool,
 }
 
 #[notan_main]
 fn main() -> Result<(), String> {
     notan::init_with(init)
-        .add_config(WindowConfig::new().size(1920, 1080).vsync(false).title("arm'st sandbox").resizable(true).multisampling(4))
+        .add_config(WindowConfig::new().size(1920, 1080).vsync(false).title("arm'st sandbox").resizable(true).multisampling(0))
         .add_config(DrawConfig)
         .add_config(EguiConfig)
         .update(update)
@@ -71,22 +71,22 @@ fn update(app: &mut App, state: &mut State) {
 }
 
 fn draw(app: &mut App, gfx: &mut Graphics, plugins: &mut Plugins, state: &mut State) {
-    let mut draw = gfx.create_draw();
-    draw.clear(Color::BLACK);
+    let mut render_draw = gfx.create_draw();
+    render_draw.clear(Color::BLACK);
 
-    draw.image(&state.sky_gradient).position(0., 0.).size(app.window().width() as f32, app.window().height() as f32);
+    render_draw.image(&state.sky_gradient).position(0., 0.).size(app.window().width() as f32, app.window().height() as f32);
 
-    state.camera.apply(&mut draw);
+    state.camera.apply(&mut render_draw);
 
-    state.chunk_manager.render(gfx, &mut draw, state.debug_render, state.debug_chunk_coords);
+    state.chunk_manager.render(gfx, &mut render_draw, state.debug_render, state.debug_chunk_coords);
 
-    draw.transform().pop();
+    render_draw.transform().pop();
 
-    draw.ellipse((app.mouse.x, app.mouse.y), (state.chunk_manager.brush_size as f32 * state.camera_zoom * 0.5 * UPSCALE_FACTOR, state.chunk_manager.brush_size as f32 * state.camera_zoom * 0.5 * UPSCALE_FACTOR,))
+    render_draw.ellipse((app.mouse.x, app.mouse.y), (state.chunk_manager.brush_size as f32 * state.camera_zoom * 0.5 * UPSCALE_FACTOR, state.chunk_manager.brush_size as f32 * state.camera_zoom * 0.5 * UPSCALE_FACTOR,))
         .stroke_color(Color::WHITE).fill_color(Color::from_rgba(0., 0., 0., 0.))
         .stroke(1.);
 
-    gfx.render(&draw);
+    gfx.render(&render_draw);
 
     let output = plugins.egui(|ctx| {
         let mut visuals = Visuals::dark();

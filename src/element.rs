@@ -61,7 +61,7 @@ pub fn water_element() -> Cell {
 		state:State::Liquid,
 		color: [55, 46, 229, 175],
 		velocity: Vec2::ZERO,
-		drag: 0.6
+		drag: 0.8
 	}
 }
 
