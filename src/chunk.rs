@@ -208,3 +208,42 @@ fn update_bytes(chunk: &mut Chunk) {
 		chunk.bytes[i * 4..i * 4 + 4].copy_from_slice(&chunk.grid[i % COLS][i / COLS].color);
 	}
 }
+
+// pub struct DirtyRect {
+// 	pub min_xy: (usize, usize),
+// 	pub max_xy: (usize, usize),
+// 	pub temp_min_xy: (usize, usize),
+// 	pub temp_max_xy: (usize, usize),
+// }
+
+// impl DirtyRect {
+// 	pub fn new() -> Self {
+// 		Self {
+// 			min_xy: (0, 0),
+// 			max_xy: (COLS - 1, ROWS - 1),
+// 			temp_min_xy: (COLS - 1, ROWS - 1),
+// 			temp_max_xy: (0, 0)
+// 		}
+// 	}
+
+// 	pub fn set_temp(&mut self, i: usize, j: usize) {
+// 		self.temp_min_xy.0 = (i - 20).min(self.temp_min_xy.0).clamp(0, COLS - 1);
+// 		self.temp_min_xy.1 = (j - 20).min(self.temp_min_xy.1).clamp(0, ROWS - 1);
+// 		self.temp_max_xy.0 = (i + 20).max(self.temp_max_xy.0).clamp(0, COLS - 1);
+// 		self.temp_max_xy.1 = (j + 20).max(self.temp_max_xy.1).clamp(0, ROWS - 1);
+// 	}
+
+// 	pub fn set_min_max(&mut self) {
+// 		self.min_xy = self.temp_min_xy;
+// 		self.max_xy = self.temp_max_xy;
+// 		self.temp_min_xy = (COLS - 1, ROWS - 1);
+// 		self.temp_max_xy = (0, 0);
+// 	}
+
+// 	pub fn reset(&mut self) {
+// 		self.min_xy = (0, 0);
+// 		self.max_xy = (COLS - 1, ROWS - 1);
+// 		self.temp_min_xy = (COLS - 1, ROWS - 1);
+// 		self.temp_max_xy = (0, 0);
+// 	}
+// }

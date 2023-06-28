@@ -15,18 +15,17 @@ pub fn downward(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, chun
 pub fn downward_sides(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32)) -> bool {
 	let d = f_grid[i][j].density;
 
-	let left_element = get(i as i32 - 1, j as i32 + 1, f_grid, chunks, index);
-	let right_element = get(i as i32 + 1, j as i32 + 1, f_grid, chunks, index);
+	let mut left = get(i as i32 - 1, j as i32 + 1, f_grid, chunks, index).density < d;
+	let mut right = get(i as i32 + 1, j as i32 + 1, f_grid, chunks, index).density < d;
 	
-	if left_element.density < d && right_element.density < d {
-		if fastrand::bool() {
-			swap(f_grid, i, j, i as i32 - 1, j as i32 + 1, chunks, index);
-		} else {
-			swap(f_grid, i, j, i as i32 + 1, j as i32 + 1, chunks, index);
-		}
-	} else if right_element.density < d {
+	if left && right {
+		let rand = fastrand::bool();
+		left = if rand { true } else { false };
+		right = if rand { false } else { true };
+	} 
+	if right {
 		swap(f_grid, i, j, i as i32 + 1, j as i32 + 1, chunks, index);
-	} else if left_element.density < d {
+	} else if left {
 		swap(f_grid, i, j, i as i32 - 1, j as i32 + 1, chunks, index);
 	}
 	
