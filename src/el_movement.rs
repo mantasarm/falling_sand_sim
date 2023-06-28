@@ -19,22 +19,25 @@ pub fn falling_sand(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, 
 
 pub fn liquid_movement(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32)) -> bool {
 	apply_gravity(f_grid, i, j, chunks, index);
-						
-	if !apply_velocity(f_grid, i, j, chunks, index) {
-		if !downward(f_grid, i, j, chunks, index) {
+
+	if !downward(f_grid, i, j, chunks, index) {				
+		if !apply_velocity(f_grid, i, j, chunks, index) {
 			let mut dir = 0.;
-			let left_element = get(i as i32 - 1, j as i32, f_grid, chunks, index);
-			let right_element = get(i as i32 + 1, j as i32, f_grid, chunks, index);
-			if left_element.density <= f_grid[i][j].density && right_element.density <= f_grid[i][j].density {
-				if fastrand::bool() {
+
+			if f_grid[i][j].velocity.x == 0. {
+				let left_element = get(i as i32 - 1, j as i32, f_grid, chunks, index);
+				let right_element = get(i as i32 + 1, j as i32, f_grid, chunks, index);
+				if left_element.density < f_grid[i][j].density && right_element.density < f_grid[i][j].density {
+					if fastrand::bool() {
+						dir = -1.;
+					} else {
+						dir = 1.;
+					}
+				} else if left_element.density < f_grid[i][j].density {
 					dir = -1.;
-				} else {
+				} else if right_element.density < f_grid[i][j].density{
 					dir = 1.;
 				}
-			} else if left_element.density <= f_grid[i][j].density {
-				dir = -1.;
-			} else if right_element.density <= f_grid[i][j].density{
-				dir = 1.;
 			}
 			
 			if dir != 0. {	

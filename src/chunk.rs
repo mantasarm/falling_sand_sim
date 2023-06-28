@@ -4,8 +4,8 @@ use notan::{graphics::Texture, draw::{Draw, DrawImages}, prelude::Graphics, math
 
 use crate::{element::*, el_movement::*};
 
-pub const COLS: usize = 208 / 1;
-pub const ROWS: usize = 117 / 1;
+pub const COLS: usize = 256 / 1;
+pub const ROWS: usize = 144 / 1;
 pub const UPSCALE_FACTOR: f32 = 2.;
 const INACTIVE_F_NUM: i32 = 60;
 
