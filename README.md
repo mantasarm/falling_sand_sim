@@ -12,3 +12,8 @@ WIP falling sand simulation made with rust and notan. Currently trying to make t
 
 
 ![image](https://user-images.githubusercontent.com/34283640/226126680-be922725-d5c5-4e03-b48d-241fe1a28147.png)
+
+
+
+
+![image](https://github.com/mantasarm/falling_sand_sim/assets/34283640/edde07f4-3b65-4b4c-9e44-fd59c73cdf18)
