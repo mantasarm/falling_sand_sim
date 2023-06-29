@@ -14,6 +14,7 @@ pub struct ChunkManager {
 	pub update_chunks: bool,
 	pub hovering_cell: Cell,
 	pub update_time: f32,
+	pub replace_air: bool,
 	font: Font
 }
 
@@ -34,6 +35,7 @@ impl ChunkManager {
 			update_chunks: true,
 			hovering_cell: sand_element(),
 			update_time: 0.,
+			replace_air: true,
 			font: gfx.create_font(include_bytes!("assets/UbuntuMono.ttf")).unwrap()
 		}
 	}
@@ -51,7 +53,7 @@ impl ChunkManager {
 		    let mouse = chunk::mouse_in_chunk(chunk, mouse_world);
 
             if app.mouse.left_is_down() && self.modify {
-                chunk::modify_chunk_elements(chunk, mouse.0, mouse.1, self.brush_size, &self.selected_element);
+                chunk::modify_chunk_elements(chunk, mouse.0, mouse.1, self.brush_size, &self.selected_element, self.replace_air);
             }
 
 			if app.mouse.right_is_down() && self.modify {
@@ -64,16 +66,10 @@ impl ChunkManager {
 			}
 		}
 
-		self.update_chunks(app);
+		self.update_chunks(app, keys);
 	}
 
-	fn update_chunks(&mut self, app: &mut App) {
-		
-		let mut keys = Vec::new();
-		for (key, _) in self.chunks.iter() {
-			keys.push(key.to_owned());
-		}
-
+	fn update_chunks(&mut self, app: &mut App, keys: Vec<(i32, i32)>) {
 		self.update_time += app.timer.delta_f32();
 		if self.update_time >= 1. / CHUNK_UPDATE_FPS && self.update_chunks {
 			for key in &keys {

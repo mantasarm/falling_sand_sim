@@ -120,12 +120,20 @@ pub fn activate(chunk: &mut Chunk) {
 	chunk.dirty_tex = true;
 }
 
-pub fn modify_chunk_elements(chunk: &mut Chunk, i: i32, j: i32, brush_size: i32, cell: &Cell) {
+pub fn modify_chunk_elements(chunk: &mut Chunk, i: i32, j: i32, brush_size: i32, cell: &Cell, empty_only: bool) {
 	if brush_size != 1 {
 		for x in -brush_size / 2..=brush_size / 2 {
 			for y in -brush_size / 2..brush_size / 2 {
-				if (((i as f32 + 0.5) - (i as f32 - x as f32)).powf(2.) + ((j as f32 + 0.5) - (j as f32 - y as f32)).powf(2.)) <= (brush_size as f32 / 2.).powf(2.)  {
-					modify_chunk_element(chunk, i as i32 - x, j as i32 - y, cell);
+				if (((i as f32 + 0.5) - (i as f32 - x as f32)).powf(2.) + ((j as f32 + 0.5) - (j as f32 - y as f32)).powf(2.)) <= (brush_size as f32 / 2.).powf(2.) {
+					if empty_only && cell.element != Element::Air {
+						if in_bound(i as i32 - x, j as i32 - y) {
+							if chunk.grid[(i as i32 - x) as usize][(j as i32 - y) as usize].element == Element::Air {
+								modify_chunk_element(chunk, i as i32 - x, j as i32 - y, cell);
+							}
+						}
+					} else {
+						modify_chunk_element(chunk, i as i32 - x, j as i32 - y, cell);
+					}
 				}
 			}
 		}
@@ -156,11 +164,13 @@ pub fn explode_chunk(chunk: &mut Chunk, i: i32, j: i32, radius: i32, force: f32)
 		for y in -radius / 2..radius / 2 {
 			if ((i as i32 - (i as i32 - x)).pow(2) + (j as i32 - (j as i32 - y)).pow(2)) <= (radius / 2).pow(2)  {
 				if in_bound(i as i32 - x, j as i32 - y) {
-					let mut angle = Vec2::new(x as f32, y as f32);
-					angle = angle.normalize_or_zero() * force * -1.;
-					chunk.grid[(i as i32 - x) as usize][(j as i32 - y) as usize].velocity += angle;
-					if angle.x.abs() > 0.5 && angle.y.abs() > 0.5 {
-						activate(chunk)
+					if chunk.grid[(i as i32 - x) as usize][(j as i32 - y) as usize].state != State::Solid && chunk.grid[(i as i32 - x) as usize][(j as i32 - y) as usize].element != Element::Air {
+						let mut angle = Vec2::new(x as f32, y as f32);
+						angle = angle.normalize_or_zero() * force * -1.;
+						chunk.grid[(i as i32 - x) as usize][(j as i32 - y) as usize].velocity += angle;
+						if angle.x.abs() > 0.5 && angle.y.abs() > 0.5 {
+							activate(chunk)
+						}
 					}
 				}
 			} 

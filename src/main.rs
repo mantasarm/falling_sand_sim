@@ -24,7 +24,7 @@ struct State {
     sky_gradient: Texture,
     debug_window: bool,
     debug_render: bool,
-    debug_chunk_coords: bool,
+    debug_chunk_coords: bool
 }
 
 #[notan_main]
@@ -63,6 +63,9 @@ fn update(app: &mut App, state: &mut State) {
     if app.keyboard.was_pressed(KeyCode::F) {
         state.debug_render = !state.debug_render;
     }
+    if app.keyboard.was_pressed(KeyCode::T) {
+        state.debug_window = !state.debug_window;
+    }
 
     if app.keyboard.was_pressed(KeyCode::Escape) {
         app.exit();
@@ -94,10 +97,11 @@ fn draw(app: &mut App, gfx: &mut Graphics, plugins: &mut Plugins, state: &mut St
         visuals.window_shadow = Shadow::NONE;
         ctx.set_visuals(visuals);
 
-        Window::new("Editor").resizable(false).collapsible(false).title_bar(true).open(&mut state.editor_open).show(ctx, |ui| {
+        Window::new("Editor").resizable(false).collapsible(true).title_bar(true).open(&mut state.editor_open).show(ctx, |ui| {
             state.chunk_manager.modify = !ctx.is_pointer_over_area();
 
             ui.label(format!("fps: {}", app.timer.fps().round()));
+
             ui.add_space(5.);
 
             ui.horizontal(|ui| {
@@ -128,18 +132,36 @@ fn draw(app: &mut App, gfx: &mut Graphics, plugins: &mut Plugins, state: &mut St
             });
             ui.add_space(5.);
 
-            let brush_slider = Slider::new(&mut state.chunk_manager.brush_size, 1..=200);
+            let brush_slider = Slider::new(&mut state.chunk_manager.brush_size, 1..=200).clamp_to_range(false);
             ui.add(brush_slider);
+            ui.checkbox(&mut state.chunk_manager.replace_air, "Replace only air");
+            ui.checkbox(&mut state.chunk_manager.update_chunks, "Update");
 
-            ui.checkbox(&mut state.debug_window, "Debug window");
+            ui.label("Press T for debug info");
+        });
 
-            Window::new("Debug window").resizable(false).collapsible(false).title_bar(true).open(&mut state.debug_window).show(ctx, |ui| {
-                ui.checkbox(&mut state.chunk_manager.update_chunks, "Update");
-                ui.checkbox(&mut state.debug_render, "Chunk borders");
-                ui.checkbox(&mut state.debug_chunk_coords, "Chunk indices");
+        Window::new("Debug window").resizable(false).collapsible(true).title_bar(true).open(&mut state.debug_window).show(ctx, |ui| {
+            if ctx.is_pointer_over_area() {
+                state.chunk_manager.modify = false;
+            }
 
-                ui.label(format!("{:?}", state.chunk_manager.hovering_cell));
-            });
+            if !state.editor_open {
+                ui.label(format!("fps: {}", app.timer.fps().round()));
+            }
+
+            ui.checkbox(&mut state.debug_render, "Chunk borders");
+            ui.checkbox(&mut state.debug_chunk_coords, "Chunk indices");
+            ui.add_space(5.);
+
+            ui.label(RichText::new("Mouse is on: ").color(Color32::from_rgb(180, 180, 180)));
+            ui.label("Cell {");
+            ui.label(format!("    element: {:?} ",state.chunk_manager.hovering_cell.element));
+            ui.label(format!("    state: {:?}", state.chunk_manager.hovering_cell.state));
+            ui.label(format!("    velocity: Vec2({:.2}, {:.2})", state.chunk_manager.hovering_cell.velocity.x, state.chunk_manager.hovering_cell.velocity.y));
+            ui.label(format!("    density: {:?}", state.chunk_manager.hovering_cell.density));
+            ui.label(format!("    drag: {:?}", state.chunk_manager.hovering_cell.drag));
+            ui.label(format!("    color: {:?}", state.chunk_manager.hovering_cell.color));
+            ui.label("}");
         });
         
         if !state.editor_open {
