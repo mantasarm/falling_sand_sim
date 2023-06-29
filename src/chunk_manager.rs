@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap};
 
 use notan::{prelude::*, draw::*};
 
@@ -20,8 +20,8 @@ pub struct ChunkManager {
 impl ChunkManager {
 	pub fn new(gfx: &mut Graphics) -> Self {
 		let mut chunks = HashMap::new();
-		for i in -1..=1 {
-			for j in -1..=1 {
+		for i in -2..=2 {
+			for j in -2..=2 {
 				chunks.insert((i, j), Chunk::new(i, j, gfx));
 			}
 		}
@@ -45,15 +45,15 @@ impl ChunkManager {
 		for (key, _) in self.chunks.iter() {
 			keys.push(key.to_owned());
 		}
-		
+
 		for key in &keys {
 			let chunk = self.chunks.get_mut(key).unwrap();
-			
 		    let mouse = chunk::mouse_in_chunk(chunk, mouse_world);
 
             if app.mouse.left_is_down() && self.modify {
                 chunk::modify_chunk_elements(chunk, mouse.0, mouse.1, self.brush_size, &self.selected_element);
             }
+
 			if app.mouse.right_is_down() && self.modify {
                 chunk::explode_chunk(chunk, mouse.0, mouse.1, self.brush_size * 2, 4. * app.timer.delta_f32() * 90.);
             }
@@ -62,6 +62,16 @@ impl ChunkManager {
 				Some(c) => self.hovering_cell = c.to_owned(),
 				_ => ()
 			}
+		}
+
+		self.update_chunks(app);
+	}
+
+	fn update_chunks(&mut self, app: &mut App) {
+		
+		let mut keys = Vec::new();
+		for (key, _) in self.chunks.iter() {
+			keys.push(key.to_owned());
 		}
 
 		self.update_time += app.timer.delta_f32();

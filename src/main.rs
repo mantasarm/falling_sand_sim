@@ -110,6 +110,9 @@ fn draw(app: &mut App, gfx: &mut Graphics, plugins: &mut Plugins, state: &mut St
                 if ui.button(RichText::new("Sand").color(Color32::from_rgb(243, 239, 118))).clicked() {
                     state.chunk_manager.selected_element = sand_element();
                 }
+                if ui.button(RichText::new("Dirt").color(Color32::from_rgb(136, 107, 82))).clicked() {
+                    state.chunk_manager.selected_element = dirt_element();
+                }
                 if ui.button(RichText::new("SawDust").color(Color32::from_rgb(181, 137, 100))).clicked() {
                     state.chunk_manager.selected_element = sawdust_element();
                 }
@@ -125,7 +128,7 @@ fn draw(app: &mut App, gfx: &mut Graphics, plugins: &mut Plugins, state: &mut St
             });
             ui.add_space(5.);
 
-            let brush_slider = Slider::new(&mut state.chunk_manager.brush_size, 2..=200);
+            let brush_slider = Slider::new(&mut state.chunk_manager.brush_size, 1..=200);
             ui.add(brush_slider);
 
             ui.checkbox(&mut state.debug_window, "Debug window");

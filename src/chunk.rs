@@ -4,8 +4,8 @@ use notan::{graphics::Texture, draw::{Draw, DrawImages}, prelude::Graphics, math
 
 use crate::{element::*, el_movement::*};
 
-pub const COLS: usize = 256 / 1;
-pub const ROWS: usize = 144 / 1;
+pub const COLS: usize = 256 / 2;
+pub const ROWS: usize = 144 / 2;
 pub const UPSCALE_FACTOR: f32 = 2.;
 const INACTIVE_F_NUM: i32 = 60;
 
@@ -15,6 +15,7 @@ pub struct Chunk {
 	pub grid: Box<[[Cell; ROWS]; COLS]>,
 	pub future_grid: Box<[[Cell; ROWS]; COLS]>,
 	pub active: bool,
+	pub dirty_tex: bool,
 	pub inactive_f: i32,
 	bytes: Vec<u8>,
 	texture: Texture,
@@ -39,6 +40,7 @@ impl Chunk {
 			grid,
 			future_grid,
 			active: true,
+			dirty_tex: true,
 			inactive_f: INACTIVE_F_NUM,
 			bytes,
 			texture
@@ -74,12 +76,7 @@ pub fn update_chunk(chunk: &mut Chunk, chunks: &mut HashMap<(i32, i32), Chunk>) 
 			}
 			if chunk.grid[i][j].element == chunk.future_grid[i][j].element {
 				match chunk.grid[i][j].element {
-					Element::Sand => {
-						if falling_sand(&mut chunk.future_grid, i, j, chunks, chunk.index) {
-							keep_active = true;
-						}
-					},
-					Element::SawDust => {
+					Element::Sand | Element::SawDust | Element::Dirt=> {
 						if falling_sand(&mut chunk.future_grid, i, j, chunks, chunk.index) {
 							keep_active = true;
 						}
@@ -111,6 +108,7 @@ pub fn update_chunk(chunk: &mut Chunk, chunks: &mut HashMap<(i32, i32), Chunk>) 
 		chunk.active = false;
 	} else if keep_active {
 		chunk.inactive_f = INACTIVE_F_NUM;
+		chunk.dirty_tex = true;
 		chunk.active = true;
 	}
 	chunk.grid = chunk.future_grid.clone();
@@ -119,15 +117,20 @@ pub fn update_chunk(chunk: &mut Chunk, chunks: &mut HashMap<(i32, i32), Chunk>) 
 pub fn activate(chunk: &mut Chunk) {
 	chunk.active = true;
 	chunk.inactive_f = INACTIVE_F_NUM;
+	chunk.dirty_tex = true;
 }
 
 pub fn modify_chunk_elements(chunk: &mut Chunk, i: i32, j: i32, brush_size: i32, cell: &Cell) {
-	for x in -brush_size / 2..=brush_size / 2 {
-		for y in -brush_size / 2..brush_size / 2 {
-			if ((i as i32 - (i as i32 - x)).pow(2) + (j as i32 - (j as i32 - y)).pow(2)) <= (brush_size / 2).pow(2)  {
-				modify_chunk_element(chunk, i as i32 - x, j as i32 - y, cell);
+	if brush_size != 1 {
+		for x in -brush_size / 2..=brush_size / 2 {
+			for y in -brush_size / 2..brush_size / 2 {
+				if (((i as f32 + 0.5) - (i as f32 - x as f32)).powf(2.) + ((j as f32 + 0.5) - (j as f32 - y as f32)).powf(2.)) <= (brush_size as f32 / 2.).powf(2.)  {
+					modify_chunk_element(chunk, i as i32 - x, j as i32 - y, cell);
+				}
 			}
 		}
+	} else {
+		modify_chunk_element(chunk, i as i32, j as i32, cell);
 	}
 }
 
@@ -194,12 +197,14 @@ pub fn render_chunk(chunk: &mut Chunk, gfx: &mut Graphics, draw: &mut Draw) {
 }
 
 fn update_chunk_tex_data(chunk: &mut Chunk, gfx: &mut Graphics) {
-	if chunk.active {
+	if chunk.dirty_tex {
 		update_bytes(chunk);
 		gfx.update_texture(&mut chunk.texture)
     		.with_data(&chunk.bytes)
     		.update()
     		.unwrap();
+
+		chunk.dirty_tex = false;
 	}
 }
 
