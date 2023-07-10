@@ -22,7 +22,8 @@ pub fn downward_sides(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize
 		let rand = fastrand::bool();
 		left = if rand { true } else { false };
 		right = if rand { false } else { true };
-	} 
+	}
+
 	if right {
 		swap(f_grid, i, j, i as i32 + 1, j as i32 + 1, chunks, index);
 	} else if left {
@@ -44,9 +45,9 @@ pub fn apply_velocity(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize
 		f_grid[i][j].velocity.x = 0.;
 	}
 
-	if f_grid[i][j].velocity.y.abs() < 0. {
-		f_grid[i][j].velocity.y = 0.;
-	}
+	// if f_grid[i][j].velocity.y.abs() < 0. {
+	// 	f_grid[i][j].velocity.y = 0.;
+	// }
 
 	let (force_x, force_y) = (f_grid[i][j].velocity.x / dist, f_grid[i][j].velocity.y / dist);
 

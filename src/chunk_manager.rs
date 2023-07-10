@@ -48,7 +48,7 @@ impl ChunkManager {
 			keys.push(key.to_owned());
 		}
 
-		for key in &keys {
+		for key in keys.iter() {
 			let chunk = self.chunks.get_mut(key).unwrap();
 		    let mouse = chunk::mouse_in_chunk(chunk, mouse_world);
 
@@ -60,9 +60,8 @@ impl ChunkManager {
                 chunk::explode_chunk(chunk, mouse.0, mouse.1, self.brush_size * 2, 4. * app.timer.delta_f32() * 90.);
             }
 
-			match chunk::get_chunk_cell(chunk, mouse.0, mouse.1) {
-				Some(c) => self.hovering_cell = c.to_owned(),
-				_ => ()
+			if let Some(c) = chunk::get_chunk_cell(chunk, mouse.0, mouse.1) {
+				self.hovering_cell = c.to_owned();
 			}
 		}
 

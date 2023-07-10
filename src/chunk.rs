@@ -57,6 +57,7 @@ fn create_cells_array() -> Box<[[Cell; ROWS]; COLS]> {
 
 pub fn update_chunk(chunk: &mut Chunk, chunks: &mut HashMap<(i32, i32), Chunk>) {
 	if !chunk.active {
+		chunk.dirty_tex = false;
 		return;
 	}
 
@@ -138,7 +139,15 @@ pub fn modify_chunk_elements(chunk: &mut Chunk, i: i32, j: i32, brush_size: i32,
 			}
 		}
 	} else {
-		modify_chunk_element(chunk, i as i32, j as i32, cell);
+		if in_bound(i as i32, j as i32) {
+			if empty_only && cell.element != Element::Air {
+				if chunk.grid[i as usize][j as usize].element == Element::Air {
+					modify_chunk_element(chunk, i as i32, j as i32, cell);
+				}
+			} else {
+				modify_chunk_element(chunk, i as i32, j as i32, cell);
+			}
+		}
 	}
 }
 
@@ -213,8 +222,6 @@ fn update_chunk_tex_data(chunk: &mut Chunk, gfx: &mut Graphics) {
     		.with_data(&chunk.bytes)
     		.update()
     		.unwrap();
-
-		chunk.dirty_tex = false;
 	}
 }
 
