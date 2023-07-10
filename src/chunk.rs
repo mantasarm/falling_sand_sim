@@ -15,6 +15,7 @@ pub struct Chunk {
 	pub future_grid: Box<[[Cell; ROWS]; COLS]>,
 	pub active: bool,
 	pub dirty_tex: bool,
+	pub dirty_rect: DirtyRect,
 	bytes: Vec<u8>,
 	texture: Texture,
 }
@@ -39,6 +40,7 @@ impl Chunk {
 			future_grid,
 			active: true,
 			dirty_tex: true,
+			dirty_rect: DirtyRect::new(),
 			bytes,
 			texture
 		}
@@ -54,7 +56,6 @@ fn create_cells_array() -> Box<[[Cell; ROWS]; COLS]> {
 
 pub fn update_chunk(chunk: &mut Chunk, chunks: &mut HashMap<(i32, i32), Chunk>) {
 	if !chunk.active {
-		chunk.dirty_tex = false;
 		return;
 	}
 
@@ -63,16 +64,19 @@ pub fn update_chunk(chunk: &mut Chunk, chunks: &mut HashMap<(i32, i32), Chunk>) 
 	let mut keep_active = false;
 	
 	let flip_x = fastrand::bool();
-	for i_loop in 0..COLS {
+	for i_loop in 0..COLS	/*chunk.dirty_rect.min_xy.0..=chunk.dirty_rect.max_xy.0*/ {
 		let flip_y = fastrand::bool();
-		for j_loop in 0..ROWS {
+		for j_loop in 0..ROWS /*chunk.dirty_rect.min_xy.1..=chunk.dirty_rect.max_xy.1*/ {
+
 			let i = if flip_x { COLS - i_loop - 1 } else { i_loop };
 			let j = if flip_y { ROWS - j_loop - 1 } else { j_loop };
+
 			if chunk.grid[i][j].element == chunk.future_grid[i][j].element {
 				match chunk.grid[i][j].element {
 					Element::Sand | Element::SawDust | Element::Dirt => {
 						if falling_sand(&mut chunk.future_grid, i, j, chunks, chunk.index) {
 							keep_active = true;
+							chunk.dirty_rect.set_temp(i, j);	
 						}
 					},
 					Element::Water => {
@@ -96,11 +100,13 @@ pub fn update_chunk(chunk: &mut Chunk, chunks: &mut HashMap<(i32, i32), Chunk>) 
 		}
 	}
 
+	chunk.dirty_rect.set_min_max();
 	if keep_active {
 		chunk.dirty_tex = true;
 		chunk.active = true;
 	} else {
 		chunk.active = false;
+		chunk.dirty_tex = false;
 	}
 	chunk.grid = chunk.future_grid.clone();
 }
@@ -108,6 +114,7 @@ pub fn update_chunk(chunk: &mut Chunk, chunks: &mut HashMap<(i32, i32), Chunk>) 
 pub fn activate(chunk: &mut Chunk) {
 	chunk.active = true;
 	chunk.dirty_tex = true;
+	chunk.dirty_rect.reset();
 }
 
 pub fn modify_chunk_elements(chunk: &mut Chunk, i: i32, j: i32, brush_size: i32, cell: &Cell, empty_only: bool) {
@@ -211,6 +218,8 @@ fn update_chunk_tex_data(chunk: &mut Chunk, gfx: &mut Graphics) {
     		.with_data(&chunk.bytes)
     		.update()
     		.unwrap();
+
+			chunk.dirty_tex = false;
 	}
 }
 
@@ -220,41 +229,41 @@ fn update_bytes(chunk: &mut Chunk) {
 	}
 }
 
-// pub struct DirtyRect {
-// 	pub min_xy: (usize, usize),
-// 	pub max_xy: (usize, usize),
-// 	pub temp_min_xy: (usize, usize),
-// 	pub temp_max_xy: (usize, usize),
-// }
+pub struct DirtyRect {
+	pub min_xy: (usize, usize),
+	pub max_xy: (usize, usize),
+	pub temp_min_xy: (usize, usize),
+	pub temp_max_xy: (usize, usize),
+}
 
-// impl DirtyRect {
-// 	pub fn new() -> Self {
-// 		Self {
-// 			min_xy: (0, 0),
-// 			max_xy: (COLS - 1, ROWS - 1),
-// 			temp_min_xy: (COLS - 1, ROWS - 1),
-// 			temp_max_xy: (0, 0)
-// 		}
-// 	}
+impl DirtyRect {
+	pub fn new() -> Self {
+		Self {
+			min_xy: (0, 0),
+			max_xy: (COLS - 1, ROWS - 1),
+			temp_min_xy: (COLS - 1, ROWS - 1),
+			temp_max_xy: (0, 0)
+		}
+	}
 
-// 	pub fn set_temp(&mut self, i: usize, j: usize) {
-// 		self.temp_min_xy.0 = (i - 20).min(self.temp_min_xy.0).clamp(0, COLS - 1);
-// 		self.temp_min_xy.1 = (j - 20).min(self.temp_min_xy.1).clamp(0, ROWS - 1);
-// 		self.temp_max_xy.0 = (i + 20).max(self.temp_max_xy.0).clamp(0, COLS - 1);
-// 		self.temp_max_xy.1 = (j + 20).max(self.temp_max_xy.1).clamp(0, ROWS - 1);
-// 	}
+	pub fn set_temp(&mut self, i: usize, j: usize) {
+		self.temp_min_xy.0 = (i - 20).min(self.temp_min_xy.0).clamp(0, COLS - 1);
+		self.temp_min_xy.1 = (j - 20).min(self.temp_min_xy.1).clamp(0, ROWS - 1);
+		self.temp_max_xy.0 = (i + 20).max(self.temp_max_xy.0).clamp(0, COLS - 1);
+		self.temp_max_xy.1 = (j + 20).max(self.temp_max_xy.1).clamp(0, ROWS - 1);
+	}
 
-// 	pub fn set_min_max(&mut self) {
-// 		self.min_xy = self.temp_min_xy;
-// 		self.max_xy = self.temp_max_xy;
-// 		self.temp_min_xy = (COLS - 1, ROWS - 1);
-// 		self.temp_max_xy = (0, 0);
-// 	}
+	pub fn set_min_max(&mut self) {
+		self.min_xy = self.temp_min_xy;
+		self.max_xy = self.temp_max_xy;
+		self.temp_min_xy = (COLS - 1, ROWS - 1);
+		self.temp_max_xy = (0, 0);
+	}
 
-// 	pub fn reset(&mut self) {
-// 		self.min_xy = (0, 0);
-// 		self.max_xy = (COLS - 1, ROWS - 1);
-// 		self.temp_min_xy = (COLS - 1, ROWS - 1);
-// 		self.temp_max_xy = (0, 0);
-// 	}
-// }
+	pub fn reset(&mut self) {
+		self.min_xy = (0, 0);
+		self.max_xy = (COLS - 1, ROWS - 1);
+		self.temp_min_xy = (COLS - 1, ROWS - 1);
+		self.temp_max_xy = (0, 0);
+	}
+}
