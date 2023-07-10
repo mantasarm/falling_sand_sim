@@ -6,8 +6,7 @@ use crate::{element::{Cell, State, solid_element}, chunk::{ROWS, COLS, in_bound,
 
 pub fn downward(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32)) -> bool {
 	if get(i as i32, j as i32 + 1, f_grid, chunks, index).density <  f_grid[i][j].density && get(i as i32, j as i32 + 2, f_grid, chunks, index).density >=  f_grid[i][j].density{
-		swap(f_grid, i, j, i as i32, j as i32+ 1, chunks, index);
-		return true;
+		return swap(f_grid, i, j, i as i32, j as i32+ 1, chunks, index);
 	}
 	false
 }
@@ -25,9 +24,9 @@ pub fn downward_sides(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize
 	}
 
 	if right {
-		swap(f_grid, i, j, i as i32 + 1, j as i32 + 1, chunks, index);
+		return swap(f_grid, i, j, i as i32 + 1, j as i32 + 1, chunks, index);
 	} else if left {
-		swap(f_grid, i, j, i as i32 - 1, j as i32 + 1, chunks, index);
+		return swap(f_grid, i, j, i as i32 - 1, j as i32 + 1, chunks, index);
 	}
 	
 	false
@@ -37,6 +36,7 @@ pub fn apply_velocity(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize
 	let dist = (f_grid[i][j].velocity.x.powf(2.) + f_grid[i][j].velocity.y.powf(2.)).sqrt();
 
 	if dist < 0.5 {
+		f_grid[i][j].velocity = Vec2::ZERO;
 		return false;
 	}
 
@@ -44,10 +44,6 @@ pub fn apply_velocity(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize
 	if f_grid[i][j].velocity.x.abs() < 1.0 {
 		f_grid[i][j].velocity.x = 0.;
 	}
-
-	// if f_grid[i][j].velocity.y.abs() < 0. {
-	// 	f_grid[i][j].velocity.y = 0.;
-	// }
 
 	let (force_x, force_y) = (f_grid[i][j].velocity.x / dist, f_grid[i][j].velocity.y / dist);
 
@@ -84,6 +80,7 @@ pub fn apply_velocity(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize
 		(dx, dy) = (x, y);
 	}
 
+	f_grid[i][j].velocity = Vec2::ZERO;
 	false
 }
 
@@ -119,8 +116,7 @@ pub fn apply_gravity(future_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: u
 pub fn upward(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32)) -> bool {
 	let cell_to_check = get(i as i32, j as i32 - 1, f_grid, chunks, index);
 	if cell_to_check .density > f_grid[i][j].density && cell_to_check .state == State::Gas {
-		swap(f_grid, i, j, i as i32, j as i32 - 1, chunks, index);
-		return true;
+		return swap(f_grid, i, j, i as i32, j as i32 - 1, chunks, index);
 	}
 	false
 }
@@ -153,11 +149,9 @@ pub fn sideways_gas(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, 
 		let el = get(i as i32 + x * dir, j as i32, f_grid, chunks, index);
 		
 		if x == amount {
-			swap(f_grid, i, j, dx, dy, chunks, index);
-			return true;
+			return swap(f_grid, i, j, dx, dy, chunks, index);
 		} else if !(el.density > d && el.state == State::Gas) {
-			swap(f_grid, i, j, dx, dy, chunks, index);
-			return true;
+			return swap(f_grid, i, j, dx, dy, chunks, index);
 		}
 		(dx, dy) = (i as i32 + x * dir, j as i32)
 	}

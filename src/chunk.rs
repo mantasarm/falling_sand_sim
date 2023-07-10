@@ -7,7 +7,6 @@ use crate::{element::*, el_movement::*};
 pub const COLS: usize = 256 / 2;
 pub const ROWS: usize = 144 / 2;
 pub const UPSCALE_FACTOR: f32 = 2.;
-const INACTIVE_F_NUM: i32 = 60;
 
 pub struct Chunk {
 	pub pos: (f32, f32),
@@ -16,7 +15,6 @@ pub struct Chunk {
 	pub future_grid: Box<[[Cell; ROWS]; COLS]>,
 	pub active: bool,
 	pub dirty_tex: bool,
-	pub inactive_f: i32,
 	bytes: Vec<u8>,
 	texture: Texture,
 }
@@ -41,7 +39,6 @@ impl Chunk {
 			future_grid,
 			active: true,
 			dirty_tex: true,
-			inactive_f: INACTIVE_F_NUM,
 			bytes,
 			texture
 		}
@@ -66,18 +63,14 @@ pub fn update_chunk(chunk: &mut Chunk, chunks: &mut HashMap<(i32, i32), Chunk>) 
 	let mut keep_active = false;
 	
 	let flip_x = fastrand::bool();
-	for mut i in 0..COLS {
+	for i_loop in 0..COLS {
 		let flip_y = fastrand::bool();
-		for mut j in 0..ROWS {
-			if flip_x {
-				i = COLS - i - 1;
-			}
-			if flip_y {
-				j = ROWS - j - 1;
-			}
+		for j_loop in 0..ROWS {
+			let i = if flip_x { COLS - i_loop - 1 } else { i_loop };
+			let j = if flip_y { ROWS - j_loop - 1 } else { j_loop };
 			if chunk.grid[i][j].element == chunk.future_grid[i][j].element {
 				match chunk.grid[i][j].element {
-					Element::Sand | Element::SawDust | Element::Dirt=> {
+					Element::Sand | Element::SawDust | Element::Dirt => {
 						if falling_sand(&mut chunk.future_grid, i, j, chunks, chunk.index) {
 							keep_active = true;
 						}
@@ -103,21 +96,17 @@ pub fn update_chunk(chunk: &mut Chunk, chunks: &mut HashMap<(i32, i32), Chunk>) 
 		}
 	}
 
-	if !keep_active && chunk.inactive_f != 0 {
-		chunk.inactive_f -= 1;
-	} else if !keep_active && chunk.inactive_f == 0 {
-		chunk.active = false;
-	} else if keep_active {
-		chunk.inactive_f = INACTIVE_F_NUM;
+	if keep_active {
 		chunk.dirty_tex = true;
 		chunk.active = true;
+	} else {
+		chunk.active = false;
 	}
 	chunk.grid = chunk.future_grid.clone();
 }
 
 pub fn activate(chunk: &mut Chunk) {
 	chunk.active = true;
-	chunk.inactive_f = INACTIVE_F_NUM;
 	chunk.dirty_tex = true;
 }
 

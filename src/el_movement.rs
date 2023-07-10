@@ -1,7 +1,5 @@
 use std::collections::HashMap;
 
-use notan::math::Vec2;
-
 use crate::{base_movement::*, element::*, chunk::*};
 
 pub fn falling_sand(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32)) -> bool {
@@ -9,7 +7,6 @@ pub fn falling_sand(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, 
 	if !downward(f_grid, i, j, chunks, index) {
 		if !apply_velocity(f_grid, i, j, chunks, index) {
 			if !downward_sides(f_grid, i, j, chunks, index) {
-				f_grid[i][j].velocity = Vec2::ZERO;
 				return false;
 			}
 		}
