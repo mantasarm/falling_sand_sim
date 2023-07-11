@@ -33,7 +33,7 @@ pub fn downward_sides(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize
 }
 
 pub fn apply_velocity(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32)) -> bool {
-	let dist = (f_grid[i][j].velocity.x.powf(2.) + f_grid[i][j].velocity.y.powf(2.)).sqrt();
+	let dist = f_grid[i][j].velocity.length();
 
 	if dist < 0.5 {
 		f_grid[i][j].velocity = Vec2::ZERO;
@@ -59,8 +59,7 @@ pub fn apply_velocity(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize
 		let get_el = get(x, y, f_grid, chunks, index);
 
 		if m == dist.round() as i32 {
-			swap(f_grid, i, j, dx, dy, chunks, index);
-			return true;
+			return swap(f_grid, i, j, dx, dy, chunks, index);
 		} else if !(get_el.density < d) {
 			if m == 1 {
 				f_grid[i][j].velocity = Vec2::ZERO;
@@ -70,8 +69,7 @@ pub fn apply_velocity(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize
 				f_grid[i][j].velocity = Vec2::ZERO;
 			}
 
-			swap(f_grid, i, j, dx, dy, chunks, index);
-			return true;
+			return swap(f_grid, i, j, dx, dy, chunks, index);
 		} else {
 			let drag = get(x, y, f_grid, chunks, index).drag;
 			f_grid[i][j].velocity *= drag;

@@ -80,7 +80,7 @@ impl ChunkManager {
 		}
 	}
 
-	pub fn render(&mut self, gfx: &mut Graphics, draw: &mut Draw, debug_render_boundaries: bool, debug_chunk_coords: bool) {
+	pub fn render(&mut self, gfx: &mut Graphics, draw: &mut Draw, debug_render_boundaries: bool, debug_chunk_coords: bool, debug_dirty_rects: bool) {
 		if debug_chunk_coords {
 			for index in self.chunks.keys() {
 				draw.text(&self.font, &format!("{:?}", index))
@@ -99,17 +99,19 @@ impl ChunkManager {
 			}
 		}
 
-		// for (index, chunk) in self.chunks.iter() {
-		// 	if chunk.active {
-		// 		draw.rect(((index.0 as f32 * COLS as f32 + chunk.dirty_rect.min_xy.0 as f32) * UPSCALE_FACTOR,
-		// 							(index.1 as f32 * ROWS as f32 + chunk.dirty_rect.min_xy.1 as f32) * UPSCALE_FACTOR),
-		// 		              ((chunk.dirty_rect.max_xy.0 - chunk.dirty_rect.min_xy.0) as f32 * UPSCALE_FACTOR,
-		// 					        (chunk.dirty_rect.max_xy.1 - chunk.dirty_rect.min_xy.1) as f32 * UPSCALE_FACTOR))
-		// 			.fill_color(Color::from_rgba(0., 0., 0., 0.))
-		// 			.stroke_color(Color::RED)
-		// 			.stroke(1.);
-		// 	}
-		// }
+		if debug_dirty_rects {
+			for (index, chunk) in self.chunks.iter() {
+				if chunk.active {
+					draw.rect(((index.0 as f32 * COLS as f32 + chunk.dirty_rect.min_xy.0 as f32) * UPSCALE_FACTOR,
+										(index.1 as f32 * ROWS as f32 + chunk.dirty_rect.min_xy.1 as f32) * UPSCALE_FACTOR),
+					              ((chunk.dirty_rect.max_xy.0 - chunk.dirty_rect.min_xy.0) as f32 * UPSCALE_FACTOR,
+								        (chunk.dirty_rect.max_xy.1 - chunk.dirty_rect.min_xy.1) as f32 * UPSCALE_FACTOR))
+						.fill_color(Color::from_rgba(0., 0., 0., 0.))
+						.stroke_color(Color::RED)
+						.stroke(1.);
+				}
+			}
+		}
 
 		for chunk in self.chunks.values_mut() {
 			chunk::render_chunk(chunk, gfx, draw);

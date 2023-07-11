@@ -24,7 +24,8 @@ struct State {
     sky_gradient: Texture,
     debug_window: bool,
     debug_render: bool,
-    debug_chunk_coords: bool
+    debug_chunk_coords: bool,
+    debug_dirty_rects: bool
 }
 
 #[notan_main]
@@ -47,7 +48,8 @@ fn init(app: &mut App, gfx: &mut Graphics) -> State {
         sky_gradient: gfx.create_texture().from_image(include_bytes!("assets/sky_gradient.png")).with_filter(TextureFilter::Linear, TextureFilter::Linear).build().unwrap(),
         debug_window: false,
         debug_render: false,
-        debug_chunk_coords: true
+        debug_chunk_coords: true,
+        debug_dirty_rects: false
     }
 }
 
@@ -82,7 +84,7 @@ fn draw(app: &mut App, gfx: &mut Graphics, plugins: &mut Plugins, state: &mut St
 
     state.camera.apply(&mut render_draw);
 
-    state.chunk_manager.render(gfx, &mut render_draw, state.debug_render, state.debug_chunk_coords);
+    state.chunk_manager.render(gfx, &mut render_draw, state.debug_render, state.debug_chunk_coords, state.debug_dirty_rects);
 
     render_draw.transform().pop();
 
@@ -151,6 +153,7 @@ fn draw(app: &mut App, gfx: &mut Graphics, plugins: &mut Plugins, state: &mut St
 
             ui.checkbox(&mut state.debug_render, "Chunk borders");
             ui.checkbox(&mut state.debug_chunk_coords, "Chunk indices");
+            ui.checkbox(&mut state.debug_dirty_rects, "Dirty rects (currently don't do anything)");
             ui.add_space(5.);
 
             ui.label(RichText::new("Mouse is on: ").color(Color32::from_rgb(180, 180, 180)));

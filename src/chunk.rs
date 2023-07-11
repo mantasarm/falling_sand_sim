@@ -63,10 +63,18 @@ pub fn update_chunk(chunk: &mut Chunk, chunks: &mut HashMap<(i32, i32), Chunk>) 
 
 	let mut keep_active = false;
 	
+	// TODO: Finish dirty rects properly
+	// INFO: Dirty rects work fine when elements do not move chunks and don't move too fast (speed < 20)
+	// FIXME: make dirty rects expand to the elements swap position (they currently expand only to the elements starting position),
+	// fix weird bugs when elements move from one chunk to another
 	let flip_x = fastrand::bool();
 	for i_loop in 0..COLS	/*chunk.dirty_rect.min_xy.0..=chunk.dirty_rect.max_xy.0*/ {
 		let flip_y = fastrand::bool();
 		for j_loop in 0..ROWS /*chunk.dirty_rect.min_xy.1..=chunk.dirty_rect.max_xy.1*/ {
+			
+			// Correct flipping for dirty rects
+			// let i = if flip_x { chunk.dirty_rect.max_xy.0 - (i_loop - chunk.dirty_rect.min_xy.0) } else { i_loop };
+			// let j = if flip_y { chunk.dirty_rect.max_xy.1 - (j_loop - chunk.dirty_rect.min_xy.1) } else { j_loop };
 
 			let i = if flip_x { COLS - i_loop - 1 } else { i_loop };
 			let j = if flip_y { ROWS - j_loop - 1 } else { j_loop };
@@ -212,6 +220,8 @@ pub fn render_chunk(chunk: &mut Chunk, gfx: &mut Graphics, draw: &mut Draw) {
 }
 
 fn update_chunk_tex_data(chunk: &mut Chunk, gfx: &mut Graphics) {
+	// TODO: sometimes chunk last frame isn't renderered
+
 	if chunk.dirty_tex {
 		update_bytes(chunk);
 		gfx.update_texture(&mut chunk.texture)
