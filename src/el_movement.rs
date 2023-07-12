@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
-use crate::{base_movement::*, element::*, chunk::*};
+use crate::{base_movement::*, chunk::*};
 
-pub fn falling_sand(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32)) -> bool {
+pub fn falling_sand(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32)) -> bool {
 	apply_gravity(f_grid, i, j, chunks, index);
 	if !downward(f_grid, i, j, chunks, index) {
 		if !apply_velocity(f_grid, i, j, chunks, index) {
@@ -14,7 +14,7 @@ pub fn falling_sand(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, 
 	true
 }
 
-pub fn liquid_movement(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32)) -> bool {
+pub fn liquid_movement(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32)) -> bool {
 	apply_gravity(f_grid, i, j, chunks, index);
 
 	if !downward(f_grid, i, j, chunks, index) {				
@@ -49,7 +49,7 @@ pub fn liquid_movement(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usiz
 	true
 }
 
-pub fn gas_movement(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32)) -> bool {
+pub fn gas_movement(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32)) -> bool {
 	if !upward(f_grid, i, j, chunks, index) {
 		if !sideways_gas(f_grid, i, j, 4, chunks, index) {
 			return false;

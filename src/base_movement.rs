@@ -2,16 +2,16 @@ use std::collections::HashMap;
 
 use notan::math::Vec2;
 
-use crate::{element::{Cell, State, solid_element}, chunk::{ROWS, COLS, in_bound, Chunk, self}};
+use crate::{element::{Cell, State, solid_element}, chunk::{ROWS, COLS, in_bound, Chunk, self, Grid}};
 
-pub fn downward(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32)) -> bool {
+pub fn downward(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32)) -> bool {
 	if get(i as i32, j as i32 + 1, f_grid, chunks, index).density <  f_grid[i][j].density && get(i as i32, j as i32 + 2, f_grid, chunks, index).density >=  f_grid[i][j].density{
 		return swap(f_grid, i, j, i as i32, j as i32+ 1, chunks, index);
 	}
 	false
 }
 
-pub fn downward_sides(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32)) -> bool {
+pub fn downward_sides(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32)) -> bool {
 	let d = f_grid[i][j].density;
 
 	let mut left = get(i as i32 - 1, j as i32 + 1, f_grid, chunks, index).density < d;
@@ -32,7 +32,7 @@ pub fn downward_sides(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize
 	false
 }
 
-pub fn apply_velocity(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32)) -> bool {
+pub fn apply_velocity(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32)) -> bool {
 	let dist = f_grid[i][j].velocity.length();
 
 	if dist < 0.5 {
@@ -81,7 +81,7 @@ pub fn apply_velocity(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize
 	false
 }
 
-pub fn apply_gravity(future_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32)) {
+pub fn apply_gravity(future_grid: &mut Grid, i: usize, j: usize, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32)) {
 	let below_element = get(i as i32, j as i32 + 1, future_grid, chunks, index);
 	
 	if below_element.density < future_grid[i][j].density {
@@ -110,7 +110,7 @@ pub fn apply_gravity(future_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: u
 	}
 }
 
-pub fn upward(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32)) -> bool {
+pub fn upward(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32)) -> bool {
 	let cell_to_check = get(i as i32, j as i32 - 1, f_grid, chunks, index);
 	if cell_to_check .density > f_grid[i][j].density && cell_to_check .state == State::Gas {
 		return swap(f_grid, i, j, i as i32, j as i32 - 1, chunks, index);
@@ -118,7 +118,7 @@ pub fn upward(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, chunks
 	false
 }
 
-pub fn sideways_gas(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, amount: i32, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32)) -> bool {
+pub fn sideways_gas(f_grid: &mut Grid, i: usize, j: usize, amount: i32, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32)) -> bool {
 	let d = f_grid[i][j].density;
 
 	let left_element = get(i as i32 - 1, j as i32, f_grid, chunks, index);
@@ -155,7 +155,7 @@ pub fn sideways_gas(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize, 
 	false
 }
 
-pub fn get(i: i32, j: i32, f_grid: &mut Box<[[Cell; ROWS]; COLS]>, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32)) -> Cell {
+pub fn get(i: i32, j: i32, f_grid: &mut Grid, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32)) -> Cell {
 	if in_bound(i, j) {
 		return f_grid[i as usize][j as usize]
 	} else {
@@ -170,7 +170,7 @@ pub fn get(i: i32, j: i32, f_grid: &mut Box<[[Cell; ROWS]; COLS]>, chunks: &mut 
 	solid_element()
 }
 
-pub fn swap(grid: &mut Box<[[Cell; ROWS]; COLS]>, i1: usize, j1: usize, i2: i32, j2: i32, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32)) -> bool {
+pub fn swap(grid: &mut Grid, i1: usize, j1: usize, i2: i32, j2: i32, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32)) -> bool {
 	if in_bound(i2, j2) {
 		(grid[i1][j1], grid[i2 as usize][j2 as usize]) = (grid[i2 as usize][j2 as usize], grid[i1][j1]);
 

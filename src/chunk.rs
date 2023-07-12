@@ -8,11 +8,13 @@ pub const COLS: usize = 256 / 2;
 pub const ROWS: usize = 144 / 2;
 pub const UPSCALE_FACTOR: f32 = 2.;
 
+pub type Grid = Box<[[Cell; ROWS]; COLS]>;
+
 pub struct Chunk {
 	pub pos: (f32, f32),
 	pub index: (i32, i32),
-	pub grid: Box<[[Cell; ROWS]; COLS]>,
-	pub future_grid: Box<[[Cell; ROWS]; COLS]>,
+	pub grid: Grid,
+	pub future_grid: Grid,
 	pub active: bool,
 	pub dirty_tex: bool,
 	pub dirty_rect: DirtyRect,
@@ -47,7 +49,7 @@ impl Chunk {
 	}
 }
 
-fn create_cells_array() -> Box<[[Cell; ROWS]; COLS]> {
+fn create_cells_array() -> Grid {
     let mut data = std::mem::ManuallyDrop::new(vec![air_element(); ROWS * COLS]);
     unsafe {
         Box::from_raw(data.as_mut_ptr() as *mut [[Cell; ROWS]; COLS])
