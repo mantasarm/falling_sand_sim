@@ -109,13 +109,9 @@ pub fn update_chunk(chunk: &mut Chunk, chunks: &mut HashMap<(i32, i32), Chunk>) 
 	}
 
 	chunk.dirty_rect.set_min_max();
-	if keep_active {
-		chunk.dirty_tex = true;
-		chunk.active = true;
-	} else {
-		chunk.active = false;
-		chunk.dirty_tex = false;
-	}
+
+	chunk.active = keep_active;
+	chunk.dirty_tex = true;
 	chunk.grid = chunk.future_grid.clone();
 }
 
@@ -220,8 +216,6 @@ pub fn render_chunk(chunk: &mut Chunk, gfx: &mut Graphics, draw: &mut Draw) {
 }
 
 fn update_chunk_tex_data(chunk: &mut Chunk, gfx: &mut Graphics) {
-	// TODO: sometimes chunk last frame isn't renderered
-
 	if chunk.dirty_tex {
 		update_bytes(chunk);
 		gfx.update_texture(&mut chunk.texture)

@@ -77,7 +77,6 @@ pub fn apply_velocity(f_grid: &mut Box<[[Cell; ROWS]; COLS]>, i: usize, j: usize
 		
 		(dx, dy) = (x, y);
 	}
-
 	f_grid[i][j].velocity = Vec2::ZERO;
 	false
 }
@@ -248,7 +247,7 @@ fn get_new_element_coord(i: i32, j: i32) -> (i32, i32) {
 			y = ROWS as i32 + j;
 		}
 	}
-
+	
 	x = x.clamp(0, COLS as i32 - 1);
 	y = y.clamp(0, ROWS as i32 - 1);
 	(x, y)
