@@ -153,7 +153,7 @@ fn draw(app: &mut App, gfx: &mut Graphics, plugins: &mut Plugins, state: &mut St
 
             ui.checkbox(&mut state.debug_render, "Chunk borders");
             ui.checkbox(&mut state.debug_chunk_coords, "Chunk indices");
-            ui.checkbox(&mut state.debug_dirty_rects, "Dirty rects (currently don't do anything)");
+            ui.checkbox(&mut state.debug_dirty_rects, "Dirty rects");
             ui.add_space(5.);
 
             ui.label(RichText::new("Mouse is on: ").color(Color32::from_rgb(180, 180, 180)));

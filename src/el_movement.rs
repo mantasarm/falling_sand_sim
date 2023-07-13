@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::{base_movement::*, chunk::*};
 
-pub fn falling_sand(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32)) -> bool {
+pub fn falling_sand(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32), keep_active: &mut bool) -> bool {
 	apply_gravity(f_grid, i, j, chunks, index);
 	if !downward(f_grid, i, j, chunks, index) {
 		if !apply_velocity(f_grid, i, j, chunks, index) {
@@ -11,6 +11,7 @@ pub fn falling_sand(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut HashMap<
 			}
 		}
 	}
+	*keep_active = true;
 	true
 }
 

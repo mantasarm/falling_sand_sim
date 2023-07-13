@@ -5,8 +5,8 @@ use notan::math::Vec2;
 use crate::{element::{Cell, State, solid_element}, chunk::{ROWS, COLS, in_bound, Chunk, self, Grid}};
 
 pub fn downward(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32)) -> bool {
-	if get(i as i32, j as i32 + 1, f_grid, chunks, index).density <  f_grid[i][j].density && get(i as i32, j as i32 + 2, f_grid, chunks, index).density >=  f_grid[i][j].density{
-		return swap(f_grid, i, j, i as i32, j as i32+ 1, chunks, index);
+	if get(i as i32, j as i32 + 1, f_grid, chunks, index).density <  f_grid[i][j].density && get(i as i32, j as i32 + 2, f_grid, chunks, index).density >=  f_grid[i][j].density {
+		return swap(f_grid, i, j, i as i32, j as i32 + 1, chunks, index);
 	}
 	false
 }
@@ -83,6 +83,8 @@ pub fn apply_velocity(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut HashMa
 
 pub fn apply_gravity(future_grid: &mut Grid, i: usize, j: usize, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32)) {
 	let below_element = get(i as i32, j as i32 + 1, future_grid, chunks, index);
+
+	//future_grid[i][j].velocity = future_grid[i][j].velocity.clamp(Vec2::new(-10., -10.), Vec2::new(10., 10.));
 	
 	if below_element.density < future_grid[i][j].density {
 		const LIMIT: f32 = 7.;
@@ -206,7 +208,7 @@ pub fn swap(grid: &mut Grid, i1: usize, j1: usize, i2: i32, j2: i32, chunks: &mu
 			let (x, y) = get_new_element_coord(i2, j2);
 
 			(grid[i1][j1], chunks.get_mut(&wanted_chunk).unwrap().grid[x as usize][y as usize]) = (chunks.get(&wanted_chunk).unwrap().grid[x as usize][y as usize], grid[i1][j1]);
-			chunks.get_mut(&wanted_chunk).unwrap().active = true;
+			chunk::activate(chunks.get_mut(&wanted_chunk).unwrap());
 			return true;
 		}
 	}

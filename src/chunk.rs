@@ -64,44 +64,38 @@ pub fn update_chunk(chunk: &mut Chunk, chunks: &mut HashMap<(i32, i32), Chunk>) 
 	chunk.future_grid = chunk.grid.clone();
 
 	let mut keep_active = false;
-	
-	// TODO: Finish dirty rects properly
-	// INFO: Dirty rects work fine when elements do not move chunks and don't move too fast (speed < 20)
-	// FIXME: make dirty rects expand to the elements swap position (they currently expand only to the elements starting position),
-	// fix weird bugs when elements move from one chunk to another
-	let flip_x = fastrand::bool();
-	for i_loop in 0..COLS	/*chunk.dirty_rect.min_xy.0..=chunk.dirty_rect.max_xy.0*/ {
-		let flip_y = fastrand::bool();
-		for j_loop in 0..ROWS /*chunk.dirty_rect.min_xy.1..=chunk.dirty_rect.max_xy.1*/ {
-			
-			// Correct flipping for dirty rects
-			// let i = if flip_x { chunk.dirty_rect.max_xy.0 - (i_loop - chunk.dirty_rect.min_xy.0) } else { i_loop };
-			// let j = if flip_y { chunk.dirty_rect.max_xy.1 - (j_loop - chunk.dirty_rect.min_xy.1) } else { j_loop };
 
-			let i = if flip_x { COLS - i_loop - 1 } else { i_loop };
-			let j = if flip_y { ROWS - j_loop - 1 } else { j_loop };
+	let flip_x = fastrand::bool();
+	for i_loop in chunk.dirty_rect.min_xy.0..=chunk.dirty_rect.max_xy.0 {
+		let flip_y = fastrand::bool();
+		for j_loop in chunk.dirty_rect.min_xy.1..=chunk.dirty_rect.max_xy.1 {
+
+			let i = if flip_x { chunk.dirty_rect.max_xy.0 - (i_loop - chunk.dirty_rect.min_xy.0) } else { i_loop };
+			let j = if flip_y { chunk.dirty_rect.max_xy.1 - (j_loop - chunk.dirty_rect.min_xy.1) } else { j_loop };
 
 			if chunk.grid[i][j].element == chunk.future_grid[i][j].element {
 				match chunk.grid[i][j].element {
 					Element::Sand | Element::SawDust | Element::Dirt => {
-						if falling_sand(&mut chunk.future_grid, i, j, chunks, chunk.index) {
-							keep_active = true;
-							chunk.dirty_rect.set_temp(i, j);	
+						if falling_sand(&mut chunk.future_grid, i, j, chunks, chunk.index, &mut keep_active) {
+							chunk.dirty_rect.set_temp(i, j);
 						}
 					},
 					Element::Water => {
 						if liquid_movement(&mut chunk.future_grid, i, j, chunks, chunk.index) {
 							keep_active = true;
+							chunk.dirty_rect.set_temp(i, j);
 						};
 					},
 					Element::Smoke => {
 						if gas_movement(&mut chunk.future_grid, i, j, chunks, chunk.index) {
 							keep_active = true;
+							chunk.dirty_rect.set_temp(i, j);
 						};
 					},
 					Element::Steam => {
 						if gas_movement(&mut chunk.future_grid, i, j, chunks, chunk.index) {
 							keep_active = true;
+							chunk.dirty_rect.set_temp(i, j);
 						};
 					},
 					_ => ()
@@ -109,11 +103,11 @@ pub fn update_chunk(chunk: &mut Chunk, chunks: &mut HashMap<(i32, i32), Chunk>) 
 			}
 		}
 	}
-
 	chunk.dirty_rect.set_min_max();
 
 	chunk.active = keep_active;
 	chunk.dirty_tex = true;
+
 	chunk.grid = chunk.future_grid.clone();
 }
 
@@ -253,10 +247,14 @@ impl DirtyRect {
 	}
 
 	pub fn set_temp(&mut self, i: usize, j: usize) {
-		self.temp_min_xy.0 = (i - 20).min(self.temp_min_xy.0).clamp(0, COLS - 1);
-		self.temp_min_xy.1 = (j - 20).min(self.temp_min_xy.1).clamp(0, ROWS - 1);
-		self.temp_max_xy.0 = (i + 20).max(self.temp_max_xy.0).clamp(0, COLS - 1);
-		self.temp_max_xy.1 = (j + 20).max(self.temp_max_xy.1).clamp(0, ROWS - 1);
+		let amount = 20;
+		let (min_x, min_y) = ((i as i32 - amount).clamp(0, COLS as i32 - 1), (j as i32 - amount).clamp(0, ROWS as i32 - 1));
+		let (max_x, max_y) = ((i as i32 + amount).clamp(0, COLS as i32 - 1), (j as i32 + amount).clamp(0, ROWS as i32 - 1));
+
+		self.temp_min_xy.0 = (min_x as usize).min(self.temp_min_xy.0);
+		self.temp_min_xy.1 = (min_y as usize).min(self.temp_min_xy.1);
+		self.temp_max_xy.0 = (max_x as usize).max(self.temp_max_xy.0);
+		self.temp_max_xy.1 = (max_y as usize).max(self.temp_max_xy.1);
 	}
 
 	pub fn set_min_max(&mut self) {

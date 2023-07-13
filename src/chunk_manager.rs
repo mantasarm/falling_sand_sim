@@ -107,8 +107,8 @@ impl ChunkManager {
 					              ((chunk.dirty_rect.max_xy.0 - chunk.dirty_rect.min_xy.0) as f32 * UPSCALE_FACTOR,
 								        (chunk.dirty_rect.max_xy.1 - chunk.dirty_rect.min_xy.1) as f32 * UPSCALE_FACTOR))
 						.fill_color(Color::from_rgba(0., 0., 0., 0.))
-						.stroke_color(Color::RED)
-						.stroke(1.);
+						.stroke_color(Color::BLUE)
+						.stroke(0.5);
 				}
 			}
 		}
