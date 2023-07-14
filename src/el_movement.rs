@@ -2,11 +2,11 @@ use std::collections::HashMap;
 
 use crate::{base_movement::*, chunk::*};
 
-pub fn falling_sand(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32), keep_active: &mut bool) -> bool {
+pub fn falling_sand(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32), keep_active: &mut bool, dirty_rect: &mut DirtyRect) -> bool {
 	apply_gravity(f_grid, i, j, chunks, index);
-	if !downward(f_grid, i, j, chunks, index) {
-		if !apply_velocity(f_grid, i, j, chunks, index) {
-			if !downward_sides(f_grid, i, j, chunks, index) {
+	if !downward(f_grid, i, j, chunks, index, dirty_rect) {
+		if !apply_velocity(f_grid, i, j, chunks, index, dirty_rect) {
+			if !downward_sides(f_grid, i, j, chunks, index, dirty_rect) {
 				return false;
 			}
 		}
@@ -15,11 +15,11 @@ pub fn falling_sand(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut HashMap<
 	true
 }
 
-pub fn liquid_movement(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32)) -> bool {
+pub fn liquid_movement(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32), keep_active: &mut bool, dirty_rect: &mut DirtyRect) -> bool {
 	apply_gravity(f_grid, i, j, chunks, index);
 
-	if !downward(f_grid, i, j, chunks, index) {				
-		if !apply_velocity(f_grid, i, j, chunks, index) {
+	if !downward(f_grid, i, j, chunks, index, dirty_rect) {				
+		if !apply_velocity(f_grid, i, j, chunks, index, dirty_rect) {
 			let mut dir = 0.;
 
 			if f_grid[i][j].velocity.x == 0. {
@@ -37,24 +37,27 @@ pub fn liquid_movement(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut HashM
 					dir = 1.;
 				}
 			}
-			
+
 			if dir != 0. {	
 				f_grid[i][j].velocity.x += 5.5 * dir;
 				f_grid[i][j].velocity.y += 0.5;
+				dirty_rect.set_temp(i, j);
 			} else {
 				f_grid[i][j].velocity.x = 0.;
 				return false;
 			}
 		}
 	}
+	*keep_active = true;
 	true
 }
 
-pub fn gas_movement(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32)) -> bool {
-	if !upward(f_grid, i, j, chunks, index) {
-		if !sideways_gas(f_grid, i, j, 4, chunks, index) {
+pub fn gas_movement(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32), keep_active: &mut bool, dirty_rect: &mut DirtyRect) -> bool {
+	if !upward(f_grid, i, j, chunks, index, dirty_rect) {
+		if !sideways_gas(f_grid, i, j, 4, chunks, index, dirty_rect) {
 			return false;
 		}
 	}
+	*keep_active = true;
 	true
 }

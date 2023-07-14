@@ -76,27 +76,19 @@ pub fn update_chunk(chunk: &mut Chunk, chunks: &mut HashMap<(i32, i32), Chunk>) 
 			if chunk.grid[i][j].element == chunk.future_grid[i][j].element {
 				match chunk.grid[i][j].element {
 					Element::Sand | Element::SawDust | Element::Dirt => {
-						if falling_sand(&mut chunk.future_grid, i, j, chunks, chunk.index, &mut keep_active) {
-							chunk.dirty_rect.set_temp(i, j);
+						if falling_sand(&mut chunk.future_grid, i, j, chunks, chunk.index, &mut keep_active, &mut chunk.dirty_rect) {
+							update_byte(chunk, i, j, &[0, 0, 0, 0]);
 						}
 					},
 					Element::Water => {
-						if liquid_movement(&mut chunk.future_grid, i, j, chunks, chunk.index) {
-							keep_active = true;
-							chunk.dirty_rect.set_temp(i, j);
-						};
+						if liquid_movement(&mut chunk.future_grid, i, j, chunks, chunk.index, &mut keep_active, &mut chunk.dirty_rect) {
+							update_byte(chunk, i, j, &[0, 0, 0, 0]);
+						}
 					},
-					Element::Smoke => {
-						if gas_movement(&mut chunk.future_grid, i, j, chunks, chunk.index) {
-							keep_active = true;
-							chunk.dirty_rect.set_temp(i, j);
-						};
-					},
-					Element::Steam => {
-						if gas_movement(&mut chunk.future_grid, i, j, chunks, chunk.index) {
-							keep_active = true;
-							chunk.dirty_rect.set_temp(i, j);
-						};
+					Element::Smoke | Element::Steam => {
+						if gas_movement(&mut chunk.future_grid, i, j, chunks, chunk.index, &mut keep_active, &mut chunk.dirty_rect) {
+							update_byte(chunk, i, j, &[0, 0, 0, 0]);
+						}
 					},
 					_ => ()
 				}
@@ -160,7 +152,13 @@ pub fn modify_chunk_element(chunk: &mut Chunk, i: i32, j: i32, cell: &Cell) {
 		c_cell.color = [cell.color[0] - c, cell.color[1] - c, cell.color[2] - c, cell.color[3]];
 		chunk.grid[i as usize][j as usize] = c_cell;
 
-		activate(chunk);
+		chunk.dirty_tex = true;
+
+		if !chunk.active {
+			activate(chunk);
+		} else {
+			chunk.dirty_rect.set_temp(i as usize, j as usize);
+		}
 	}
 }
 
@@ -223,9 +221,23 @@ fn update_chunk_tex_data(chunk: &mut Chunk, gfx: &mut Graphics) {
 	}
 }
 
+fn update_byte(chunk: &mut Chunk, i: usize, j: usize, color: &[u8; 4]) {
+	let index = j * COLS + i;
+	chunk.bytes[index * 4..index * 4 + 4].copy_from_slice(color);
+}
+
 fn update_bytes(chunk: &mut Chunk) {
-	for i in 0..chunk.bytes.len() / 4 {
-		chunk.bytes[i * 4..i * 4 + 4].copy_from_slice(&chunk.grid[i % COLS][i / COLS].color);
+	// for i in 0..chunk.bytes.len() / 4 {
+	// 	chunk.bytes[i * 4..i * 4 + 4].copy_from_slice(&chunk.grid[i % COLS][i / COLS].color);
+	// }
+
+	for i in chunk.dirty_rect.min_xy.0..=chunk.dirty_rect.max_xy.0 {
+		for j in chunk.dirty_rect.min_xy.1..=chunk.dirty_rect.max_xy.1 {
+			let index = j * COLS + i;
+
+			chunk.bytes[index * 4..index * 4 + 4].copy_from_slice(&chunk.grid[i][j].color);
+			
+		}
 	}
 }
 
@@ -247,7 +259,8 @@ impl DirtyRect {
 	}
 
 	pub fn set_temp(&mut self, i: usize, j: usize) {
-		let amount = 20;
+		// INFO: we have to get these in i32 format and the cast to usize because usize value flips to max value when index is smaller than amount
+		let amount = 5;
 		let (min_x, min_y) = ((i as i32 - amount).clamp(0, COLS as i32 - 1), (j as i32 - amount).clamp(0, ROWS as i32 - 1));
 		let (max_x, max_y) = ((i as i32 + amount).clamp(0, COLS as i32 - 1), (j as i32 + amount).clamp(0, ROWS as i32 - 1));
 
