@@ -260,7 +260,7 @@ impl DirtyRect {
 
 	pub fn set_temp(&mut self, i: usize, j: usize) {
 		// INFO: we have to get these in i32 format and the cast to usize because usize value flips to max value when index is smaller than amount
-		let amount = 5;
+		let amount = 10;
 		let (min_x, min_y) = ((i as i32 - amount).clamp(0, COLS as i32 - 1), (j as i32 - amount).clamp(0, ROWS as i32 - 1));
 		let (max_x, max_y) = ((i as i32 + amount).clamp(0, COLS as i32 - 1), (j as i32 + amount).clamp(0, ROWS as i32 - 1));
 

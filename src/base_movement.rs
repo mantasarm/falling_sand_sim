@@ -181,30 +181,15 @@ pub fn swap(grid: &mut Grid, i1: usize, j1: usize, i2: i32, j2: i32, chunks: &mu
 
 		// INFO: Wake up neighboring sleeping chunks if chunk edge element moves
 		if i1 == 0 || i2 == 0 {
-			match chunks.get_mut(&(index.0 - 1, index.1)) {
-				Some(chunk) => if !chunk.active { chunk::activate(chunk) },
-				_ => ()
-			}
+			wake_up_chunk(chunks, index, (-1, 0), (COLS - 1, j1));
 		} else if i1 == COLS - 1 || i2 == COLS as i32 - 1 {
-			match chunks.get_mut(&(index.0 + 1, index.1)) {
-				Some(chunk) => if !chunk.active { chunk::activate(chunk) },
-				_ => ()
-			}
+			wake_up_chunk(chunks, index, (1, 0), (0, j1));
 		}
+
 		if j1 == 0 || j2 == 0 {
-			let el = get(i1 as i32, j1 as i32 - 1, grid, chunks, index).state;
-			if let Some(chunk) = chunks.get_mut(&(index.0, index.1 - 1)) {
-				if !chunk.active { 
-					chunk::activate(chunk)
-				} else if el != State::Gas {
-					chunk.dirty_rect.set_temp(i1, ROWS - 1);
-				}
-			}
+			wake_up_chunk(chunks, index, (0, -1), (i1, ROWS - 1))
 		} else if j1 == ROWS - 1 || j2 == ROWS as i32 - 1 {
-			match chunks.get_mut(&(index.0, index.1 + 1)) {
-				Some(chunk) => if !chunk.active { chunk::activate(chunk) },
-				_ => ()
-			}
+			wake_up_chunk(chunks, index, (0, 1), (i1, 0));
 		}
 
 		return true;
@@ -227,6 +212,16 @@ pub fn swap(grid: &mut Grid, i1: usize, j1: usize, i2: i32, j2: i32, chunks: &mu
 		}
 	}
 	false
+}
+
+fn wake_up_chunk(chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32), dir: (i32, i32), dirty_coord: (usize, usize)) {
+	if let Some(chunk) = chunks.get_mut(&(index.0 + dir.0, index.1 + dir.1)) {
+		if !chunk.active { 
+			chunk::activate(chunk)
+		} else {
+			chunk.dirty_rect.set_temp(dirty_coord.0, dirty_coord.1);
+		}
+	}
 }
 
 fn get_wanted_chunk(index: (i32, i32), i2: i32, j2: i32) -> (i32, i32) {
