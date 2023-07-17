@@ -22,9 +22,12 @@ pub struct ChunkManager {
 
 impl ChunkManager {
 	pub fn new(gfx: &mut Graphics) -> Self {
+		let range_x = (-2, 2);
+		let range_y = (-2, 2);
+
 		let mut chunks = HashMap::new();
-		for i in -2..=2 {
-			for j in -2..=2 {
+		for i in range_x.0..=range_x.1 {
+			for j in range_y.0..=range_y.1 {
 				chunks.insert((i, j), Chunk::new(i, j, gfx));
 			}
 		}
@@ -35,8 +38,8 @@ impl ChunkManager {
 	        modify: true,
 			brush_size: 32,
 			update_chunks: true,
-			range_x: (-2, 2),
-			range_y: (-2, 2),
+			range_x,
+			range_y,
 			hovering_cell: sand_element(),
 			update_time: 0.,
 			replace_air: true,
