@@ -1,8 +1,6 @@
-use std::collections::HashMap;
+use crate::{base_movement::*, chunk::*, chunk_manager::WorldChunks};
 
-use crate::{base_movement::*, chunk::*};
-
-pub fn falling_sand(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32), keep_active: &mut bool, dirty_rect: &mut DirtyRect) -> bool {
+pub fn falling_sand(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut WorldChunks, index: (i32, i32), keep_active: &mut bool, dirty_rect: &mut DirtyRect) -> bool {
 	apply_gravity(f_grid, i, j, chunks, index);
 	if !downward(f_grid, i, j, chunks, index, dirty_rect) {
 		if !apply_velocity(f_grid, i, j, chunks, index, dirty_rect) {
@@ -15,7 +13,7 @@ pub fn falling_sand(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut HashMap<
 	true
 }
 
-pub fn liquid_movement(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32), keep_active: &mut bool, dirty_rect: &mut DirtyRect) -> bool {
+pub fn liquid_movement(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut WorldChunks, index: (i32, i32), keep_active: &mut bool, dirty_rect: &mut DirtyRect) -> bool {
 	apply_gravity(f_grid, i, j, chunks, index);
 
 	if !downward(f_grid, i, j, chunks, index, dirty_rect) {				
@@ -52,7 +50,7 @@ pub fn liquid_movement(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut HashM
 	true
 }
 
-pub fn gas_movement(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32), keep_active: &mut bool, dirty_rect: &mut DirtyRect) -> bool {
+pub fn gas_movement(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut WorldChunks, index: (i32, i32), keep_active: &mut bool, dirty_rect: &mut DirtyRect) -> bool {
 	if !upward(f_grid, i, j, chunks, index, dirty_rect) {
 		if !sideways_gas(f_grid, i, j, 4, chunks, index, dirty_rect) {
 			return false;

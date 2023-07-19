@@ -1,17 +1,15 @@
-use std::collections::HashMap;
-
 use notan::math::Vec2;
 
-use crate::{element::{Cell, State, solid_element}, chunk::{ROWS, COLS, in_bound, Chunk, self, Grid, DirtyRect}};
+use crate::{element::{Cell, State, solid_element}, chunk::{ROWS, COLS, in_bound, self, Grid, DirtyRect}, chunk_manager::WorldChunks};
 
-pub fn downward(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32), dirty_rect: &mut DirtyRect) -> bool {
+pub fn downward(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut WorldChunks, index: (i32, i32), dirty_rect: &mut DirtyRect) -> bool {
 	if get(i as i32, j as i32 + 1, f_grid, chunks, index).density <  f_grid[i][j].density && get(i as i32, j as i32 + 2, f_grid, chunks, index).density >=  f_grid[i][j].density {
 		return swap(f_grid, i, j, i as i32, j as i32 + 1, chunks, index, dirty_rect);
 	}
 	false
 }
 
-pub fn downward_sides(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32), dirty_rect: &mut DirtyRect) -> bool {
+pub fn downward_sides(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut WorldChunks, index: (i32, i32), dirty_rect: &mut DirtyRect) -> bool {
 	let d = f_grid[i][j].density;
 
 	let mut left = get(i as i32 - 1, j as i32 + 1, f_grid, chunks, index).density < d;
@@ -32,7 +30,7 @@ pub fn downward_sides(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut HashMa
 	false
 }
 
-pub fn apply_velocity(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32), dirty_rect: &mut DirtyRect) -> bool {
+pub fn apply_velocity(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut WorldChunks, index: (i32, i32), dirty_rect: &mut DirtyRect) -> bool {
 	let dist = f_grid[i][j].velocity.length();
 
 	if dist < 0.5 {
@@ -81,7 +79,7 @@ pub fn apply_velocity(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut HashMa
 	false
 }
 
-pub fn apply_gravity(future_grid: &mut Grid, i: usize, j: usize, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32)) {
+pub fn apply_gravity(future_grid: &mut Grid, i: usize, j: usize, chunks: &mut WorldChunks, index: (i32, i32)) {
 	let below_element = get(i as i32, j as i32 + 1, future_grid, chunks, index);
 
 	let max_speed = if ROWS > COLS { COLS as f32 } else {ROWS as f32 };
@@ -113,7 +111,7 @@ pub fn apply_gravity(future_grid: &mut Grid, i: usize, j: usize, chunks: &mut Ha
 	}
 }
 
-pub fn upward(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32), dirty_rect: &mut DirtyRect) -> bool {
+pub fn upward(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut WorldChunks, index: (i32, i32), dirty_rect: &mut DirtyRect) -> bool {
 	let cell_to_check = get(i as i32, j as i32 - 1, f_grid, chunks, index);
 	if cell_to_check .density > f_grid[i][j].density && cell_to_check .state == State::Gas {
 		return swap(f_grid, i, j, i as i32, j as i32 - 1, chunks, index, dirty_rect);
@@ -121,7 +119,7 @@ pub fn upward(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut HashMap<(i32, 
 	false
 }
 
-pub fn sideways_gas(f_grid: &mut Grid, i: usize, j: usize, amount: i32, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32), dirty_rect: &mut DirtyRect) -> bool {
+pub fn sideways_gas(f_grid: &mut Grid, i: usize, j: usize, amount: i32, chunks: &mut WorldChunks, index: (i32, i32), dirty_rect: &mut DirtyRect) -> bool {
 	let d = f_grid[i][j].density;
 
 	let left_element = get(i as i32 - 1, j as i32, f_grid, chunks, index);
@@ -158,7 +156,7 @@ pub fn sideways_gas(f_grid: &mut Grid, i: usize, j: usize, amount: i32, chunks: 
 	false
 }
 
-pub fn get(i: i32, j: i32, f_grid: &mut Grid, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32)) -> Cell {
+pub fn get(i: i32, j: i32, f_grid: &mut Grid, chunks: &mut WorldChunks, index: (i32, i32)) -> Cell {
 	if in_bound(i, j) {
 		return f_grid[i as usize][j as usize]
 	} else {
@@ -173,7 +171,7 @@ pub fn get(i: i32, j: i32, f_grid: &mut Grid, chunks: &mut HashMap<(i32, i32), C
 	solid_element()
 }
 
-pub fn swap(grid: &mut Grid, i1: usize, j1: usize, i2: i32, j2: i32, chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32), dirty_rect: &mut DirtyRect) -> bool {
+pub fn swap(grid: &mut Grid, i1: usize, j1: usize, i2: i32, j2: i32, chunks: &mut WorldChunks, index: (i32, i32), dirty_rect: &mut DirtyRect) -> bool {
 	if in_bound(i2, j2) {
 		(grid[i1][j1], grid[i2 as usize][j2 as usize]) = (grid[i2 as usize][j2 as usize], grid[i1][j1]);
 
@@ -215,7 +213,7 @@ pub fn swap(grid: &mut Grid, i1: usize, j1: usize, i2: i32, j2: i32, chunks: &mu
 	false
 }
 
-fn wake_up_chunk(chunks: &mut HashMap<(i32, i32), Chunk>, index: (i32, i32), dir: (i32, i32), dirty_coord: (usize, usize)) {
+fn wake_up_chunk(chunks: &mut WorldChunks, index: (i32, i32), dir: (i32, i32), dirty_coord: (usize, usize)) {
 	if let Some(chunk) = chunks.get_mut(&(index.0 + dir.0, index.1 + dir.1)) {
 		if !chunk.active { 
 			chunk::activate(chunk)

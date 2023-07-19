@@ -6,8 +6,10 @@ use crate::{camera::Camera2D, input_manager::get_mouse_in_world, element::{Cell,
 
 const CHUNK_UPDATE_FPS: f32 = 60.;
 
+pub type WorldChunks = HashMap<(i32, i32), Chunk>;
+
 pub struct ChunkManager {
-	chunks: HashMap<(i32, i32), Chunk>,
+	chunks: WorldChunks,
     pub selected_element: Cell,
     pub modify: bool,
     pub brush_size: i32,
