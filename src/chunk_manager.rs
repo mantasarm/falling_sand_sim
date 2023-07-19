@@ -84,10 +84,12 @@ impl ChunkManager {
 			for i in self.range_x.0..=self.range_x.1 {
 				for j in (self.range_y.0..=self.range_y.1).rev() {
 					let key = &(i, j);
-
-					let mut chunk = self.chunks.remove(key).unwrap();
-					chunk::update_chunk(&mut chunk, &mut self.chunks);
-					self.chunks.insert(key.to_owned(), chunk);
+					
+					if self.chunks.contains_key(key) {
+						let mut chunk = self.chunks.remove(key).unwrap();
+						chunk::update_chunk(&mut chunk, &mut self.chunks);
+						self.chunks.insert(key.to_owned(), chunk);
+					}
 				}
 			}
 			self.update_time = 0.;

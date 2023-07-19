@@ -199,8 +199,9 @@ pub fn swap(grid: &mut Grid, i1: usize, j1: usize, i2: i32, j2: i32, chunks: &mu
 		if chunks.contains_key(&wanted_chunk) {
 			let (x, y) = get_new_element_coord(i2, j2);
 
-			(grid[i1][j1], chunks.get_mut(&wanted_chunk).unwrap().grid[x as usize][y as usize]) = (chunks.get(&wanted_chunk).unwrap().grid[x as usize][y as usize], grid[i1][j1]);
+
 			let chunk = chunks.get_mut(&wanted_chunk).unwrap();
+			(grid[i1][j1], chunk.grid[x as usize][y as usize]) = (chunk.grid[x as usize][y as usize], grid[i1][j1]);
 
 			if !chunk.active {
 				chunk::activate(chunk);

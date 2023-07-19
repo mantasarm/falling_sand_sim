@@ -4,8 +4,8 @@ use notan::{graphics::Texture, draw::{Draw, DrawImages}, prelude::Graphics, math
 
 use crate::{element::*, el_movement::*};
 
-pub const COLS: usize = 256 / 2;
-pub const ROWS: usize = 144 / 2;
+pub const COLS: usize = 256 / 1;
+pub const ROWS: usize = 144 / 1;
 pub const UPSCALE_FACTOR: f32 = 2.;
 
 pub type Grid = Box<[[Cell; ROWS]; COLS]>;
