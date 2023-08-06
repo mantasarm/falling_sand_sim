@@ -6,5 +6,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+ahash = "0.8.3"
 fastrand = "2.0.0"
 notan = { version = "0.9.5", features = ["egui"] }

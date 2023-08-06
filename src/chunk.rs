@@ -1,8 +1,6 @@
-use std::collections::HashMap;
-
 use notan::{graphics::Texture, draw::{Draw, DrawImages}, prelude::Graphics, math::Vec2};
 
-use crate::{element::*, el_movement::*};
+use crate::{element::*, el_movement::*, chunk_manager::WorldChunks};
 
 pub const COLS: usize = 256 / 1;
 pub const ROWS: usize = 144 / 1;
@@ -56,7 +54,7 @@ fn create_cells_array() -> Grid {
     }
 }
 
-pub fn update_chunk(chunk: &mut Chunk, chunks: &mut HashMap<(i32, i32), Chunk>) {
+pub fn update_chunk(chunk: &mut Chunk, chunks: &mut WorldChunks) {
 	if !chunk.active {
 		return;
 	}
@@ -221,7 +219,7 @@ fn update_chunk_tex_data(chunk: &mut Chunk, gfx: &mut Graphics) {
 	}
 }
 
-fn update_byte(chunk: &mut Chunk, i: usize, j: usize, color: &[u8; 4]) {
+pub fn update_byte(chunk: &mut Chunk, i: usize, j: usize, color: &[u8; 4]) {
 	let index = j * COLS + i;
 	chunk.bytes[index * 4..index * 4 + 4].copy_from_slice(color);
 }

@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use ahash::RandomState;
 
 use notan::{prelude::*, draw::*};
 
@@ -6,7 +7,7 @@ use crate::{camera::Camera2D, input_manager::get_mouse_in_world, element::{Cell,
 
 const CHUNK_UPDATE_FPS: f32 = 60.;
 
-pub type WorldChunks = HashMap<(i32, i32), Chunk>;
+pub type WorldChunks = HashMap<(i32, i32), Chunk, RandomState>;
 
 pub struct ChunkManager {
 	chunks: WorldChunks,
@@ -27,7 +28,7 @@ impl ChunkManager {
 		let range_x = (-2, 2);
 		let range_y = (-2, 2);
 
-		let mut chunks = HashMap::new();
+		let mut chunks: WorldChunks = HashMap::default();
 		for i in range_x.0..=range_x.1 {
 			for j in range_y.0..=range_y.1 {
 				chunks.insert((i, j), Chunk::new(i, j, gfx));
