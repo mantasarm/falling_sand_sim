@@ -31,7 +31,11 @@ struct State {
 #[notan_main]
 fn main() -> Result<(), String> {
     notan::init_with(init)
-        .add_config(WindowConfig::new().size(1920, 1080).vsync(false).title("arm'st sandbox").resizable(true).multisampling(0))
+        .add_config(WindowConfig::new()
+                    .set_size(1920, 1080)
+                    .set_vsync(false).set_title("arm'st sandbox")
+                    .set_resizable(false)
+                    .set_multisampling(1))
         .add_config(DrawConfig)
         .add_config(EguiConfig)
         .update(update)
@@ -129,7 +133,10 @@ fn draw(app: &mut App, gfx: &mut Graphics, plugins: &mut Plugins, state: &mut St
                     state.chunk_manager.selected_element = smoke_element();
                 }
                 if ui.button(RichText::new("Steam").color(Color32::from_rgb(143, 159, 234))).clicked() {
-                    state.chunk_manager.selected_element = steam_element();
+                   state.chunk_manager.selected_element = steam_element();
+                }
+                if ui.button(RichText::new("Fire").color(Color32::from_rgb(255, 0, 0))).clicked() {
+                   state.chunk_manager.selected_element = fire_element();
                 }
             });
             ui.add_space(5.);

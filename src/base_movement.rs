@@ -113,7 +113,7 @@ pub fn apply_gravity(future_grid: &mut Grid, i: usize, j: usize, chunks: &mut Wo
 
 pub fn upward(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut WorldChunks, index: (i32, i32), dirty_rect: &mut DirtyRect) -> bool {
 	let cell_to_check = get(i as i32, j as i32 - 1, f_grid, chunks, index);
-	if cell_to_check .density > f_grid[i][j].density && cell_to_check .state == State::Gas {
+	if cell_to_check.density > f_grid[i][j].density && cell_to_check.state == State::Gas {
 		return swap(f_grid, i, j, i as i32, j as i32 - 1, chunks, index, dirty_rect);
 	}
 	false
@@ -173,6 +173,7 @@ pub fn get(i: i32, j: i32, f_grid: &mut Grid, chunks: &mut WorldChunks, index: (
 
 pub fn swap(grid: &mut Grid, i1: usize, j1: usize, i2: i32, j2: i32, chunks: &mut WorldChunks, index: (i32, i32), dirty_rect: &mut DirtyRect) -> bool {
 	if in_bound(i2, j2) {
+		// INFO: Element swap happening inside of the chunk
 		(grid[i1][j1], grid[i2 as usize][j2 as usize]) = (grid[i2 as usize][j2 as usize], grid[i1][j1]);
 
 		dirty_rect.set_temp(i2 as usize, j2 as usize);
@@ -192,6 +193,7 @@ pub fn swap(grid: &mut Grid, i1: usize, j1: usize, i2: i32, j2: i32, chunks: &mu
 
 		return true;
 	} else {
+		// INFO: Element swap happening between two chunks
 		let wanted_chunk = get_wanted_chunk(index, i2, j2);
 		
 		if chunks.contains_key(&wanted_chunk) {
@@ -223,6 +225,7 @@ fn wake_up_chunk(chunks: &mut WorldChunks, index: (i32, i32), dir: (i32, i32), d
 	}
 }
 
+// INFO: Gets the chunk that the element wants to move to
 fn get_wanted_chunk(index: (i32, i32), i2: i32, j2: i32) -> (i32, i32) {
 	let mut wanted_chunk = index;
 	if i2 > COLS as i32 - 1 {
@@ -239,6 +242,7 @@ fn get_wanted_chunk(index: (i32, i32), i2: i32, j2: i32) -> (i32, i32) {
 	wanted_chunk
 }
 
+// INFO: Gets the new element coordinates when swapping is done between chunks
 fn get_new_element_coord(i: i32, j: i32) -> (i32, i32) {
 	let mut x = i;
 	if i < 0 || i >= COLS as i32 {

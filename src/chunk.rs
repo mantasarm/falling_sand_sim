@@ -1,6 +1,6 @@
 use notan::{graphics::Texture, draw::{Draw, DrawImages}, prelude::Graphics, math::Vec2};
 
-use crate::{element::*, el_movement::*, chunk_manager::WorldChunks};
+use crate::{element::*, el_movement::*, chunk_manager::WorldChunks, base_movement::apply_velocity};
 
 pub const COLS: usize = 256 / 1;
 pub const ROWS: usize = 144 / 1;
@@ -26,7 +26,7 @@ impl Chunk {
 
 		let texture = gfx
 			.create_texture()
-			.from_bytes(&bytes, COLS as i32, ROWS as i32)
+			.from_bytes(&bytes, COLS as u32, ROWS as u32)
 			.build()
 			.unwrap();
 
@@ -88,6 +88,33 @@ pub fn update_chunk(chunk: &mut Chunk, chunks: &mut WorldChunks) {
 							update_byte(chunk, i, j, &[0, 0, 0, 0]);
 						}
 					},
+					Element::Fire => 'fire: {
+						// TODO: Make fire prettier
+						// TODO: Make elements flammable
+						// TODO: Dead fire elements sometimes remain on screen
+
+						chunk.future_grid[i][j].lifetime -= fastrand::i32(1..8);
+
+						if chunk.future_grid[i][j].lifetime <= 0 {
+							chunk.future_grid[i][j] = air_element();
+							update_byte(chunk, i, j, &[0, 0, 0, 0]);
+							break 'fire;
+						} else {
+							keep_active = true;
+						}
+
+						if chunk.future_grid[i][j].velocity.y >= -4. {
+							chunk.future_grid[i][j].velocity.y += -0.5;
+
+							chunk.future_grid[i][j].velocity.x += (chunk.future_grid[i][j].lifetime as f32).sin() * 1.07;
+						}
+
+						
+						if apply_velocity(&mut chunk.future_grid, i, j, chunks, chunk.index, &mut chunk.dirty_rect) {
+							update_byte(chunk, i, j, &[0, 0, 0, 0]);
+							keep_active = true;
+						}
+					}
 					_ => ()
 				}
 			}
@@ -215,7 +242,7 @@ fn update_chunk_tex_data(chunk: &mut Chunk, gfx: &mut Graphics) {
     		.update()
     		.unwrap();
 
-			chunk.dirty_tex = false;
+		chunk.dirty_tex = false;
 	}
 }
 

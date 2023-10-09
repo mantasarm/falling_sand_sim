@@ -51,7 +51,15 @@ impl ChunkManager {
 	}
 
 	pub fn update(&mut self, app: &mut App, camera: &Camera2D) {
-	    let mouse_world = get_mouse_in_world(&(app.mouse.x, app.mouse.y), (app.window().width(), app.window().height()), &camera);
+	    let mouse_world = get_mouse_in_world(&(app.mouse.x, app.mouse.y), (app.window().width() as i32, app.window().height() as i32), &camera);
+
+		if app.mouse.is_scrolling() {
+			self.brush_size += app.mouse.wheel_delta.y as i32 / 2;
+
+			if self.brush_size <= 0 {
+				self.brush_size = 1;
+			}
+		}
 
 		for i in self.range_x.0..=self.range_x.1 {
 			for j in (self.range_y.0..=self.range_y.1).rev() {

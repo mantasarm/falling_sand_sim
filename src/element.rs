@@ -7,7 +7,8 @@ pub struct Cell {
 	pub state: State,
 	pub color: [u8; 4],
 	pub velocity: Vec2,
-	pub drag: f32
+	pub drag: f32,
+	pub lifetime: i32
 }
 
 pub fn air_element() -> Cell {
@@ -17,7 +18,8 @@ pub fn air_element() -> Cell {
 		state: State::Gas,
 		color: [0, 0, 0, 0],
 		velocity: Vec2::ZERO,
-		drag: 1.
+		drag: 1.,
+		lifetime: -1
 	}
 }
 
@@ -28,7 +30,8 @@ pub fn solid_element() -> Cell {
 		state: State::Solid,
 		color: [69, 62, 66, 255],
 		velocity: Vec2::ZERO,
-		drag: 0.
+		drag: 0.,
+		lifetime: -1
 	}
 }
 
@@ -39,7 +42,8 @@ pub fn sand_element() -> Cell {
 		state: State::Powder,
 		color: [243, 239, 118, 255],
 		velocity: Vec2::ZERO,
-		drag: 0.9
+		drag: 0.9,
+		lifetime: -1
 	}
 }
 
@@ -50,7 +54,8 @@ pub fn dirt_element() -> Cell {
 		state: State::Powder,
 		color: [76, 57, 32, 255],
 		velocity: Vec2::ZERO,
-		drag: 0.9
+		drag: 0.9,
+		lifetime: -1
 	}
 }
 
@@ -61,7 +66,8 @@ pub fn sawdust_element() -> Cell {
 		state: State::Powder,
 		color: [181, 137, 100, 255],
 		velocity: Vec2::ZERO,
-		drag: 0.9
+		drag: 0.9,
+		lifetime: -1
 	}
 }
 
@@ -72,7 +78,8 @@ pub fn water_element() -> Cell {
 		state:State::Liquid,
 		color: [55, 46, 229, 175],
 		velocity: Vec2::ZERO,
-		drag: 0.8
+		drag: 0.8,
+		lifetime: -1
 	}
 }
 
@@ -83,7 +90,8 @@ pub fn smoke_element() -> Cell {
 		state: State::Gas,
 		color: [42, 42, 42, 220],
 		velocity: Vec2::ZERO,
-		drag: 1.
+		drag: 1.,
+		lifetime: -1
 	}
 }
 
@@ -94,14 +102,27 @@ pub fn steam_element() -> Cell {
 		state: State::Gas,
 		color: [143, 159, 234, 140],
 		velocity: Vec2::ZERO,
-		drag: 1.
+		drag: 1.,
+		lifetime: -1
+	}
+}
+
+pub fn fire_element() -> Cell {
+	Cell {
+		element: Element::Fire,
+		density: 1.,
+		state: State::Gas,
+		color: [255, 0, 0, 230],
+		velocity: Vec2::ZERO,
+		drag: 1.,
+		lifetime: 100
 	}
 }
 
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Element {
-	Air, Solid, Sand, SawDust, Water, Steam, Smoke, Dirt
+	Air, Solid, Sand, SawDust, Water, Steam, Smoke, Dirt, Fire
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
