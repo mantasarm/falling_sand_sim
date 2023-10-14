@@ -58,7 +58,7 @@ pub fn apply_velocity(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut WorldC
 
 		if m == dist.round() as i32 {
 			return swap(f_grid, i, j, dx, dy, chunks, index, dirty_rect);
-		} else if !(get_el.density < d) {
+		} else if !(get_el.density < d) && get_el.state != State::Plasma {
 			if m == 1 {
 				f_grid[i][j].velocity = Vec2::ZERO;
 				return false;
@@ -66,7 +66,6 @@ pub fn apply_velocity(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut WorldC
 			if get_el.state == State::Solid {
 				f_grid[i][j].velocity = Vec2::ZERO;
 			}
-
 			return swap(f_grid, i, j, dx, dy, chunks, index, dirty_rect);
 		} else {
 			let drag = get(x, y, f_grid, chunks, index).drag;
@@ -171,6 +170,19 @@ pub fn get(i: i32, j: i32, f_grid: &mut Grid, chunks: &mut WorldChunks, index: (
 	solid_element()
 }
 
+pub fn set(i: i32, j: i32, f_grid: &mut Grid, chunks: &mut WorldChunks, index: (i32, i32), cell: Cell) {
+	if in_bound(i, j) {
+		f_grid[i as usize][j as usize] = cell;
+	} else {
+		let wanted_chunk = get_wanted_chunk(index, i, j);
+		
+		if chunks.contains_key(&wanted_chunk) {
+			let (x, y) = get_new_element_coord(i, j);
+			chunks.get_mut(&wanted_chunk).unwrap().grid[x as usize][y as usize] = cell;
+		}
+	}
+}
+
 pub fn swap(grid: &mut Grid, i1: usize, j1: usize, i2: i32, j2: i32, chunks: &mut WorldChunks, index: (i32, i32), dirty_rect: &mut DirtyRect) -> bool {
 	if in_bound(i2, j2) {
 		// INFO: Element swap happening inside of the chunk
@@ -226,7 +238,7 @@ fn wake_up_chunk(chunks: &mut WorldChunks, index: (i32, i32), dir: (i32, i32), d
 }
 
 // INFO: Gets the chunk that the element wants to move to
-fn get_wanted_chunk(index: (i32, i32), i2: i32, j2: i32) -> (i32, i32) {
+pub fn get_wanted_chunk(index: (i32, i32), i2: i32, j2: i32) -> (i32, i32) {
 	let mut wanted_chunk = index;
 	if i2 > COLS as i32 - 1 {
 		wanted_chunk.0 += 1;
@@ -243,7 +255,7 @@ fn get_wanted_chunk(index: (i32, i32), i2: i32, j2: i32) -> (i32, i32) {
 }
 
 // INFO: Gets the new element coordinates when swapping is done between chunks
-fn get_new_element_coord(i: i32, j: i32) -> (i32, i32) {
+pub fn get_new_element_coord(i: i32, j: i32) -> (i32, i32) {
 	let mut x = i;
 	if i < 0 || i >= COLS as i32 {
 		x = i - COLS as i32;

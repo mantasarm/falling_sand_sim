@@ -1,6 +1,6 @@
 use notan::{graphics::Texture, draw::{Draw, DrawImages}, prelude::Graphics, math::Vec2};
 
-use crate::{element::*, el_movement::*, chunk_manager::WorldChunks, base_movement::apply_velocity};
+use crate::{element::*, el_movement::*, chunk_manager::WorldChunks, element_actions::handle_actions};
 
 pub const COLS: usize = 256 / 1;
 pub const ROWS: usize = 144 / 1;
@@ -73,7 +73,13 @@ pub fn update_chunk(chunk: &mut Chunk, chunks: &mut WorldChunks) {
 
 			if chunk.grid[i][j].element == chunk.future_grid[i][j].element {
 				match chunk.grid[i][j].element {
-					Element::Sand | Element::SawDust | Element::Dirt => {
+					Element::Sand | Element::Dirt => {
+						if falling_sand(&mut chunk.future_grid, i, j, chunks, chunk.index, &mut keep_active, &mut chunk.dirty_rect) {
+							update_byte(chunk, i, j, &[0, 0, 0, 0]);
+						}
+					},
+					Element::SawDust => {
+						handle_actions(&mut chunk.future_grid, i, j, chunks, chunk.index, &mut keep_active, &mut chunk.dirty_rect);
 						if falling_sand(&mut chunk.future_grid, i, j, chunks, chunk.index, &mut keep_active, &mut chunk.dirty_rect) {
 							update_byte(chunk, i, j, &[0, 0, 0, 0]);
 						}
@@ -88,33 +94,12 @@ pub fn update_chunk(chunk: &mut Chunk, chunks: &mut WorldChunks) {
 							update_byte(chunk, i, j, &[0, 0, 0, 0]);
 						}
 					},
-					Element::Fire => 'fire: {
-						// TODO: Make fire prettier
-						// TODO: Make elements flammable
-						// TODO: Dead fire elements sometimes remain on screen
-
-						chunk.future_grid[i][j].lifetime -= fastrand::i32(1..8);
-
-						if chunk.future_grid[i][j].lifetime <= 0 {
-							chunk.future_grid[i][j] = air_element();
+					Element::Fire => {
+						if fire_movement(&mut chunk.future_grid, i, j, chunks, chunk.index, &mut keep_active, &mut chunk.dirty_rect) {
 							update_byte(chunk, i, j, &[0, 0, 0, 0]);
-							break 'fire;
-						} else {
-							keep_active = true;
 						}
-
-						if chunk.future_grid[i][j].velocity.y >= -4. {
-							chunk.future_grid[i][j].velocity.y += -0.5;
-
-							chunk.future_grid[i][j].velocity.x += (chunk.future_grid[i][j].lifetime as f32).sin() * 1.07;
-						}
-
-						
-						if apply_velocity(&mut chunk.future_grid, i, j, chunks, chunk.index, &mut chunk.dirty_rect) {
-							update_byte(chunk, i, j, &[0, 0, 0, 0]);
-							keep_active = true;
-						}
-					}
+					},
+					Element::Wood => handle_actions(&mut chunk.future_grid, i, j, chunks, chunk.index, &mut keep_active, &mut chunk.dirty_rect),
 					_ => ()
 				}
 			}

@@ -5,6 +5,7 @@ pub mod camera;
 pub mod input_manager;
 pub mod chunk_manager;
 pub mod el_movement;
+pub mod element_actions;
 
 use camera::Camera2D;
 use chunk::{UPSCALE_FACTOR, ROWS, COLS};
@@ -35,7 +36,8 @@ fn main() -> Result<(), String> {
                     .set_size(1920, 1080)
                     .set_vsync(false).set_title("arm'st sandbox")
                     .set_resizable(false)
-                    .set_multisampling(1))
+                    .set_multisampling(0)
+                    .set_high_dpi(true))
         .add_config(DrawConfig)
         .add_config(EguiConfig)
         .update(update)
@@ -44,6 +46,11 @@ fn main() -> Result<(), String> {
 }
 
 fn init(app: &mut App, gfx: &mut Graphics) -> State {
+    let screen_size = app.window().container_size();
+    let window_size = app.window().size();
+    let dpi = app.window().dpi();
+    app.window().set_position((((screen_size.0 as f64 - window_size.0 as f64) / 2.) * dpi) as i32, (((screen_size.1 as f64 - window_size.1 as f64) / 2.) * dpi) as i32);
+
     State {
         chunk_manager: ChunkManager::new(gfx),
         editor_open: true,
@@ -123,6 +130,9 @@ fn draw(app: &mut App, gfx: &mut Graphics, plugins: &mut Plugins, state: &mut St
                 if ui.button(RichText::new("Dirt").color(Color32::from_rgb(136, 107, 82))).clicked() {
                     state.chunk_manager.selected_element = dirt_element();
                 }
+                if ui.button(RichText::new("Wood").color(Color32::from_rgb(111, 83, 57))).clicked() {
+                    state.chunk_manager.selected_element = wood_element();
+                }
                 if ui.button(RichText::new("SawDust").color(Color32::from_rgb(181, 137, 100))).clicked() {
                     state.chunk_manager.selected_element = sawdust_element();
                 }
@@ -165,12 +175,14 @@ fn draw(app: &mut App, gfx: &mut Graphics, plugins: &mut Plugins, state: &mut St
 
             ui.label(RichText::new("Mouse is on: ").color(Color32::from_rgb(180, 180, 180)));
             ui.label("Cell {");
-            ui.label(format!("    element: {:?} ",state.chunk_manager.hovering_cell.element));
+            ui.label(format!("    element: {:?} ", state.chunk_manager.hovering_cell.element));
+            ui.label(format!("    action: {:?} ", state.chunk_manager.hovering_cell.action));
             ui.label(format!("    state: {:?}", state.chunk_manager.hovering_cell.state));
             ui.label(format!("    velocity: Vec2({:.2}, {:.2})", state.chunk_manager.hovering_cell.velocity.x, state.chunk_manager.hovering_cell.velocity.y));
             ui.label(format!("    density: {:?}", state.chunk_manager.hovering_cell.density));
             ui.label(format!("    drag: {:?}", state.chunk_manager.hovering_cell.drag));
             ui.label(format!("    color: {:?}", state.chunk_manager.hovering_cell.color));
+            ui.label(format!("    lifetime: {:?}", state.chunk_manager.hovering_cell.lifetime));
             ui.label("}");
         });
         

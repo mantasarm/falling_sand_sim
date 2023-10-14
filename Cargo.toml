@@ -8,4 +8,4 @@ edition = "2021"
 [dependencies]
 ahash = "0.8.3"
 fastrand = "2.0.0"
-notan = { version = "0.10.0", features = ["egui"] }
+notan = { git = "https://github.com/Nazariglez/notan.git", branch = "develop", features = ["egui"] }

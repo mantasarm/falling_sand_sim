@@ -1,4 +1,4 @@
-use crate::{base_movement::*, chunk::*, chunk_manager::WorldChunks};
+use crate::{base_movement::*, chunk::*, chunk_manager::WorldChunks, element_actions::{set_action, is_flammable}, element::{Action, air_element}};
 
 pub fn falling_sand(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut WorldChunks, index: (i32, i32), keep_active: &mut bool, dirty_rect: &mut DirtyRect) -> bool {
 	apply_gravity(f_grid, i, j, chunks, index);
@@ -58,4 +58,42 @@ pub fn gas_movement(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut WorldChu
 	}
 	*keep_active = true;
 	true
+}
+
+pub fn fire_movement(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut WorldChunks, index: (i32, i32), keep_active: &mut bool, dirty_rect: &mut DirtyRect) -> bool {
+	let rand =  fastrand::i32(2..8);
+	f_grid[i][j].lifetime -= rand;
+
+	if f_grid[i][j].lifetime <= 0 {
+		f_grid[i][j] = air_element();
+		*keep_active = true;
+		dirty_rect.set_temp(i, j);
+		return false;
+	}
+
+	if f_grid[i][j].velocity.y >= -4. {
+		f_grid[i][j].velocity.y += -0.5;
+	}
+	f_grid[i][j].velocity.x += (f_grid[i][j].lifetime as f32).sin() * 1.1;
+
+	f_grid[i][j].color[1] = (f_grid[i][j].color[1] as f32 - (rand as f32).powf(2.) * 0.3).clamp(0., 200.) as u8;
+	f_grid[i][j].color[3] = (f_grid[i][j].color[3] as f32 - (rand as f32).powf(2.)).clamp(220., 255.) as u8;
+
+	if is_flammable(&get(i as i32, j as i32 - 1, f_grid, chunks, index)) {
+		set_action(i as i32, j as i32 - 1, f_grid, chunks, index, Some(Action::Burn));
+	}
+	if is_flammable(&get(i as i32, j as i32 + 1, f_grid, chunks, index)) {
+		set_action(i as i32, j as i32 + 1, f_grid, chunks, index, Some(Action::Burn));
+	}
+	if is_flammable(&get(i as i32 - 1, j as i32, f_grid, chunks, index)) {
+		set_action(i as i32 - 1, j as i32, f_grid, chunks, index, Some(Action::Burn));
+	}
+	if is_flammable(&get(i as i32 + 1, j as i32, f_grid, chunks, index)) {
+		set_action(i as i32 + 1, j as i32, f_grid, chunks, index, Some(Action::Burn));
+	}
+	
+	if apply_velocity(f_grid, i, j, chunks, index, dirty_rect) {
+		*keep_active = true;
+	}
+	return true;
 }

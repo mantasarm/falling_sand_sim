@@ -54,7 +54,7 @@ impl ChunkManager {
 	    let mouse_world = get_mouse_in_world(&(app.mouse.x, app.mouse.y), (app.window().width() as i32, app.window().height() as i32), &camera);
 
 		if app.mouse.is_scrolling() {
-			self.brush_size += app.mouse.wheel_delta.y as i32 / 2;
+			self.brush_size += app.mouse.wheel_delta.y as i32 / 6;
 
 			if self.brush_size <= 0 {
 				self.brush_size = 1;
@@ -135,7 +135,7 @@ impl ChunkManager {
 								        (chunk.dirty_rect.max_xy.1 - chunk.dirty_rect.min_xy.1) as f32 * UPSCALE_FACTOR))
 						.fill_color(Color::from_rgba(0., 0., 0., 0.))
 						.stroke_color(Color::BLUE)
-						.stroke(0.5);
+						.stroke(1.);
 				}
 			}
 		}
