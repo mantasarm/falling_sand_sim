@@ -135,7 +135,7 @@ pub fn fire_element() -> Cell {
 		element: Element::Fire,
 		action: None,
 		density: 1.,
-		state: State::Gas,
+		state: State::Plasma,
 		color: [255, 170, 0, 220],
 		velocity: Vec2::ZERO,
 		drag: 1.,
