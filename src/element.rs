@@ -51,6 +51,19 @@ pub fn wood_element() -> Cell {
 	}
 }
 
+pub fn coal_element() -> Cell {
+	Cell {
+		element: Element::Coal,
+		action: None,
+		density: 100.,
+		state: State::Solid,
+		color: [42, 42, 42, 255],
+		velocity: Vec2::ZERO,
+		drag: 0.,
+		lifetime: -1
+	}
+}
+
 pub fn sand_element() -> Cell {
 	Cell {
 		element: Element::Sand,
@@ -146,7 +159,7 @@ pub fn fire_element() -> Cell {
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Element {
-	Air, Solid, Sand, SawDust, Water, Steam, Smoke, Dirt, Fire, Wood
+	Air, Solid, Sand, SawDust, Water, Steam, Smoke, Dirt, Fire, Wood, Coal
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]

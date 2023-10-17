@@ -99,7 +99,7 @@ pub fn update_chunk(chunk: &mut Chunk, chunks: &mut WorldChunks) {
 							update_byte(chunk, i, j, &[0, 0, 0, 0]);
 						}
 					},
-					Element::Wood => handle_actions(&mut chunk.future_grid, i, j, chunks, chunk.index, &mut keep_active, &mut chunk.dirty_rect),
+					Element::Wood | Element::Coal => handle_actions(&mut chunk.future_grid, i, j, chunks, chunk.index, &mut keep_active, &mut chunk.dirty_rect),
 					_ => ()
 				}
 			}

@@ -130,6 +130,9 @@ fn draw(app: &mut App, gfx: &mut Graphics, plugins: &mut Plugins, state: &mut St
                 if ui.button(RichText::new("Dirt").color(Color32::from_rgb(136, 107, 82))).clicked() {
                     state.chunk_manager.selected_element = dirt_element();
                 }
+                if ui.button(RichText::new("Coal").color(Color32::from_rgb(130, 130, 130))).clicked() {
+                    state.chunk_manager.selected_element = coal_element();
+                }
                 if ui.button(RichText::new("Wood").color(Color32::from_rgb(111, 83, 57))).clicked() {
                     state.chunk_manager.selected_element = wood_element();
                 }

@@ -6,7 +6,7 @@ pub fn handle_actions(future_grid: &mut Grid, i: usize, j: usize, chunks: &mut W
             match action {
                 Action::Burn => {
                     if future_grid[i][j].lifetime == -1 {
-                        future_grid[i][j].lifetime = 400;
+                        future_grid[i][j].lifetime = get_flammable_lifetime(&future_grid[i][j].element);
                         future_grid[i][j].color[0] = future_grid[i][j].color[0] / 2;
                         future_grid[i][j].color[1] = future_grid[i][j].color[1] / 2;
                         future_grid[i][j].color[2] = future_grid[i][j].color[2] / 2;
@@ -49,8 +49,17 @@ pub fn handle_actions(future_grid: &mut Grid, i: usize, j: usize, chunks: &mut W
 
 pub fn is_flammable(cell: &Cell) -> bool {
     match cell.element {
-        Element::Wood | Element::SawDust => true,
+        Element::Wood | Element::SawDust | Element::Coal => true,
         _ => false
+    }
+}
+
+pub fn get_flammable_lifetime(element: &Element) -> i32 {
+    match element {
+        Element::Wood => 300,
+        Element::Coal => 400,
+        Element::SawDust => 215,
+        _ => 0
     }
 }
 
