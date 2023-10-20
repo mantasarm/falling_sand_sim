@@ -20,7 +20,8 @@ pub struct ChunkManager {
 	pub hovering_cell: Cell,
 	pub update_time: f32,
 	pub replace_air: bool,
-	font: Font
+	font: Font,
+	chunk_frame_count: u128
 }
 
 impl ChunkManager {
@@ -46,7 +47,8 @@ impl ChunkManager {
 			hovering_cell: sand_element(),
 			update_time: 0.,
 			replace_air: true,
-			font: gfx.create_font(include_bytes!("assets/UbuntuMono.ttf")).unwrap()
+			font: gfx.create_font(include_bytes!("assets/UbuntuMono.ttf")).unwrap(),
+			chunk_frame_count: 0
 		}
 	}
 
@@ -93,17 +95,21 @@ impl ChunkManager {
 		self.update_time += app.timer.delta_f32();
 		if self.update_time >= 1. / CHUNK_UPDATE_FPS && self.update_chunks {
 			for i in self.range_x.0..=self.range_x.1 {
-				for j in (self.range_y.0..=self.range_y.1).rev() {
-					let key = &(i, j);
-					
-					if self.chunks.contains_key(key) {
-						let mut chunk = self.chunks.remove(key).unwrap();
+				for j in self.range_y.0..=self.range_y.1 {
+					let mut key = (i, j);
+					if self.chunk_frame_count % 2 == 0 {
+						key.0 = self.range_x.1 - i + self.range_x.0;
+						key.1 = self.range_y.1 - j + self.range_y.0;
+					}
+					if self.chunks.contains_key(&key) {
+						let mut chunk = self.chunks.remove(&key).unwrap();
 						chunk::update_chunk(&mut chunk, &mut self.chunks);
 						self.chunks.insert(key.to_owned(), chunk);
 					}
 				}
 			}
 			self.update_time = 0.;
+			self.chunk_frame_count += 1;
 		}
 	}
 

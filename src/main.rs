@@ -26,7 +26,9 @@ struct State {
     debug_window: bool,
     debug_render: bool,
     debug_chunk_coords: bool,
-    debug_dirty_rects: bool
+    debug_dirty_rects: bool,
+    sky_color: [u8; 3],
+    sky_editor: bool
 }
 
 #[notan_main]
@@ -60,7 +62,9 @@ fn init(app: &mut App, gfx: &mut Graphics) -> State {
         debug_window: false,
         debug_render: false,
         debug_chunk_coords: true,
-        debug_dirty_rects: false
+        debug_dirty_rects: false,
+        sky_color: [70, 35, 70],
+        sky_editor: false
     }
 }
 
@@ -69,6 +73,9 @@ fn update(app: &mut App, state: &mut State) {
 
     if app.keyboard.was_pressed(KeyCode::R) {
         state.editor_open = !state.editor_open;
+    }
+    if app.keyboard.was_pressed(KeyCode::Y) {
+        state.sky_editor = !state.sky_editor;
     }
     if app.keyboard.was_pressed(KeyCode::Space) {
         state.chunk_manager.update_chunks = !state.chunk_manager.update_chunks;
@@ -91,7 +98,10 @@ fn draw(app: &mut App, gfx: &mut Graphics, plugins: &mut Plugins, state: &mut St
     let mut render_draw = gfx.create_draw();
     render_draw.clear(Color::BLACK);
 
-    render_draw.image(&state.sky_gradient).position(0., 0.).size(app.window().width() as f32, app.window().height() as f32);
+    render_draw.image(&state.sky_gradient)
+                .position(0., 0.)
+                .size(app.window().width() as f32, app.window().height() as f32)
+                .color(Color::from_bytes(state.sky_color[0], state.sky_color[1], state.sky_color[2], 255));
 
     state.camera.apply(&mut render_draw);
 
@@ -159,6 +169,7 @@ fn draw(app: &mut App, gfx: &mut Graphics, plugins: &mut Plugins, state: &mut St
             ui.checkbox(&mut state.chunk_manager.replace_air, "Replace only air");
             ui.checkbox(&mut state.chunk_manager.update_chunks, "Update");
 
+            ui.label("Press Y to modify sky color");
             ui.label("Press T for debug info");
         });
 
@@ -187,6 +198,12 @@ fn draw(app: &mut App, gfx: &mut Graphics, plugins: &mut Plugins, state: &mut St
             ui.label(format!("    color: {:?}", state.chunk_manager.hovering_cell.color));
             ui.label(format!("    lifetime: {:?}", state.chunk_manager.hovering_cell.lifetime));
             ui.label("}");
+        });
+
+        Window::new("Sky color").resizable(false).collapsible(true).open(&mut state.sky_editor).show(ctx, |ui| {
+            ui.add(Slider::new(&mut state.sky_color[0], 0..=255).clamp_to_range(true).prefix("r: "));
+            ui.add(Slider::new(&mut state.sky_color[1], 0..=255).clamp_to_range(true).prefix("g: "));
+            ui.add(Slider::new(&mut state.sky_color[2], 0..=255).clamp_to_range(true).prefix("b: "));
         });
         
         if !state.editor_open {
