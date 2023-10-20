@@ -1,6 +1,20 @@
 # falling_sand_sim
 WIP falling sand simulation made with rust and notan. Currently trying to make this my best attempt at it.
 
+Completed tasks:
+* Base physics
+* Basic elements
+* Chunking system
+* Dirty rectangle system
+* Other optimizations (such as disabling and enabling chunks)
+
+TODO:
+* Multithreading
+* Integration with rapier2d for rigid body simulation
+
+Progression:
+
+
 ![image](https://user-images.githubusercontent.com/34283640/223518969-e1f044ed-4f9c-4374-8873-0aaf70f6571e.png)
 
 
