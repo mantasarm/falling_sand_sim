@@ -11,6 +11,7 @@ Completed tasks:
 TODO:
 * Multithreading
 * Integration with rapier2d for rigid body simulation
+* Serialization of chunks
 
 Progression:
 
