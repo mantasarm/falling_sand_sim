@@ -1,17 +1,18 @@
-use crate::{element::{Cell, Element, Action, air_element, fire_element}, chunk::{Grid, in_bound, DirtyRect}, chunk_manager::WorldChunks, base_movement::{get_wanted_chunk, get_new_element_coord, set, get}};
+use crate::{element::{Cell, Element, Action, air_element, fire_element, smoke_element}, chunk::{Grid, in_bound, DirtyRect}, chunk_manager::WorldChunks, base_movement::{get_wanted_chunk, get_new_element_coord, set, get}};
 
 pub fn handle_actions(future_grid: &mut Grid, i: usize, j: usize, chunks: &mut WorldChunks, index: (i32, i32), keep_active: &mut bool, dirty_rect: &mut DirtyRect) {
     match future_grid[i][j].action {
         Some(action) => 'action: {
             match action {
                 Action::Burn => {
+                    let (lifetime, burn_element) = get_flammable_info(&future_grid[i][j].element);
                     if future_grid[i][j].lifetime == -1 {
-                        future_grid[i][j].lifetime = get_flammable_lifetime(&future_grid[i][j].element);
+                        future_grid[i][j].lifetime = lifetime;
                         future_grid[i][j].color[0] = future_grid[i][j].color[0] / 2;
                         future_grid[i][j].color[1] = future_grid[i][j].color[1] / 2;
                         future_grid[i][j].color[2] = future_grid[i][j].color[2] / 2;
                     } else if future_grid[i][j].lifetime < 0 {
-                        future_grid[i][j] = air_element();
+                        future_grid[i][j] = burn_element;
                         break 'action;
                     }
 
@@ -54,12 +55,12 @@ pub fn is_flammable(cell: &Cell) -> bool {
     }
 }
 
-pub fn get_flammable_lifetime(element: &Element) -> i32 {
+pub fn get_flammable_info(element: &Element) -> (i32, Cell) {
     match element {
-        Element::Wood => 300,
-        Element::Coal => 400,
-        Element::SawDust => 215,
-        _ => 0
+        Element::Wood => (300, smoke_element()),
+        Element::Coal => (400, air_element()),
+        Element::SawDust => (215, air_element()),
+        _ => (0, air_element())
     }
 }
 

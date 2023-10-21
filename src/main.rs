@@ -35,7 +35,7 @@ struct State {
 fn main() -> Result<(), String> {
     notan::init_with(init)
         .add_config(WindowConfig::new()
-                    .set_size(1920, 1080)
+                    .set_size(1920, 1080).set_fullscreen(false)
                     .set_vsync(false).set_title("arm'st sandbox")
                     .set_resizable(false)
                     .set_multisampling(0)
@@ -120,9 +120,9 @@ fn draw(app: &mut App, gfx: &mut Graphics, plugins: &mut Plugins, state: &mut St
         visuals.window_shadow = Shadow::NONE;
         ctx.set_visuals(visuals);
 
-        Window::new("Editor").resizable(false).collapsible(true).title_bar(true).open(&mut state.editor_open).show(ctx, |ui| {
-            state.chunk_manager.modify = !ctx.is_pointer_over_area();
+        state.chunk_manager.modify = !ctx.is_pointer_over_area();
 
+        Window::new("Editor").resizable(false).collapsible(true).title_bar(true).open(&mut state.editor_open).show(ctx, |ui| {
             ui.label(format!("fps: {}", app.timer.fps().round()));
 
             ui.add_space(5.);
@@ -174,10 +174,6 @@ fn draw(app: &mut App, gfx: &mut Graphics, plugins: &mut Plugins, state: &mut St
         });
 
         Window::new("Debug window").resizable(false).collapsible(true).title_bar(true).open(&mut state.debug_window).show(ctx, |ui| {
-            if ctx.is_pointer_over_area() {
-                state.chunk_manager.modify = false;
-            }
-
             if !state.editor_open {
                 ui.label(format!("fps: {}", app.timer.fps().round()));
             }
@@ -205,10 +201,6 @@ fn draw(app: &mut App, gfx: &mut Graphics, plugins: &mut Plugins, state: &mut St
             ui.add(Slider::new(&mut state.sky_color[1], 0..=255).clamp_to_range(true).prefix("g: "));
             ui.add(Slider::new(&mut state.sky_color[2], 0..=255).clamp_to_range(true).prefix("b: "));
         });
-        
-        if !state.editor_open {
-            state.chunk_manager.modify = true;
-        }
     });
 
     gfx.render(&output);
