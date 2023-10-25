@@ -110,51 +110,6 @@ pub fn apply_gravity(future_grid: &mut Grid, i: usize, j: usize, chunks: &mut Wo
 	}
 }
 
-pub fn upward(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut WorldChunks, index: (i32, i32), dirty_rect: &mut DirtyRect) -> bool {
-	let cell_to_check = get(i as i32, j as i32 - 1, f_grid, chunks, index);
-	if cell_to_check.density > f_grid[i][j].density && cell_to_check.state == State::Gas {
-		return swap(f_grid, i, j, i as i32, j as i32 - 1, chunks, index, dirty_rect);
-	}
-	false
-}
-
-pub fn sideways_gas(f_grid: &mut Grid, i: usize, j: usize, amount: i32, chunks: &mut WorldChunks, index: (i32, i32), dirty_rect: &mut DirtyRect) -> bool {
-	let d = f_grid[i][j].density;
-
-	let left_element = get(i as i32 - 1, j as i32, f_grid, chunks, index);
-	let right_element = get(i as i32 + 1, j as i32, f_grid, chunks, index);
-	let dir = if left_element.density > d && left_element.state == State::Gas && right_element.density > d && right_element.state == State::Gas {
-		if fastrand::bool() {
-			1
-		} else {
-			-1
-		}
-	} else if left_element.density > d && left_element.state == State::Gas {
-		-1
-	} else if right_element.density > d && right_element.state == State::Gas {
-		1
-	} else {
-		0
-	};
-
-	if dir == 0 {
-		return false
-	}
-
-	let (mut dx, mut dy) = (i as i32 + dir, j as i32);
-	for x in 1..=amount {
-		let el = get(i as i32 + x * dir, j as i32, f_grid, chunks, index);
-		
-		if x == amount {
-			return swap(f_grid, i, j, dx, dy, chunks, index, dirty_rect);
-		} else if !(el.density > d && el.state == State::Gas) {
-			return swap(f_grid, i, j, dx, dy, chunks, index, dirty_rect);
-		}
-		(dx, dy) = (i as i32 + x * dir, j as i32)
-	}
-	false
-}
-
 pub fn get(i: i32, j: i32, f_grid: &mut Grid, chunks: &mut WorldChunks, index: (i32, i32)) -> Cell {
 	if in_bound(i, j) {
 		return f_grid[i as usize][j as usize]
@@ -217,6 +172,7 @@ pub fn swap(grid: &mut Grid, i1: usize, j1: usize, i2: i32, j2: i32, chunks: &mu
 
 			if !chunk.active {
 				chunk::activate(chunk);
+				chunk.dirty_rect.set_temp(x as usize, y as usize);
 			} else {
 				chunk.dirty_rect.set_temp(x as usize, y as usize);
 			}

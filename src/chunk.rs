@@ -89,7 +89,7 @@ pub fn update_chunk(chunk: &mut Chunk, chunks: &mut WorldChunks) {
 							update_byte(chunk, i, j, &[0, 0, 0, 0]);
 						}
 					},
-					Element::Smoke | Element::Steam => {
+					Element::Steam | Element::Smoke => {
 						if gas_movement(&mut chunk.future_grid, i, j, chunks, chunk.index, &mut keep_active, &mut chunk.dirty_rect) {
 							update_byte(chunk, i, j, &[0, 0, 0, 0]);
 						}

@@ -51,30 +51,53 @@ pub fn liquid_movement(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut World
 }
 
 pub fn gas_movement(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut WorldChunks, index: (i32, i32), keep_active: &mut bool, dirty_rect: &mut DirtyRect) -> bool {
-	if !upward(f_grid, i, j, chunks, index, dirty_rect) {
-		if !sideways_gas(f_grid, i, j, 4, chunks, index, dirty_rect) {
-			return false;
+	let up_density = get(i as i32, j as i32 - 1, f_grid, chunks, index).density;
+
+	if f_grid[i][j].velocity.y > -1.75 && up_density < f_grid[i][j].density {
+		f_grid[i][j].velocity.y += -0.5;
+	} else if up_density >= f_grid[i][j].density {
+		let mut left = get(i as i32 - 1, j as i32, f_grid, chunks, index).density < f_grid[i][j].density;
+		let mut right = get(i as i32 + 1, j as i32, f_grid, chunks, index).density < f_grid[i][j].density;
+	
+		if left && right {
+			let rand = fastrand::bool();
+			left = if rand { true } else { false };
+			right = if rand { false } else { true };
+		}
+
+		if right {
+			f_grid[i][j].velocity.x = f_grid[i][j].velocity.x + 1.1;
+		} else if left {
+			f_grid[i][j].velocity.x = f_grid[i][j].velocity.x - 1.1;
 		}
 	}
-	*keep_active = true;
-	true
+
+	if apply_velocity(f_grid, i, j, chunks, index, dirty_rect) {
+		*keep_active = true;
+		dirty_rect.set_temp(i, j);
+
+		return true;
+	}
+
+	false
 }
 
 pub fn fire_movement(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut WorldChunks, index: (i32, i32), keep_active: &mut bool, dirty_rect: &mut DirtyRect) -> bool {
 	let rand =  fastrand::i32(2..8);
 	f_grid[i][j].lifetime -= rand;
 
+	*keep_active = true;
+	dirty_rect.set_temp(i, j);
+
 	if f_grid[i][j].lifetime <= 0 {
 		f_grid[i][j] = air_element();
-		*keep_active = true;
-		dirty_rect.set_temp(i, j);
 		return false;
 	}
 
 	if f_grid[i][j].velocity.y >= -4. {
 		f_grid[i][j].velocity.y += -0.5;
 	}
-	f_grid[i][j].velocity.x += (f_grid[i][j].lifetime as f32).sin() * 1.1;
+	f_grid[i][j].velocity.x += ((f_grid[i][j].lifetime as f32).sin() * 1.075).clamp(-1.5, 1.5);
 
 	f_grid[i][j].color[1] = (f_grid[i][j].color[1] as f32 - (rand as f32).powf(2.) * 0.3).clamp(0., 200.) as u8;
 	f_grid[i][j].color[3] = (f_grid[i][j].color[3] as f32 - (rand as f32).powf(2.)).clamp(220., 255.) as u8;
@@ -92,8 +115,7 @@ pub fn fire_movement(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut WorldCh
 		set_action(i as i32 + 1, j as i32, f_grid, chunks, index, Some(Action::Burn));
 	}
 	
-	if apply_velocity(f_grid, i, j, chunks, index, dirty_rect) {
-		*keep_active = true;
-	}
+	apply_velocity(f_grid, i, j, chunks, index, dirty_rect);
+
 	return true;
 }

@@ -120,7 +120,7 @@ pub fn smoke_element() -> Cell {
 	Cell {
 		element: Element::Smoke,
 		action: None,
-		density: -20.,
+		density: 3.,
 		state: State::Gas,
 		color: [42, 42, 42, 220],
 		velocity: Vec2::ZERO,
@@ -133,7 +133,7 @@ pub fn steam_element() -> Cell {
 	Cell {
 		element: Element::Steam,
 		action: None,
-		density: -10.,
+		density: 2.,
 		state: State::Gas,
 		color: [143, 159, 234, 140],
 		velocity: Vec2::ZERO,

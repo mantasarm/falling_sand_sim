@@ -1,4 +1,4 @@
-use crate::{element::{Cell, Element, Action, air_element, fire_element, smoke_element}, chunk::{Grid, in_bound, DirtyRect}, chunk_manager::WorldChunks, base_movement::{get_wanted_chunk, get_new_element_coord, set, get}};
+use crate::{element::*, chunk::{Grid, in_bound, DirtyRect}, chunk_manager::WorldChunks, base_movement::{get_wanted_chunk, get_new_element_coord, set, get}};
 
 pub fn handle_actions(future_grid: &mut Grid, i: usize, j: usize, chunks: &mut WorldChunks, index: (i32, i32), keep_active: &mut bool, dirty_rect: &mut DirtyRect) {
     match future_grid[i][j].action {
@@ -57,8 +57,8 @@ pub fn is_flammable(cell: &Cell) -> bool {
 
 pub fn get_flammable_info(element: &Element) -> (i32, Cell) {
     match element {
-        Element::Wood => (300, smoke_element()),
-        Element::Coal => (400, air_element()),
+        Element::Wood => (300, air_element()),
+        Element::Coal => (400, smoke_element()),
         Element::SawDust => (215, air_element()),
         _ => (0, air_element())
     }
