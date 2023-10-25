@@ -9,6 +9,7 @@ Completed tasks:
 * Other optimizations (such as disabling and enabling chunks)
 
 TODO:
+* Bug fixes and code clean up
 * Multithreading
 * Integration with rapier2d for rigid body simulation
 * Serialization of chunks
