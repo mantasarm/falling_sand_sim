@@ -1,5 +1,6 @@
 use crate::{base_movement::*, chunk::*, chunk_manager::WorldChunks, element_actions::{set_action, is_flammable}, element::{Action, air_element}};
 
+#[inline]
 pub fn falling_sand(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut WorldChunks, index: (i32, i32), keep_active: &mut bool, dirty_rect: &mut DirtyRect) -> bool {
 	apply_gravity(f_grid, i, j, chunks, index);
 	if !downward(f_grid, i, j, chunks, index, dirty_rect) {
@@ -13,6 +14,7 @@ pub fn falling_sand(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut WorldChu
 	true
 }
 
+#[inline]
 pub fn liquid_movement(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut WorldChunks, index: (i32, i32), keep_active: &mut bool, dirty_rect: &mut DirtyRect) -> bool {
 	apply_gravity(f_grid, i, j, chunks, index);
 
@@ -51,6 +53,7 @@ pub fn liquid_movement(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut World
 }
 
 // TODO: fix weird interaction between different gasses
+#[inline]
 pub fn gas_movement(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut WorldChunks, index: (i32, i32), keep_active: &mut bool, dirty_rect: &mut DirtyRect) -> bool {
 	let up_density = get(i as i32, j as i32 - 1, f_grid, chunks, index).density;
 
@@ -88,6 +91,7 @@ pub fn gas_movement(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut WorldChu
 	false
 }
 
+#[inline]
 pub fn fire_movement(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut WorldChunks, index: (i32, i32), keep_active: &mut bool, dirty_rect: &mut DirtyRect) -> bool {
 	let rand =  fastrand::i32(2..8);
 	f_grid[i][j].lifetime -= rand;
