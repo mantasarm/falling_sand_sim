@@ -8,9 +8,9 @@ pub fn handle_actions(future_grid: &mut Grid, i: usize, j: usize, chunks: &mut W
                     let (lifetime, burn_element) = get_flammable_info(&future_grid[i][j].element);
                     if future_grid[i][j].lifetime == -1 {
                         future_grid[i][j].lifetime = lifetime;
-                        future_grid[i][j].color[0] = future_grid[i][j].color[0] / 2;
-                        future_grid[i][j].color[1] = future_grid[i][j].color[1] / 2;
-                        future_grid[i][j].color[2] = future_grid[i][j].color[2] / 2;
+                        future_grid[i][j].color[0] /= 2;
+                        future_grid[i][j].color[1] /= 2;
+                        future_grid[i][j].color[2] /= 2;
                     } else if future_grid[i][j].lifetime < 0 {
                         future_grid[i][j] = burn_element;
                         break 'action;
@@ -49,10 +49,7 @@ pub fn handle_actions(future_grid: &mut Grid, i: usize, j: usize, chunks: &mut W
 }
 
 pub fn is_flammable(cell: &Cell) -> bool {
-    match cell.element {
-        Element::Wood | Element::SawDust | Element::Coal => true,
-        _ => false
-    }
+    matches!(cell.element, Element::Wood | Element::SawDust | Element::Coal)
 }
 
 pub fn get_flammable_info(element: &Element) -> (i32, Cell) {

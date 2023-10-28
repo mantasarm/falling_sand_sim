@@ -20,8 +20,8 @@ pub fn downward_sides(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut WorldC
 	
 	if left && right {
 		let rand = fastrand::bool();
-		left = if rand { true } else { false };
-		right = if rand { false } else { true };
+		left = rand;
+		right = !rand;
 	}
 
 	if right {
@@ -64,7 +64,7 @@ pub fn apply_velocity(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut WorldC
 
 		if m == dist.round() as i32 {
 			return swap(f_grid, i, j, dx, dy, chunks, index, dirty_rect);
-		} else if !(get_el.density < d) && get_el.state != State::Plasma && get_el.state != State::Gas { // INFO: Ignore Plasma and Gas elements so they could pass each other
+		} else if get_el.density >= d && get_el.state != State::Plasma && get_el.state != State::Gas { // INFO: Ignore Plasma and Gas elements so they could pass each other
 			if m == 1 {
 				f_grid[i][j].velocity = Vec2::ZERO;
 				return false;
@@ -209,12 +209,12 @@ pub fn get_wanted_chunk(index: (i32, i32), i2: i32, j2: i32) -> (i32, i32) {
 	let mut wanted_chunk = index;
 	if i2 > COLS as i32 - 1 {
 		wanted_chunk.0 += 1;
-	} else if i2 < 0 as i32 {
+	} else if i2 < 0 {
 		wanted_chunk.0 -= 1;
 	}
 	if j2 > ROWS as i32 - 1 {
 		wanted_chunk.1 += 1;
-	} else if j2 < 0 as i32 {
+	} else if j2 < 0 {
 		wanted_chunk.1 -= 1;
 	}
 	

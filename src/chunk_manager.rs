@@ -53,7 +53,7 @@ impl ChunkManager {
 	}
 
 	pub fn update(&mut self, app: &mut App, camera: &Camera2D) {
-	    let mouse_world = get_mouse_in_world(&(app.mouse.x, app.mouse.y), (app.window().width() as i32, app.window().height() as i32), &camera);
+	    let mouse_world = get_mouse_in_world(&(app.mouse.x, app.mouse.y), (app.window().width() as i32, app.window().height() as i32), camera);
 
 		if app.mouse.is_scrolling() {
 			self.brush_size += app.mouse.wheel_delta.y as i32 / 6;
@@ -67,23 +67,20 @@ impl ChunkManager {
 			for j in (self.range_y.0..=self.range_y.1).rev() {
 				let key = &(i, j);
 
-				match self.chunks.get_mut(key) {
-					Some(chunk) => {
-						let mouse = chunk::mouse_in_chunk(chunk, mouse_world);
-
-            			if app.mouse.left_is_down() && self.modify {
-                			chunk::modify_chunk_elements(chunk, mouse.0, mouse.1, self.brush_size, &self.selected_element, self.replace_air);
-            			}
-
-						if app.mouse.right_is_down() && self.modify {
-               				chunk::explode_chunk(chunk, mouse.0, mouse.1, self.brush_size * 2, 4. * app.timer.delta_f32() * 90.);
-            			}
-
-						if let Some(c) = chunk::get_chunk_cell(chunk, mouse.0, mouse.1) {
-							self.hovering_cell = c.to_owned();
-						}
-					},
-					_ => ()
+				if let Some(chunk) = self.chunks.get_mut(key) {
+					let mouse = chunk::mouse_in_chunk(chunk, mouse_world);
+				
+					if app.mouse.left_is_down() && self.modify {
+					    chunk::modify_chunk_elements(chunk, mouse.0, mouse.1, self.brush_size, &self.selected_element, self.replace_air); 
+					}
+				
+					if app.mouse.right_is_down() && self.modify {
+					       chunk::explode_chunk(chunk, mouse.0, mouse.1, self.brush_size * 2, 4. * app.timer.delta_f32() * 90.);
+					}
+				
+					if let Some(c) = chunk::get_chunk_cell(chunk, mouse.0, mouse.1) {
+					    self.hovering_cell = c.to_owned();
+					}
 				}
 			}
 		}

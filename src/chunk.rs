@@ -125,25 +125,25 @@ pub fn modify_chunk_elements(chunk: &mut Chunk, i: i32, j: i32, brush_size: i32,
 			for y in -brush_size / 2..brush_size / 2 {
 				if (((i as f32 + 0.5) - (i as f32 - x as f32)).powf(2.) + ((j as f32 + 0.5) - (j as f32 - y as f32)).powf(2.)) <= (brush_size as f32 / 2.).powf(2.) {
 					if empty_only && cell.element != Element::Air {
-						if in_bound(i as i32 - x, j as i32 - y) {
-							if chunk.grid[(i as i32 - x) as usize][(j as i32 - y) as usize].element == Element::Air {
-								modify_chunk_element(chunk, i as i32 - x, j as i32 - y, cell);
+						if in_bound(i - x, j - y) {
+							if chunk.grid[(i - x) as usize][(j - y) as usize].element == Element::Air {
+								modify_chunk_element(chunk, i - x, j - y, cell);
 							}
 						}
 					} else {
-						modify_chunk_element(chunk, i as i32 - x, j as i32 - y, cell);
+						modify_chunk_element(chunk, i - x, j - y, cell);
 					}
 				}
 			}
 		}
 	} else {
-		if in_bound(i as i32, j as i32) {
+		if in_bound(i, j) {
 			if empty_only && cell.element != Element::Air {
 				if chunk.grid[i as usize][j as usize].element == Element::Air {
-					modify_chunk_element(chunk, i as i32, j as i32, cell);
+					modify_chunk_element(chunk, i, j, cell);
 				}
 			} else {
-				modify_chunk_element(chunk, i as i32, j as i32, cell);
+				modify_chunk_element(chunk, i, j, cell);
 			}
 		}
 	}
@@ -175,12 +175,12 @@ pub fn modify_chunk_element(chunk: &mut Chunk, i: i32, j: i32, cell: &Cell) {
 pub fn explode_chunk(chunk: &mut Chunk, i: i32, j: i32, radius: i32, force: f32) {
 	for x in -radius / 2..=radius / 2 {
 		for y in -radius / 2..radius / 2 {
-			if ((i as i32 - (i as i32 - x)).pow(2) + (j as i32 - (j as i32 - y)).pow(2)) <= (radius / 2).pow(2)  {
-				if in_bound(i as i32 - x, j as i32 - y) {
-					if chunk.grid[(i as i32 - x) as usize][(j as i32 - y) as usize].state != State::Solid && chunk.grid[(i as i32 - x) as usize][(j as i32 - y) as usize].element != Element::Air {
+			if ((i - (i - x)).pow(2) + (j - (j - y)).pow(2)) <= (radius / 2).pow(2)  {
+				if in_bound(i - x, j - y) {
+					if chunk.grid[(i - x) as usize][(j - y) as usize].state != State::Solid && chunk.grid[(i - x) as usize][(j - y) as usize].element != Element::Air {
 						let mut angle = Vec2::new(x as f32, y as f32);
 						angle = angle.normalize_or_zero() * force * -1.;
-						chunk.grid[(i as i32 - x) as usize][(j as i32 - y) as usize].velocity += angle;
+						chunk.grid[(i - x) as usize][(j - y) as usize].velocity += angle;
 						if angle.x.abs() > 0.5 && angle.y.abs() > 0.5 {
 							activate(chunk)
 						}
@@ -203,12 +203,12 @@ pub fn mouse_in_chunk(chunk: &Chunk, mouse_world: (f32, f32)) -> (i32, i32) {
 	mouse_pos.0 = ((mouse_world.0 - chunk.pos.0) / UPSCALE_FACTOR) as i32;
 	mouse_pos.1 = ((mouse_world.1 - chunk.pos.1) / UPSCALE_FACTOR) as i32;
 
-	return mouse_pos
+	mouse_pos
 }
 
 
 pub fn in_bound(i: i32, j: i32) -> bool {
-	return i >= 0 && j >= 0 && i < COLS as i32 && j < ROWS as i32
+	i >= 0 && j >= 0 && i < COLS as i32 && j < ROWS as i32
 }
 
 pub fn render_chunk(chunk: &mut Chunk, gfx: &mut Graphics, draw: &mut Draw) {

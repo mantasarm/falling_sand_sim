@@ -30,8 +30,8 @@ pub fn liquid_movement(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut World
 			
 			if left && right {
 				let rand = fastrand::bool();
-				left = if rand { true } else { false };
-				right = if rand { false } else { true };
+				left = rand;
+				right = !rand;
 			}
 		}
 
@@ -69,8 +69,8 @@ pub fn gas_movement(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut WorldChu
 			
 			if left && right {
 				let rand = fastrand::bool();
-				left = if rand { true } else { false };
-				right = if rand { false } else { true };
+				left = rand;
+				right = !rand;
 			}
 		}
 
@@ -127,5 +127,5 @@ pub fn fire_movement(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut WorldCh
 	
 	apply_velocity(f_grid, i, j, chunks, index, dirty_rect);
 
-	return true;
+	true
 }
