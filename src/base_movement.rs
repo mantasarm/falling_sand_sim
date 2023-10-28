@@ -34,13 +34,15 @@ pub fn apply_velocity(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut WorldC
 	let dist = f_grid[i][j].velocity.length();
 
 	if dist < 0.5 {
-		f_grid[i][j].velocity = Vec2::ZERO;
 		return false;
 	}
 
 	f_grid[i][j].velocity.x /= 1.05;
-	if f_grid[i][j].velocity.x.abs() < 1.0 {
-		f_grid[i][j].velocity.x = 0.;
+	// INFO: We do this only for Powder elements, so other States could have slower accelarations
+	if f_grid[i][j].state == State::Powder {
+		if f_grid[i][j].velocity.x.abs() < 1.0 {
+			f_grid[i][j].velocity.x = 0.;
+		}
 	}
 
 	let (force_x, force_y) = (f_grid[i][j].velocity.x / dist, f_grid[i][j].velocity.y / dist);
@@ -58,9 +60,9 @@ pub fn apply_velocity(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut WorldC
 
 		if m == dist.round() as i32 {
 			return swap(f_grid, i, j, dx, dy, chunks, index, dirty_rect);
-		} else if !(get_el.density < d) && get_el.state != State::Plasma {
+		} else if !(get_el.density < d) && get_el.state != State::Plasma && get_el.state != State::Gas { // INFO: Ignore Plasma and Gas elements so they could pass each other
 			if m == 1 {
-				f_grid[i][j].velocity = Vec2::ZERO;
+				f_grid[i][j].velocity = Vec2::ZERO; // PROBLEM HERE
 				return false;
 			}
 			if get_el.state == State::Solid {
@@ -74,7 +76,6 @@ pub fn apply_velocity(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut WorldC
 		
 		(dx, dy) = (x, y);
 	}
-	f_grid[i][j].velocity = Vec2::ZERO;
 	false
 }
 

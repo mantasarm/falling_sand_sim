@@ -16,59 +16,65 @@ pub fn falling_sand(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut WorldChu
 pub fn liquid_movement(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut WorldChunks, index: (i32, i32), keep_active: &mut bool, dirty_rect: &mut DirtyRect) -> bool {
 	apply_gravity(f_grid, i, j, chunks, index);
 
-	if !downward(f_grid, i, j, chunks, index, dirty_rect) {				
-		if !apply_velocity(f_grid, i, j, chunks, index, dirty_rect) {
-			let mut dir = 0.;
+	let down_density = get(i as i32, j as i32 + 1, f_grid, chunks, index).density;
 
-			if f_grid[i][j].velocity.x == 0. {
-				let left_element = get(i as i32 - 1, j as i32, f_grid, chunks, index);
-				let right_element = get(i as i32 + 1, j as i32, f_grid, chunks, index);
-				if left_element.density < f_grid[i][j].density && right_element.density < f_grid[i][j].density {
-					if fastrand::bool() {
-						dir = -1.;
-					} else {
-						dir = 1.;
-					}
-				} else if left_element.density < f_grid[i][j].density {
-					dir = -1.;
-				} else if right_element.density < f_grid[i][j].density{
-					dir = 1.;
-				}
-			}
+	if down_density >= f_grid[i][j].density && f_grid[i][j].velocity.x.abs() <= 5.0 {
+		let mut left = f_grid[i][j].velocity.x < 0.;
+		let mut right = f_grid[i][j].velocity.x > 0.;
 
-			if dir != 0. {	
-				f_grid[i][j].velocity.x += 5.5 * dir;
-				f_grid[i][j].velocity.y += 0.5;
-				dirty_rect.set_temp(i, j);
-			} else {
-				f_grid[i][j].velocity.x = 0.;
-				return false;
+		if !left && !right {
+			left = get(i as i32 - 1, j as i32, f_grid, chunks, index).density < f_grid[i][j].density;
+			right = get(i as i32 + 1, j as i32, f_grid, chunks, index).density < f_grid[i][j].density;
+			
+			if left && right {
+				let rand = fastrand::bool();
+				left = if rand { true } else { false };
+				right = if rand { false } else { true };
 			}
 		}
+
+		if right {
+			f_grid[i][j].velocity.x += 1.0;
+		} else if left {
+			f_grid[i][j].velocity.x -= 1.0;
+		}
 	}
-	*keep_active = true;
-	true
+
+	if apply_velocity(f_grid, i, j, chunks, index, dirty_rect) {
+		*keep_active = true;
+		dirty_rect.set_temp(i, j);
+
+		return true;
+	}
+
+	false
 }
 
+// TODO: fix weird interaction between different gasses
 pub fn gas_movement(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut WorldChunks, index: (i32, i32), keep_active: &mut bool, dirty_rect: &mut DirtyRect) -> bool {
 	let up_density = get(i as i32, j as i32 - 1, f_grid, chunks, index).density;
 
 	if f_grid[i][j].velocity.y > -1.75 && up_density < f_grid[i][j].density {
 		f_grid[i][j].velocity.y += -0.5;
-	} else if up_density >= f_grid[i][j].density {
-		let mut left = get(i as i32 - 1, j as i32, f_grid, chunks, index).density < f_grid[i][j].density;
-		let mut right = get(i as i32 + 1, j as i32, f_grid, chunks, index).density < f_grid[i][j].density;
-	
-		if left && right {
-			let rand = fastrand::bool();
-			left = if rand { true } else { false };
-			right = if rand { false } else { true };
+	} else if up_density >= f_grid[i][j].density && f_grid[i][j].velocity.x.abs() <= 2.5 {
+		let mut left = f_grid[i][j].velocity.x < 0.;
+		let mut right = f_grid[i][j].velocity.x > 0.;
+
+		if !left && !right {
+			left = get(i as i32 - 1, j as i32, f_grid, chunks, index).density < f_grid[i][j].density;
+			right = get(i as i32 + 1, j as i32, f_grid, chunks, index).density < f_grid[i][j].density;
+			
+			if left && right {
+				let rand = fastrand::bool();
+				left = if rand { true } else { false };
+				right = if rand { false } else { true };
+			}
 		}
 
 		if right {
-			f_grid[i][j].velocity.x = f_grid[i][j].velocity.x + 1.1;
+			f_grid[i][j].velocity.x += 0.5;
 		} else if left {
-			f_grid[i][j].velocity.x = f_grid[i][j].velocity.x - 1.1;
+			f_grid[i][j].velocity.x -= 0.5;
 		}
 	}
 
