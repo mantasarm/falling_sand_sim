@@ -158,6 +158,9 @@ fn draw(app: &mut App, gfx: &mut Graphics, plugins: &mut Plugins, state: &mut St
                 if ui.button(RichText::new("Steam").color(Color32::from_rgb(143, 159, 234))).clicked() {
                    state.chunk_manager.selected_element = steam_element();
                 }
+                if ui.button(RichText::new("Methane").color(Color32::from_rgb(130, 171, 41))).clicked() {
+                    state.chunk_manager.selected_element = methane_element();
+                 }
                 if ui.button(RichText::new("Fire").color(Color32::from_rgb(255, 0, 0))).clicked() {
                    state.chunk_manager.selected_element = fire_element();
                 }

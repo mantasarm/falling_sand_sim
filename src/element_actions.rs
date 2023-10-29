@@ -5,7 +5,7 @@ pub fn handle_actions(future_grid: &mut Grid, i: usize, j: usize, chunks: &mut W
         Some(action) => 'action: {
             match action {
                 Action::Burn => {
-                    let (lifetime, burn_element) = get_flammable_info(&future_grid[i][j].element);
+                    let (lifetime, burn_element, emit_fire) = get_flammable_info(&future_grid[i][j].element);
                     if future_grid[i][j].lifetime == -1 {
                         future_grid[i][j].lifetime = lifetime;
                         future_grid[i][j].color[0] /= 2;
@@ -26,20 +26,22 @@ pub fn handle_actions(future_grid: &mut Grid, i: usize, j: usize, chunks: &mut W
                         future_grid[i][j].lifetime -= 1;
                     }
 
-                    match rand {
-                        0 => if get(i as i32, j as i32 - 1,  future_grid, chunks, index).element == Element::Air {
-                            set(i as i32, j as i32 - 1,  future_grid, chunks, index, fire_element());
-                        },
-                        1 => if get(i as i32 + 1, j as i32,  future_grid, chunks, index).element == Element::Air {
-                            set(i as i32 + 1, j as i32,  future_grid, chunks, index, fire_element());
-                        },
-                        2 => if get(i as i32, j as i32 + 1,  future_grid, chunks, index).element == Element::Air {
-                            set(i as i32, j as i32 + 1,  future_grid, chunks, index, fire_element());
-                        },
-                        3 => if get(i as i32 - 1, j as i32,  future_grid, chunks, index).element == Element::Air {
-                            set(i as i32 - 1, j as i32,  future_grid, chunks, index, fire_element());
-                        },
-                        _ => ()
+                    if emit_fire {
+                        match rand {
+                            0 => if get(i as i32, j as i32 - 1,  future_grid, chunks, index).element == Element::Air {
+                                set(i as i32, j as i32 - 1,  future_grid, chunks, index, fire_element());
+                            },
+                            1 => if get(i as i32 + 1, j as i32,  future_grid, chunks, index).element == Element::Air {
+                                set(i as i32 + 1, j as i32,  future_grid, chunks, index, fire_element());
+                            },
+                            2 => if get(i as i32, j as i32 + 1,  future_grid, chunks, index).element == Element::Air {
+                                set(i as i32, j as i32 + 1,  future_grid, chunks, index, fire_element());
+                            },
+                            3 => if get(i as i32 - 1, j as i32,  future_grid, chunks, index).element == Element::Air {
+                                set(i as i32 - 1, j as i32,  future_grid, chunks, index, fire_element());
+                            },
+                            _ => ()
+                        }
                     }
                 }
             }
@@ -49,15 +51,17 @@ pub fn handle_actions(future_grid: &mut Grid, i: usize, j: usize, chunks: &mut W
 }
 
 pub fn is_flammable(cell: &Cell) -> bool {
-    matches!(cell.element, Element::Wood | Element::SawDust | Element::Coal)
+    matches!(cell.element, Element::Wood | Element::SawDust | Element::Coal | Element::Methane | Element::Water)
 }
 
-pub fn get_flammable_info(element: &Element) -> (i32, Cell) {
+pub fn get_flammable_info(element: &Element) -> (i32, Cell, bool) {
     match element {
-        Element::Wood => (300, air_element()),
-        Element::Coal => (400, smoke_element()),
-        Element::SawDust => (215, air_element()),
-        _ => (0, air_element())
+        Element::Wood => (300, air_element(), true),
+        Element::Coal => (400, smoke_element(), true),
+        Element::SawDust => (215, air_element(), true),
+        Element::Methane => (0, fire_element(), true),
+        Element::Water => (-2, steam_element(), false),
+        _ => (0, air_element(), false)
     }
 }
 
