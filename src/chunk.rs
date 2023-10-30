@@ -73,6 +73,8 @@ pub fn update_chunk(chunk: &mut Chunk, chunks: &mut WorldChunks) {
 
 			/* TODO: Bug: Elements when moving into other chunk sometimes do not activate the chunk and get stuck.
       			This affects all elements, happens only sometimes, issue unknown */
+			
+			// TODO: Change the way the update_byte function is called
 
 			if chunk.grid[i][j].element == chunk.future_grid[i][j].element {
 				match chunk.grid[i][j].element {

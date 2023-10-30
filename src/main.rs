@@ -36,7 +36,8 @@ fn main() -> Result<(), String> {
     notan::init_with(init)
         .add_config(WindowConfig::new()
                     .set_size(1920, 1080).set_fullscreen(false)
-                    .set_vsync(false).set_title("arm'st sandbox")
+                    .set_vsync(false) // TODO: Bug: sim runs slower with vsync enabled
+                    .set_title("arm'st sandbox")
                     .set_resizable(false)
                     .set_multisampling(0)
                     .set_high_dpi(true))
@@ -123,7 +124,7 @@ fn draw(app: &mut App, gfx: &mut Graphics, plugins: &mut Plugins, state: &mut St
         state.chunk_manager.modify = !ctx.is_pointer_over_area();
 
         Window::new("Editor").resizable(false).collapsible(true).title_bar(true).open(&mut state.editor_open).show(ctx, |ui| {
-            ui.label(format!("fps: {}", app.timer.fps().round()));
+            ui.label(format!("fps: {}", (1. / app.timer.delta_f32()).round()));
 
             ui.add_space(5.);
 
@@ -181,7 +182,7 @@ fn draw(app: &mut App, gfx: &mut Graphics, plugins: &mut Plugins, state: &mut St
 
         Window::new("Debug window").resizable(false).collapsible(true).title_bar(true).open(&mut state.debug_window).show(ctx, |ui| {
             if !state.editor_open {
-                ui.label(format!("fps: {}", app.timer.fps().round()));
+                ui.label(format!("fps: {}", (1. / app.timer.delta_f32()).round()));
             }
 
             ui.checkbox(&mut state.debug_render, "Chunk borders");
