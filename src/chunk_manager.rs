@@ -144,7 +144,7 @@ impl ChunkManager {
 		}
 
 		for chunk in self.chunks.values_mut() {
-			chunk::render_chunk(chunk, gfx, draw);
+			chunk::render_chunk(chunk, gfx, draw, self.update_chunks);
 		}
 	}
 }

@@ -149,6 +149,9 @@ fn draw(app: &mut App, gfx: &mut Graphics, plugins: &mut Plugins, state: &mut St
                 if ui.button(RichText::new("SawDust").color(Color32::from_rgb(181, 137, 100))).clicked() {
                     state.chunk_manager.selected_element = sawdust_element();
                 }
+            });
+            ui.add_space(2.);
+            ui.horizontal(|ui| {
                 if ui.button(RichText::new("Water").color(Color32::from_rgb(75, 66, 249))).clicked() {
                     state.chunk_manager.selected_element = water_element();
                 }

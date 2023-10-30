@@ -71,6 +71,9 @@ pub fn update_chunk(chunk: &mut Chunk, chunks: &mut WorldChunks) {
 			let i = if flip_x { chunk.dirty_rect.max_xy.0 - (i_loop - chunk.dirty_rect.min_xy.0) } else { i_loop };
 			let j = if flip_y { chunk.dirty_rect.max_xy.1 - (j_loop - chunk.dirty_rect.min_xy.1) } else { j_loop };
 
+			/* TODO: Bug: Elements when moving into other chunk sometimes do not activate the chunk and get stuck.
+      			This affects all elements, happens only sometimes, issue unknown */
+
 			if chunk.grid[i][j].element == chunk.future_grid[i][j].element {
 				match chunk.grid[i][j].element {
 					Element::Sand | Element::Dirt => {
@@ -218,17 +221,17 @@ pub fn in_bound(i: i32, j: i32) -> bool {
 	i >= 0 && j >= 0 && i < COLS as i32 && j < ROWS as i32
 }
 
-pub fn render_chunk(chunk: &mut Chunk, gfx: &mut Graphics, draw: &mut Draw) {
-	update_chunk_tex_data(chunk, gfx);
+pub fn render_chunk(chunk: &mut Chunk, gfx: &mut Graphics, draw: &mut Draw, update_chunks: bool) {
+	update_chunk_tex_data(chunk, gfx, update_chunks);
 
 	draw.image(&chunk.texture)
 		.size(COLS as f32 * UPSCALE_FACTOR, ROWS as f32 * UPSCALE_FACTOR)
 		.position(chunk.pos.0, chunk.pos.1);
 }
 
-fn update_chunk_tex_data(chunk: &mut Chunk, gfx: &mut Graphics) {
+fn update_chunk_tex_data(chunk: &mut Chunk, gfx: &mut Graphics, update_chunks: bool) {
 	if chunk.dirty_tex {
-		update_bytes(chunk);
+		update_bytes(chunk, update_chunks);
 		gfx.update_texture(&mut chunk.texture)
     		.with_data(&chunk.bytes)
     		.update()
@@ -243,17 +246,19 @@ pub fn update_byte(chunk: &mut Chunk, i: usize, j: usize, color: &[u8; 4]) {
 	chunk.bytes[index * 4..index * 4 + 4].copy_from_slice(color);
 }
 
-fn update_bytes(chunk: &mut Chunk) {
-	// for i in 0..chunk.bytes.len() / 4 {
-	// 	chunk.bytes[i * 4..i * 4 + 4].copy_from_slice(&chunk.grid[i % COLS][i / COLS].color);
-	// }
+fn update_bytes(chunk: &mut Chunk, update_chunks: bool) {
+	if !update_chunks {
+		for i in 0..chunk.bytes.len() / 4 {
+			chunk.bytes[i * 4..i * 4 + 4].copy_from_slice(&chunk.grid[i % COLS][i / COLS].color);
+		}
+	} else {
+		for i in chunk.dirty_rect.min_xy.0..=chunk.dirty_rect.max_xy.0 {
+			for j in chunk.dirty_rect.min_xy.1..=chunk.dirty_rect.max_xy.1 {
+				let index = j * COLS + i;
 
-	for i in chunk.dirty_rect.min_xy.0..=chunk.dirty_rect.max_xy.0 {
-		for j in chunk.dirty_rect.min_xy.1..=chunk.dirty_rect.max_xy.1 {
-			let index = j * COLS + i;
-
-			chunk.bytes[index * 4..index * 4 + 4].copy_from_slice(&chunk.grid[i][j].color);
+				chunk.bytes[index * 4..index * 4 + 4].copy_from_slice(&chunk.grid[i][j].color);
 			
+			}
 		}
 	}
 }

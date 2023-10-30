@@ -44,7 +44,6 @@ pub fn liquid_movement(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut World
 
 	if apply_velocity(f_grid, i, j, chunks, index, dirty_rect) {
 		*keep_active = true;
-		dirty_rect.set_temp(i, j);
 
 		return true;
 	}
@@ -53,6 +52,7 @@ pub fn liquid_movement(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut World
 }
 
 // TODO: fix weird interaction between different gasses
+// TODO: improve gas interaction with itself
 #[inline]
 pub fn gas_movement(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut WorldChunks, index: (i32, i32), keep_active: &mut bool, dirty_rect: &mut DirtyRect) -> bool {
 	let up_density = get(i as i32, j as i32 - 1, f_grid, chunks, index).density;
@@ -83,7 +83,6 @@ pub fn gas_movement(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut WorldChu
 
 	if apply_velocity(f_grid, i, j, chunks, index, dirty_rect) {
 		*keep_active = true;
-		dirty_rect.set_temp(i, j);
 
 		return true;
 	}
@@ -97,11 +96,10 @@ pub fn fire_movement(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut WorldCh
 	f_grid[i][j].lifetime -= rand;
 
 	*keep_active = true;
-	dirty_rect.set_temp(i, j);
 
 	if f_grid[i][j].lifetime <= 0 {
 		f_grid[i][j] = air_element();
-		return false;
+		return true;
 	}
 
 	if f_grid[i][j].velocity.y >= -4. {

@@ -2,6 +2,13 @@ use notan::math::Vec2;
 
 use crate::{element::{Cell, State, solid_element}, chunk::{ROWS, COLS, in_bound, self, Grid, DirtyRect}, chunk_manager::WorldChunks};
 
+pub const fn max_vel() -> f32 {
+	if COLS / 2 > ROWS / 2 {
+		return (ROWS / 2) as f32;
+	}
+	(COLS / 2) as f32
+}
+
 #[inline]
 pub fn downward(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut WorldChunks, index: (i32, i32), dirty_rect: &mut DirtyRect) -> bool {
 	// TODO: I don't like this
@@ -40,6 +47,10 @@ pub fn apply_velocity(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut WorldC
 	if dist < 0.5 {
 		return false;
 	}
+
+	// Clamp the elements speed to the maximum velocity
+	f_grid[i][j].velocity.x = f_grid[i][j].velocity.x.clamp(-max_vel(), max_vel());
+	f_grid[i][j].velocity.y = f_grid[i][j].velocity.y.clamp(-max_vel(), max_vel());
 
 	f_grid[i][j].velocity.x /= 1.05;
 	// INFO: We do this only for Powder elements, so other States could have slower accelarations
