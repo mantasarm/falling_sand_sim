@@ -124,7 +124,7 @@ fn draw(app: &mut App, gfx: &mut Graphics, plugins: &mut Plugins, state: &mut St
         state.chunk_manager.modify = !ctx.is_pointer_over_area();
 
         Window::new("Editor").resizable(false).collapsible(true).title_bar(true).open(&mut state.editor_open).show(ctx, |ui| {
-            ui.label(format!("fps: {}", (1. / app.timer.delta_f32()).round()));
+            ui.label(format!("fps: {}", app.timer.fps().round()));
 
             ui.add_space(5.);
 
@@ -182,8 +182,10 @@ fn draw(app: &mut App, gfx: &mut Graphics, plugins: &mut Plugins, state: &mut St
 
         Window::new("Debug window").resizable(false).collapsible(true).title_bar(true).open(&mut state.debug_window).show(ctx, |ui| {
             if !state.editor_open {
-                ui.label(format!("fps: {}", (1. / app.timer.delta_f32()).round()));
+                ui.label(format!("fps: {}", app.timer.fps().round()));
             }
+
+            ui.label(format!("Chunks update time: {:?}", state.chunk_manager.chunks_update_time));
 
             ui.checkbox(&mut state.debug_render, "Chunk borders");
             ui.checkbox(&mut state.debug_chunk_coords, "Chunk indices");

@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, time::{Instant, Duration}};
 use ahash::RandomState;
 
 use notan::{prelude::*, draw::*};
@@ -20,6 +20,7 @@ pub struct ChunkManager {
 	pub hovering_cell: Cell,
 	pub update_time: f32,
 	pub replace_air: bool,
+	pub chunks_update_time: Duration,
 	font: Font,
 	chunk_frame_count: u128
 }
@@ -47,6 +48,7 @@ impl ChunkManager {
 			hovering_cell: sand_element(),
 			update_time: 0.,
 			replace_air: true,
+			chunks_update_time: Duration::default(),
 			font: gfx.create_font(include_bytes!("assets/UbuntuMono.ttf")).unwrap(),
 			chunk_frame_count: 0
 		}
@@ -91,6 +93,8 @@ impl ChunkManager {
 	fn update_chunks(&mut self, app: &mut App) {
 		self.update_time += app.timer.delta_f32();
 		if self.update_time >= 1. / CHUNK_UPDATE_FPS && self.update_chunks {
+			let now = Instant::now();
+			
 			for i in self.range_x.0..=self.range_x.1 {
 				for j in self.range_y.0..=self.range_y.1 {
 					let mut key = (i, j);
@@ -98,6 +102,7 @@ impl ChunkManager {
 						key.0 = self.range_x.1 - i + self.range_x.0;
 						key.1 = self.range_y.1 - j + self.range_y.0;
 					}
+
 					if self.chunks.contains_key(&key) {
 						let mut chunk = self.chunks.remove(&key).unwrap();
 						chunk::update_chunk(&mut chunk, &mut self.chunks);
@@ -107,6 +112,8 @@ impl ChunkManager {
 			}
 			self.update_time = 0.;
 			self.chunk_frame_count += 1;
+
+			self.chunks_update_time = now.elapsed();
 		}
 	}
 
