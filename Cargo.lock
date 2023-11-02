@@ -1114,6 +1114,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "memory-stats"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "34f79cf9964c5c9545493acda1263f1912f8d2c56c8a2ffee2606cb960acaacc"
+dependencies = [
+ "libc",
+ "winapi",
+]
+
+[[package]]
 name = "minimal-lexical"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1711,6 +1721,7 @@ version = "0.1.0"
 dependencies = [
  "ahash",
  "fastrand 2.0.0",
+ "memory-stats",
  "notan",
 ]
 

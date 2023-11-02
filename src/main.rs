@@ -11,6 +11,7 @@ use camera::Camera2D;
 use chunk::{UPSCALE_FACTOR, ROWS, COLS};
 use chunk_manager::ChunkManager;
 use element::*;
+use memory_stats::memory_stats;
 use notan::draw::*;
 use notan::egui::epaint::Shadow;
 use notan::egui::{EguiConfig, EguiPluginSugar, Window, Slider, Visuals, RichText, Color32};
@@ -27,6 +28,7 @@ struct State {
     debug_render: bool,
     debug_chunk_coords: bool,
     debug_dirty_rects: bool,
+    debug_metrics: bool,
     sky_color: [u8; 3],
     sky_editor: bool
 }
@@ -64,6 +66,7 @@ fn init(app: &mut App, gfx: &mut Graphics) -> State {
         debug_render: false,
         debug_chunk_coords: true,
         debug_dirty_rects: false,
+        debug_metrics: false,
         sky_color: [70, 35, 70],
         sky_editor: false
     }
@@ -86,6 +89,9 @@ fn update(app: &mut App, state: &mut State) {
     }
     if app.keyboard.was_pressed(KeyCode::T) {
         state.debug_window = !state.debug_window;
+    }
+    if app.keyboard.was_pressed(KeyCode::M) {
+        state.debug_metrics = !state.debug_metrics;
     }
 
     if app.keyboard.was_pressed(KeyCode::Escape) {
@@ -178,15 +184,10 @@ fn draw(app: &mut App, gfx: &mut Graphics, plugins: &mut Plugins, state: &mut St
 
             ui.label("Press Y to modify sky color");
             ui.label("Press T for debug info");
+            ui.label("Press M for metrics");
         });
 
         Window::new("Debug window").resizable(false).collapsible(true).title_bar(true).open(&mut state.debug_window).show(ctx, |ui| {
-            if !state.editor_open {
-                ui.label(format!("fps: {}", app.timer.fps().round()));
-            }
-
-            ui.label(format!("Chunks update time: {:?}", state.chunk_manager.chunks_update_time));
-
             ui.checkbox(&mut state.debug_render, "Chunk borders");
             ui.checkbox(&mut state.debug_chunk_coords, "Chunk indices");
             ui.checkbox(&mut state.debug_dirty_rects, "Dirty rects");
@@ -203,6 +204,19 @@ fn draw(app: &mut App, gfx: &mut Graphics, plugins: &mut Plugins, state: &mut St
             ui.label(format!("    color: {:?}", state.chunk_manager.hovering_cell.color));
             ui.label(format!("    lifetime: {:?}", state.chunk_manager.hovering_cell.lifetime));
             ui.label("}");
+        });
+
+        Window::new("Metrics").resizable(false).collapsible(true).open(&mut state.debug_metrics).show(ctx, |ui| {
+            ui.label(format!("fps: {}", app.timer.fps().round()));
+
+            ui.label(format!("Chunks update time: {:?}", state.chunk_manager.chunks_update_time));
+            if let Some(usage) = memory_stats() {
+                ui.label(format!("Physical mem usage: {} mb", usage.physical_mem / 1024 / 1024));
+                ui.label(format!("Virtual mem usage: {} mb", usage.virtual_mem / 1024 / 1024));
+            } else {
+                ui.label("Memory usage is unknown");
+            }
+            
         });
 
         Window::new("Sky color").resizable(false).collapsible(true).open(&mut state.sky_editor).show(ctx, |ui| {
