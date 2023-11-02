@@ -7,10 +7,10 @@ Completed tasks:
 * Chunking system
 * Dirty rectangle system
 * Other optimizations (such as disabling and enabling chunks)
+* Multithreading
 
 TODO:
 * Bug fixes and code clean up
-* Multithreading
 * Integration with rapier2d for rigid body simulation
 * Serialization of chunks
 
