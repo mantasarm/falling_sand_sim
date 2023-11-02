@@ -1,7 +1,7 @@
-use std::{collections::HashMap, time::{Instant, Duration}};
+use std::{collections::HashMap, time::{Instant, Duration}, thread};
 use ahash::RandomState;
 
-use notan::{prelude::*, draw::*};
+use notan::{prelude::*, draw::*, random::rand::{prelude::SliceRandom, thread_rng}};
 
 use crate::{camera::Camera2D, input_manager::get_mouse_in_world, element::{Cell, sand_element}, chunk::{Chunk, self, COLS, UPSCALE_FACTOR, ROWS}};
 
@@ -21,6 +21,7 @@ pub struct ChunkManager {
 	pub update_time: f32,
 	pub replace_air: bool,
 	pub chunks_update_time: Duration,
+	pub	num_of_threads: [usize; 4],
 	font: Font,
 	chunk_frame_count: u128
 }
@@ -49,6 +50,7 @@ impl ChunkManager {
 			update_time: 0.,
 			replace_air: true,
 			chunks_update_time: Duration::default(),
+			num_of_threads: [0; 4],
 			font: gfx.create_font(include_bytes!("assets/UbuntuMono.ttf")).unwrap(),
 			chunk_frame_count: 0
 		}
@@ -77,7 +79,7 @@ impl ChunkManager {
 					}
 				
 					if app.mouse.right_is_down() && self.modify {
-					       chunk::explode_chunk(chunk, mouse.0, mouse.1, self.brush_size * 2, 4. * app.timer.delta_f32() * 90.);
+				       chunk::explode_chunk(chunk, mouse.0, mouse.1, self.brush_size * 2, 4. * app.timer.delta_f32() * 90.);
 					}
 				
 					if let Some(c) = chunk::get_chunk_cell(chunk, mouse.0, mouse.1) {
@@ -87,33 +89,128 @@ impl ChunkManager {
 			}
 		}
 
-		self.update_chunks(app);
+		self.multithreaded_update_chunks(app);
 	}
 
-	fn update_chunks(&mut self, app: &mut App) {
+	fn multithreaded_update_chunks(&mut self, app: &mut App) {
 		self.update_time += app.timer.delta_f32();
+		
 		if self.update_time >= 1. / CHUNK_UPDATE_FPS && self.update_chunks {
 			let now = Instant::now();
-			
-			for i in self.range_x.0..=self.range_x.1 {
-				for j in self.range_y.0..=self.range_y.1 {
-					let mut key = (i, j);
-					if self.chunk_frame_count % 2 == 0 {
-						key.0 = self.range_x.1 - i + self.range_x.0;
-						key.1 = self.range_y.1 - j + self.range_y.0;
-					}
 
-					if self.chunks.contains_key(&key) {
-						let mut chunk = self.chunks.remove(&key).unwrap();
-						chunk::update_chunk(&mut chunk, &mut self.chunks);
-						self.chunks.insert(key.to_owned(), chunk);
+			let mut all_chunks_to_update = vec![];
+			
+			// 1st pass
+			let mut chunks_to_update = vec![];
+			for j in self.range_y.0..=self.range_y.1 {
+				if j % 2 == 0 {
+					for i in self.range_x.0..=self.range_x.1 {
+						if i % 2 == 0 {
+							if self.chunks.get(&(i, j)).unwrap().active {
+								chunks_to_update.push((i, j));
+							}
+						}
 					}
 				}
 			}
-			self.update_time = 0.;
-			self.chunk_frame_count += 1;
+			if !chunks_to_update.is_empty() {
+				all_chunks_to_update.push(chunks_to_update);
+			}
+			
+			// 2nd pass
+			let mut chunks_to_update = vec![];
+			for j in self.range_y.0..=self.range_y.1 {
+				if j % 2 == 0 {
+					for i in self.range_x.0..=self.range_x.1 {
+						if i % 2 != 0 {
+							if self.chunks.get(&(i, j)).unwrap().active {
+								chunks_to_update.push((i, j));
+							}
+						}
+					}
+				}
+			}
+			if !chunks_to_update.is_empty() {
+				all_chunks_to_update.push(chunks_to_update);
+			}
+
+			// 3rd pass
+			let mut chunks_to_update = vec![];
+			for j in self.range_y.0..=self.range_y.1 {
+				if j % 2 != 0 {
+					for i in self.range_x.0..=self.range_x.1 {
+						if i % 2 == 0 {
+							if self.chunks.get(&(i, j)).unwrap().active {
+								chunks_to_update.push((i, j));
+							}
+						}
+					}
+				}
+			}
+			if !chunks_to_update.is_empty() {
+				all_chunks_to_update.push(chunks_to_update);
+			}
+
+			// 4th pass
+			let mut chunks_to_update = vec![];
+			for j in self.range_y.0..=self.range_y.1 {
+				if j % 2 != 0 {
+					for i in self.range_x.0..=self.range_x.1 {
+						if i % 2 != 0 {
+							if self.chunks.get(&(i, j)).unwrap().active {
+								chunks_to_update.push((i, j));
+							}
+						}
+					}
+				}
+			}
+			if !chunks_to_update.is_empty() {
+				all_chunks_to_update.push(chunks_to_update);
+			}
+
+			self.num_of_threads = [0; 4];
+			if !all_chunks_to_update.is_empty() {
+				let mut order: Vec<usize> = (0..all_chunks_to_update.len()).collect();
+				order.shuffle(&mut thread_rng());
+
+				for i in order {
+					self.update_select_chunks(&all_chunks_to_update[i], i);
+				}
+
+				self.update_time = 0.;
+				self.chunk_frame_count += 1;
+			}
 
 			self.chunks_update_time = now.elapsed();
+		}
+	}
+
+	fn update_select_chunks(&mut self, chunks_to_update: &Vec<(i32, i32)>, index: usize) {
+		let mut thread_handles = vec![];
+		for chunk_index in chunks_to_update {
+			let mut chunk = self.chunks.remove(&chunk_index).unwrap();
+
+			let ptr = HoldRawPtr {
+				ptr: &mut self.chunks as *mut WorldChunks
+			};
+		
+			let handle = thread::spawn(move || {
+				let world_chunks_ptr = ptr;
+				unsafe {
+					chunk::update_chunk(&mut chunk, &mut *world_chunks_ptr.ptr);
+				}
+
+				chunk
+			});
+				
+			thread_handles.push(handle);
+		}
+
+		self.num_of_threads[index] = thread_handles.len();
+
+		for handle in thread_handles {
+			let chunk = handle.join().unwrap();
+			self.chunks.insert(chunk.index, chunk);
 		}
 	}
 
@@ -155,3 +252,10 @@ impl ChunkManager {
 		}
 	}
 }
+
+struct HoldRawPtr {
+	ptr: *mut WorldChunks
+}
+
+unsafe impl Send for HoldRawPtr {}
+unsafe impl Sync for HoldRawPtr {}

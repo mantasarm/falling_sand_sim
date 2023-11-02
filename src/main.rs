@@ -216,7 +216,11 @@ fn draw(app: &mut App, gfx: &mut Graphics, plugins: &mut Plugins, state: &mut St
             } else {
                 ui.label("Memory usage is unknown");
             }
-            
+
+            for i in 0..state.chunk_manager.num_of_threads.len() {
+                ui.label(format!("Pass {} num of threads: {}", i, state.chunk_manager.num_of_threads[i]));
+            }
+            ui.label("                                                            "); // This is necessery because egui is annoying and without this the window twitches
         });
 
         Window::new("Sky color").resizable(false).collapsible(true).open(&mut state.sky_editor).show(ctx, |ui| {
