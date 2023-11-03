@@ -209,18 +209,20 @@ fn draw(app: &mut App, gfx: &mut Graphics, plugins: &mut Plugins, state: &mut St
         Window::new("Metrics").resizable(false).collapsible(true).open(&mut state.debug_metrics).show(ctx, |ui| {
             ui.label(format!("fps: {}", app.timer.fps().round()));
 
-            ui.label(format!("Chunks update time: {:?}", state.chunk_manager.chunks_update_time));
+            ui.label(format!("Chunks render time: {:?}", state.chunk_manager.chunks_render_time));
+
             if let Some(usage) = memory_stats() {
                 ui.label(format!("Physical mem usage: {} mb", usage.physical_mem / 1024 / 1024));
                 ui.label(format!("Virtual mem usage: {} mb", usage.virtual_mem / 1024 / 1024));
             } else {
                 ui.label("Memory usage is unknown");
             }
+            ui.label("                                                            "); // This is necessery because egui is annoying and without this the window twitches
 
+            ui.label(format!("Chunks update time: {:?}", state.chunk_manager.chunks_update_time));
             for i in 0..state.chunk_manager.num_of_threads.len() {
                 ui.label(format!("Pass {} num of threads: {}", i, state.chunk_manager.num_of_threads[i]));
             }
-            ui.label("                                                            "); // This is necessery because egui is annoying and without this the window twitches
         });
 
         Window::new("Sky color").resizable(false).collapsible(true).open(&mut state.sky_editor).show(ctx, |ui| {
