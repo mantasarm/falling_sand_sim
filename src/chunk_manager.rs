@@ -89,99 +89,101 @@ impl ChunkManager {
 			}
 		}
 
-		self.multithreaded_update_chunks(app);
+		self.update_chunks(app);
 	}
 
-	fn multithreaded_update_chunks(&mut self, app: &mut App) {
+	fn update_chunks(&mut self, app: &mut App) {
 		self.update_time += app.timer.delta_f32();
 		
-		if self.update_time >= 1. / CHUNK_UPDATE_FPS && self.update_chunks {
-			let now = Instant::now();
+		if self.update_chunks {
+			while self.update_time >= 1. / CHUNK_UPDATE_FPS {
+				let now = Instant::now();
 
-			let mut all_chunks_to_update = vec![];
+				let mut all_chunks_to_update = vec![];
 			
-			// 1st pass
-			let mut chunks_to_update = vec![];
-			for j in self.range_y.0..=self.range_y.1 {
-				if j % 2 == 0 {
-					for i in self.range_x.0..=self.range_x.1 {
-						if i % 2 == 0 {
-							if self.chunks.get(&(i, j)).unwrap().active {
-								chunks_to_update.push((i, j));
+				// 1st pass
+				let mut chunks_to_update = vec![];
+				for j in self.range_y.0..=self.range_y.1 {
+					if j % 2 == 0 {
+						for i in self.range_x.0..=self.range_x.1 {
+							if i % 2 == 0 {
+								if self.chunks.get(&(i, j)).unwrap().active {
+									chunks_to_update.push((i, j));
+								}
 							}
 						}
 					}
 				}
-			}
-			if !chunks_to_update.is_empty() {
-				all_chunks_to_update.push(chunks_to_update);
-			}
+				if !chunks_to_update.is_empty() {
+					all_chunks_to_update.push(chunks_to_update);
+				}
 			
-			// 2nd pass
-			let mut chunks_to_update = vec![];
-			for j in self.range_y.0..=self.range_y.1 {
-				if j % 2 == 0 {
-					for i in self.range_x.0..=self.range_x.1 {
-						if i % 2 != 0 {
-							if self.chunks.get(&(i, j)).unwrap().active {
-								chunks_to_update.push((i, j));
+				// 2nd pass
+				let mut chunks_to_update = vec![];
+				for j in self.range_y.0..=self.range_y.1 {
+					if j % 2 == 0 {
+						for i in self.range_x.0..=self.range_x.1 {
+							if i % 2 != 0 {
+								if self.chunks.get(&(i, j)).unwrap().active {
+									chunks_to_update.push((i, j));
+								}
 							}
 						}
 					}
 				}
-			}
-			if !chunks_to_update.is_empty() {
-				all_chunks_to_update.push(chunks_to_update);
-			}
+				if !chunks_to_update.is_empty() {
+					all_chunks_to_update.push(chunks_to_update);
+				}
 
-			// 3rd pass
-			let mut chunks_to_update = vec![];
-			for j in self.range_y.0..=self.range_y.1 {
-				if j % 2 != 0 {
-					for i in self.range_x.0..=self.range_x.1 {
-						if i % 2 == 0 {
-							if self.chunks.get(&(i, j)).unwrap().active {
-								chunks_to_update.push((i, j));
+				// 3rd pass
+				let mut chunks_to_update = vec![];
+				for j in self.range_y.0..=self.range_y.1 {
+					if j % 2 != 0 {
+						for i in self.range_x.0..=self.range_x.1 {
+							if i % 2 == 0 {
+								if self.chunks.get(&(i, j)).unwrap().active {
+									chunks_to_update.push((i, j));
+								}
 							}
 						}
 					}
 				}
-			}
-			if !chunks_to_update.is_empty() {
-				all_chunks_to_update.push(chunks_to_update);
-			}
+				if !chunks_to_update.is_empty() {
+					all_chunks_to_update.push(chunks_to_update);
+				}
 
-			// 4th pass
-			let mut chunks_to_update = vec![];
-			for j in self.range_y.0..=self.range_y.1 {
-				if j % 2 != 0 {
-					for i in self.range_x.0..=self.range_x.1 {
-						if i % 2 != 0 {
-							if self.chunks.get(&(i, j)).unwrap().active {
-								chunks_to_update.push((i, j));
+				// 4th pass
+				let mut chunks_to_update = vec![];
+				for j in self.range_y.0..=self.range_y.1 {
+					if j % 2 != 0 {
+						for i in self.range_x.0..=self.range_x.1 {
+							if i % 2 != 0 {
+								if self.chunks.get(&(i, j)).unwrap().active {
+									chunks_to_update.push((i, j));
+								}
 							}
 						}
 					}
 				}
-			}
-			if !chunks_to_update.is_empty() {
-				all_chunks_to_update.push(chunks_to_update);
-			}
-
-			self.num_of_threads = [0; 4];
-			if !all_chunks_to_update.is_empty() {
-				let mut order: Vec<usize> = (0..all_chunks_to_update.len()).collect();
-				order.shuffle(&mut thread_rng());
-
-				for i in order {
-					self.update_select_chunks(&all_chunks_to_update[i], i);
+				if !chunks_to_update.is_empty() {
+					all_chunks_to_update.push(chunks_to_update);
 				}
 
-				self.update_time = 0.;
+				self.num_of_threads = [0; 4];
+				if !all_chunks_to_update.is_empty() {
+					let mut order: Vec<usize> = (0..all_chunks_to_update.len()).collect();
+					order.shuffle(&mut thread_rng());
+
+					for i in order {
+						self.update_select_chunks(&all_chunks_to_update[i], i);
+					}
+
+				}
+				self.update_time -= 1. / CHUNK_UPDATE_FPS;
 				self.chunk_frame_count += 1;
-			}
 
-			self.chunks_update_time = now.elapsed();
+				self.chunks_update_time = now.elapsed();
+			}
 		}
 	}
 
