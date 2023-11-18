@@ -109,9 +109,12 @@ pub fn debug_editor(ctx: &Context, app: &App, debug_info: &mut DebugInfo, chunk_
             if ui.button(RichText::new("Steam").color(Color32::from_rgb(143, 159, 234))).clicked() {
                chunk_manager.selected_element = steam_element();
             }
+            if ui.button(RichText::new("Petrol").color(Color32::from_rgb(0, 95, 106))).clicked() {
+                chunk_manager.selected_element = petrol_element();
+            }
             if ui.button(RichText::new("Methane").color(Color32::from_rgb(130, 171, 41))).clicked() {
                 chunk_manager.selected_element = methane_element();
-             }
+            }
             if ui.button(RichText::new("Fire").color(Color32::from_rgb(255, 0, 0))).clicked() {
                chunk_manager.selected_element = fire_element();
             }

@@ -116,6 +116,19 @@ pub fn water_element() -> Cell {
 	}
 }
 
+pub fn petrol_element() -> Cell {
+	Cell {
+		element: Element::Petrol,
+		action: None,
+		density: 40.,
+		state:State::Liquid,
+		color: [0, 95, 106, 175],
+		velocity: Vec2::ZERO,
+		drag: 0.8,
+		lifetime: -1
+	}
+}
+
 pub fn smoke_element() -> Cell {
 	Cell {
 		element: Element::Smoke,
@@ -172,7 +185,7 @@ pub fn methane_element() -> Cell {
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Element {
-	Air, Solid, Sand, SawDust, Water, Steam, Smoke, Dirt, Fire, Wood, Coal, Methane
+	Air, Solid, Sand, SawDust, Water, Steam, Smoke, Dirt, Fire, Wood, Coal, Methane, Petrol
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]

@@ -5,12 +5,14 @@ pub fn handle_actions(future_grid: &mut Grid, i: usize, j: usize, mov_dt: &mut M
         Some(action) => 'action: {
             match action {
                 Action::Burn => {
-                    let (lifetime, burn_element, emit_fire) = get_flammable_info(&future_grid[i][j].element);
+                    let (lifetime, burn_element, emit_fire, darken) = get_flammable_info(&future_grid[i][j].element);
                     if future_grid[i][j].lifetime == -1 {
                         future_grid[i][j].lifetime = lifetime;
-                        future_grid[i][j].color[0] /= 2;
-                        future_grid[i][j].color[1] /= 2;
-                        future_grid[i][j].color[2] /= 2;
+                        if darken {
+                            future_grid[i][j].color[0] /= 2;
+                            future_grid[i][j].color[1] /= 2;
+                            future_grid[i][j].color[2] /= 2;
+                        }
                     } else if future_grid[i][j].lifetime < 0 {
                         future_grid[i][j] = burn_element;
                         break 'action;
@@ -51,17 +53,18 @@ pub fn handle_actions(future_grid: &mut Grid, i: usize, j: usize, mov_dt: &mut M
 }
 
 pub fn is_flammable(cell: &Cell) -> bool {
-    matches!(cell.element, Element::Wood | Element::SawDust | Element::Coal | Element::Methane | Element::Water)
+    matches!(cell.element, Element::Wood | Element::SawDust | Element::Coal | Element::Methane | Element::Water  | Element::Petrol)
 }
 
-pub fn get_flammable_info(element: &Element) -> (i32, Cell, bool) {
+pub fn get_flammable_info(element: &Element) -> (i32, Cell, bool, bool) {
     match element {
-        Element::Wood => (300, air_element(), true),
-        Element::Coal => (400, smoke_element(), true),
-        Element::SawDust => (215, air_element(), true),
-        Element::Methane => (0, fire_element(), true),
-        Element::Water => (-2, steam_element(), false),
-        _ => (0, air_element(), false)
+        Element::Wood => (300, air_element(), true, true),
+        Element::Coal => (400, smoke_element(), true, true),
+        Element::SawDust => (215, air_element(), true, true),
+        Element::Methane => (0, fire_element(), true, false),
+        Element::Water => (-1, steam_element(), false, false),
+        Element::Petrol => (80, fire_element(), true, false),
+        _ => (0, air_element(), false, false)
     }
 }
 

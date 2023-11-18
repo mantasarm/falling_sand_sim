@@ -101,7 +101,7 @@ pub fn update_chunk(chunk: &mut Chunk, chunks: &mut WorldChunks) {
 						handle_actions(&mut chunk.future_grid, i, j, &mut mov_dt);
 						falling_sand(&mut chunk.future_grid, i, j, &mut mov_dt);
 					},
-					Element::Water => {
+					Element::Water | Element::Petrol => {
 						handle_actions(&mut chunk.future_grid, i, j, &mut mov_dt);
 						liquid_movement(&mut chunk.future_grid, i, j, &mut mov_dt);
 					},
