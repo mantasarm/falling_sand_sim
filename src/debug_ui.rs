@@ -1,7 +1,7 @@
 use memory_stats::memory_stats;
 use notan::{egui::{Window, RichText, Color32, Context, Slider, Visuals, epaint::Shadow}, app::App, input::keyboard::KeyCode};
 
-use crate::{chunk_manager::ChunkManager, element::*};
+use crate::{phys_world::chunk_manager::ChunkManager, phys_world::element::*};
 
 pub struct DebugInfo {
     pub set_visuals: bool,

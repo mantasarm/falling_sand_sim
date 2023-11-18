@@ -1,16 +1,11 @@
-mod chunk;
-mod element;
-pub mod base_movement;
 pub mod camera;
 pub mod input_manager;
-pub mod chunk_manager;
-pub mod el_movement;
-pub mod element_actions;
 mod debug_ui;
+pub mod phys_world;
 
 use camera::Camera2D;
-use chunk::{UPSCALE_FACTOR, ROWS, COLS};
-use chunk_manager::ChunkManager;
+use phys_world::chunk::{UPSCALE_FACTOR, ROWS, COLS};
+use phys_world::chunk_manager::ChunkManager;
 use debug_ui::DebugInfo;
 use notan::draw::*;
 use notan::egui::{EguiConfig, EguiPluginSugar};
