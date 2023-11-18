@@ -12,7 +12,6 @@ Completed tasks:
 TODO:
 * Bug fixes and code clean up
 * Integration with rapier2d for rigid body simulation
-* Serialization of chunks
 
 Progression:
 
