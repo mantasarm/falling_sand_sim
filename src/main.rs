@@ -38,7 +38,7 @@ fn main() -> Result<(), String> {
     notan::init_with(init)
         .add_config(WindowConfig::new()
                     .set_size(1920, 1080).set_fullscreen(false)
-                    .set_vsync(false)
+                    .set_vsync(true)
                     .set_title("arm'st sandbox")
                     .set_resizable(false)
                     .set_multisampling(0)

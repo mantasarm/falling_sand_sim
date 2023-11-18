@@ -76,6 +76,8 @@ pub fn update_chunk(chunk: &mut Chunk, chunks: &mut WorldChunks) {
 			
 			// TODO: Change the way the update_byte function is called
 
+			// TODO: Have less arguments in the movement functions
+
 			if chunk.grid[i][j].element == chunk.future_grid[i][j].element {
 				match chunk.grid[i][j].element {
 					Element::Sand | Element::Dirt => {

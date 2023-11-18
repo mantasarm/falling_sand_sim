@@ -189,31 +189,37 @@ impl ChunkManager {
 	}
 
 	fn update_select_chunks(&mut self, chunks_to_update: &Vec<(i32, i32)>, index: usize) {
-		let mut thread_handles = vec![];
-		for chunk_index in chunks_to_update {
-			let mut chunk = self.chunks.remove(&chunk_index).unwrap();
+		if chunks_to_update.len() > 1 { // INFO: Create threads only if there are multiple chunks to update
+			let mut thread_handles = vec![];
+			for chunk_index in chunks_to_update {
+				let mut chunk = self.chunks.remove(&chunk_index).unwrap();
 
-			let ptr = HoldRawPtr {
-				ptr: &mut self.chunks as *mut WorldChunks
-			};
-		
-			let handle = thread::spawn(move || {
-				let world_chunks_ptr = ptr;
-				unsafe {
-					chunk::update_chunk(&mut chunk, &mut *world_chunks_ptr.ptr);
-				}
+				let ptr = HoldRawPtr {
+					ptr: &mut self.chunks as *mut WorldChunks
+				};
+			
+				let handle = thread::spawn(move || {
+					let world_chunks_ptr = ptr;
+					unsafe {
+						chunk::update_chunk(&mut chunk, &mut *world_chunks_ptr.ptr);
+					}
 
-				chunk
-			});
-				
-			thread_handles.push(handle);
-		}
+					chunk
+				});
 
-		self.num_of_threads[index] = thread_handles.len();
+				thread_handles.push(handle);
+			}
 
-		for handle in thread_handles {
-			let chunk = handle.join().unwrap();
-			self.chunks.insert(chunk.index, chunk);
+			self.num_of_threads[index] = thread_handles.len();
+
+			for handle in thread_handles {
+				let chunk = handle.join().unwrap();
+				self.chunks.insert(chunk.index, chunk);
+			}
+		} else {
+			let mut chunk = self.chunks.remove(&chunks_to_update[0]).unwrap();
+			chunk::update_chunk(&mut chunk, &mut self.chunks);
+			self.chunks.insert(chunks_to_update[0], chunk);
 		}
 	}
 
