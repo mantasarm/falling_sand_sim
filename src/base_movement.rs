@@ -1,6 +1,6 @@
 use notan::math::Vec2;
 
-use crate::{element::{Cell, State, solid_element}, chunk::{ROWS, COLS, in_bound, self, Grid, DirtyRect}, chunk_manager::WorldChunks};
+use crate::{element::{Cell, State, solid_element}, chunk::{ROWS, COLS, in_bound, self, Grid, MovData}, chunk_manager::WorldChunks};
 
 pub const fn max_vel() -> f32 {
 	if COLS / 2 > ROWS / 2 {
@@ -10,20 +10,21 @@ pub const fn max_vel() -> f32 {
 }
 
 #[inline]
-pub fn downward(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut WorldChunks, index: (i32, i32), dirty_rect: &mut DirtyRect) -> bool {
+pub fn downward(f_grid: &mut Grid, i: usize, j: usize, mov_dt: &mut MovData) -> bool {
 	// TODO: I don't like this
-	if get(i as i32, j as i32 + 1, f_grid, chunks, index).density <  f_grid[i][j].density && get(i as i32, j as i32 + 2, f_grid, chunks, index).density >=  f_grid[i][j].density {
-		return swap(f_grid, i, j, i as i32, j as i32 + 1, chunks, index, dirty_rect);
+	if get(i as i32, j as i32 + 1, f_grid, mov_dt).density <  f_grid[i][j].density 
+	   && get(i as i32, j as i32 + 2, f_grid, mov_dt).density >=  f_grid[i][j].density {
+		return swap(f_grid, i, j, i as i32, j as i32 + 1, mov_dt);
 	}
 	false
 }
 
 #[inline]
-pub fn downward_sides(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut WorldChunks, index: (i32, i32), dirty_rect: &mut DirtyRect) -> bool {
+pub fn downward_sides(f_grid: &mut Grid, i: usize, j: usize, mov_dt: &mut MovData) -> bool {
 	let d = f_grid[i][j].density;
 
-	let mut left = get(i as i32 - 1, j as i32 + 1, f_grid, chunks, index).density < d;
-	let mut right = get(i as i32 + 1, j as i32 + 1, f_grid, chunks, index).density < d;
+	let mut left = get(i as i32 - 1, j as i32 + 1, f_grid, mov_dt).density < d;
+	let mut right = get(i as i32 + 1, j as i32 + 1, f_grid, mov_dt).density < d;
 	
 	if left && right {
 		let rand = fastrand::bool();
@@ -32,16 +33,16 @@ pub fn downward_sides(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut WorldC
 	}
 
 	if right {
-		return swap(f_grid, i, j, i as i32 + 1, j as i32 + 1, chunks, index, dirty_rect);
+		return swap(f_grid, i, j, i as i32 + 1, j as i32 + 1, mov_dt);
 	} else if left {
-		return swap(f_grid, i, j, i as i32 - 1, j as i32 + 1, chunks, index, dirty_rect);
+		return swap(f_grid, i, j, i as i32 - 1, j as i32 + 1, mov_dt);
 	}
 	
 	false
 }
 
 #[inline]
-pub fn apply_velocity(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut WorldChunks, index: (i32, i32), dirty_rect: &mut DirtyRect) -> bool {
+pub fn apply_velocity(f_grid: &mut Grid, i: usize, j: usize, mov_dt: &mut MovData) -> bool {
 	let dist = f_grid[i][j].velocity.length();
 
 	if dist < 0.5 {
@@ -71,10 +72,10 @@ pub fn apply_velocity(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut WorldC
 	for m in 1..=dist.round() as i32 {
 		let (x, y) = ((i as f32 + (force_x * m as f32)).round() as i32, (j as f32 + (force_y * m as f32)).round() as i32);
 
-		let get_el = get(x, y, f_grid, chunks, index);
+		let get_el = get(x, y, f_grid, mov_dt);
 
 		if m == dist.round() as i32 {
-			return swap(f_grid, i, j, dx, dy, chunks, index, dirty_rect);
+			return swap(f_grid, i, j, dx, dy, mov_dt);
 		} else if get_el.density >= d && get_el.state != State::Plasma && get_el.state != State::Gas { // INFO: Ignore Plasma and Gas elements so they could pass each other
 			if m == 1 {
 				f_grid[i][j].velocity = Vec2::ZERO;
@@ -83,9 +84,9 @@ pub fn apply_velocity(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut WorldC
 			if get_el.state == State::Solid {
 				f_grid[i][j].velocity = Vec2::ZERO;
 			}
-			return swap(f_grid, i, j, dx, dy, chunks, index, dirty_rect);
+			return swap(f_grid, i, j, dx, dy, mov_dt);
 		} else {
-			let drag = get(x, y, f_grid, chunks, index).drag;
+			let drag = get(x, y, f_grid, mov_dt).drag;
 			f_grid[i][j].velocity *= drag;
 		}
 		
@@ -95,8 +96,8 @@ pub fn apply_velocity(f_grid: &mut Grid, i: usize, j: usize, chunks: &mut WorldC
 }
 
 #[inline]
-pub fn apply_gravity(future_grid: &mut Grid, i: usize, j: usize, chunks: &mut WorldChunks, index: (i32, i32)) {
-	let below_element = get(i as i32, j as i32 + 1, future_grid, chunks, index);
+pub fn apply_gravity(future_grid: &mut Grid, i: usize, j: usize, mov_dt: &mut MovData) {
+	let below_element = get(i as i32, j as i32 + 1, future_grid, mov_dt);
 
 	let max_speed = if ROWS > COLS { COLS as f32 } else {ROWS as f32 };
 	future_grid[i][j].velocity = future_grid[i][j].velocity.clamp(Vec2::new(-max_speed, -max_speed), Vec2::new(max_speed, max_speed));
@@ -128,66 +129,68 @@ pub fn apply_gravity(future_grid: &mut Grid, i: usize, j: usize, chunks: &mut Wo
 }
 
 #[inline]
-pub fn get(i: i32, j: i32, f_grid: &mut Grid, chunks: &mut WorldChunks, index: (i32, i32)) -> Cell {
+pub fn get(i: i32, j: i32, f_grid: &mut Grid, mov_dt: &mut MovData) -> Cell {
 	if in_bound(i, j) {
 		return f_grid[i as usize][j as usize]
 	} else {
-		let wanted_chunk = get_wanted_chunk(index, i, j);
+		let wanted_chunk = get_wanted_chunk(mov_dt.index, i, j);
 		
-		if chunks.contains_key(&wanted_chunk) {
+		if mov_dt.chunks.contains_key(&wanted_chunk) {
 			let (x, y) = get_new_element_coord(i, j);
 			
-			return chunks.get(&wanted_chunk).unwrap().grid[x as usize][y as usize];
+			return mov_dt.chunks.get(&wanted_chunk).unwrap().grid[x as usize][y as usize];
 		}
 	}
 	solid_element()
 }
 
 #[inline]
-pub fn set(i: i32, j: i32, f_grid: &mut Grid, chunks: &mut WorldChunks, index: (i32, i32), cell: Cell) {
+pub fn set(i: i32, j: i32, f_grid: &mut Grid, mov_dt: &mut MovData, cell: Cell) {
 	if in_bound(i, j) {
 		f_grid[i as usize][j as usize] = cell;
 	} else {
-		let wanted_chunk = get_wanted_chunk(index, i, j);
+		let wanted_chunk = get_wanted_chunk(mov_dt.index, i, j);
 		
-		if chunks.contains_key(&wanted_chunk) {
+		if mov_dt.chunks.contains_key(&wanted_chunk) {
 			let (x, y) = get_new_element_coord(i, j);
-			chunks.get_mut(&wanted_chunk).unwrap().grid[x as usize][y as usize] = cell;
+			mov_dt.chunks.get_mut(&wanted_chunk).unwrap().grid[x as usize][y as usize] = cell;
 		}
 	}
 }
 
 #[inline]
-pub fn swap(grid: &mut Grid, i1: usize, j1: usize, i2: i32, j2: i32, chunks: &mut WorldChunks, index: (i32, i32), dirty_rect: &mut DirtyRect) -> bool {
+pub fn swap(grid: &mut Grid, i1: usize, j1: usize, i2: i32, j2: i32, mov_dt: &mut MovData) -> bool {
 	if in_bound(i2, j2) {
 		// INFO: Element swap happening inside of the chunk
 		(grid[i1][j1], grid[i2 as usize][j2 as usize]) = (grid[i2 as usize][j2 as usize], grid[i1][j1]);
 
-		dirty_rect.set_temp(i2 as usize, j2 as usize);
+		mov_dt.dirty_rect.set_temp(i2 as usize, j2 as usize);
+		chunk::update_byte(mov_dt.bytes, i1, j1, &[0, 0, 0, 0]);
 
 		// INFO: Wake up neighboring sleeping chunks if chunk edge element moves
 		if i1 == 0 || i2 == 0 {
-			wake_up_chunk(chunks, index, (-1, 0), (COLS - 1, j1));
+			wake_up_chunk(mov_dt.chunks, mov_dt.index, (-1, 0), (COLS - 1, j1));
 		} else if i1 == COLS - 1 || i2 == COLS as i32 - 1 {
-			wake_up_chunk(chunks, index, (1, 0), (0, j1));
+			wake_up_chunk(mov_dt.chunks, mov_dt.index, (1, 0), (0, j1));
 		}
 
 		if j1 == 0 || j2 == 0 {
-			wake_up_chunk(chunks, index, (0, -1), (i1, ROWS - 1))
+			wake_up_chunk(mov_dt.chunks, mov_dt.index, (0, -1), (i1, ROWS - 1))
 		} else if j1 == ROWS - 1 || j2 == ROWS as i32 - 1 {
-			wake_up_chunk(chunks, index, (0, 1), (i1, 0));
+			wake_up_chunk(mov_dt.chunks, mov_dt.index, (0, 1), (i1, 0));
 		}
 
 		return true;
 	} else {
 		// INFO: Element swap happening between two chunks
-		let wanted_chunk = get_wanted_chunk(index, i2, j2);
+		let wanted_chunk = get_wanted_chunk(mov_dt.index, i2, j2);
 		
-		if chunks.contains_key(&wanted_chunk) {
+		if mov_dt.chunks.contains_key(&wanted_chunk) {
 			let (x, y) = get_new_element_coord(i2, j2);
+			
+			chunk::update_byte(mov_dt.bytes, i1, j1, &[0, 0, 0, 0]);
 
-
-			let chunk = chunks.get_mut(&wanted_chunk).unwrap();
+			let chunk = mov_dt.chunks.get_mut(&wanted_chunk).unwrap();
 			(grid[i1][j1], chunk.grid[x as usize][y as usize]) = (chunk.grid[x as usize][y as usize], grid[i1][j1]);
 
 			if !chunk.active {

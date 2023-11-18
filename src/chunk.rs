@@ -40,7 +40,7 @@ impl Chunk {
 			future_grid,
 			active: true,
 			dirty_tex: true,
-			dirty_rect: DirtyRect::new(),
+			dirty_rect: DirtyRect::default(),
 			bytes,
 			texture
 		}
@@ -52,6 +52,14 @@ fn create_cells_array() -> Grid {
     unsafe {
         Box::from_raw(data.as_mut_ptr() as *mut [[Cell; ROWS]; COLS])
     }
+}
+
+pub struct MovData<'a> {
+	pub chunks: &'a mut WorldChunks,
+	pub index: (i32, i32),
+	pub keep_active: &'a mut bool,
+	pub dirty_rect: &'a mut DirtyRect,
+	pub bytes: &'a mut Vec<u8>
 }
 
 pub fn update_chunk(chunk: &mut Chunk, chunks: &mut WorldChunks) {
@@ -76,44 +84,38 @@ pub fn update_chunk(chunk: &mut Chunk, chunks: &mut WorldChunks) {
 			
 			// TODO: Change the way the update_byte function is called
 
-			// TODO: Have less arguments in the movement functions
+			let mut mov_dt = MovData {
+				chunks,
+				index: chunk.index,
+				keep_active: &mut keep_active,
+				dirty_rect: &mut chunk.dirty_rect,
+				bytes: &mut chunk.bytes
+			};
 
 			if chunk.grid[i][j].element == chunk.future_grid[i][j].element {
 				match chunk.grid[i][j].element {
 					Element::Sand | Element::Dirt => {
-						if falling_sand(&mut chunk.future_grid, i, j, chunks, chunk.index, &mut keep_active, &mut chunk.dirty_rect) {
-							update_byte(chunk, i, j, &[0, 0, 0, 0]);
-						}
+						falling_sand(&mut chunk.future_grid, i, j, &mut mov_dt);
 					},
 					Element::SawDust => {
-						handle_actions(&mut chunk.future_grid, i, j, chunks, chunk.index, &mut keep_active, &mut chunk.dirty_rect);
-						if falling_sand(&mut chunk.future_grid, i, j, chunks, chunk.index, &mut keep_active, &mut chunk.dirty_rect) {
-							update_byte(chunk, i, j, &[0, 0, 0, 0]);
-						}
+						handle_actions(&mut chunk.future_grid, i, j, &mut mov_dt);
+						falling_sand(&mut chunk.future_grid, i, j, &mut mov_dt);
 					},
 					Element::Water => {
-						handle_actions(&mut chunk.future_grid, i, j, chunks, chunk.index, &mut keep_active, &mut chunk.dirty_rect);
-						if liquid_movement(&mut chunk.future_grid, i, j, chunks, chunk.index, &mut keep_active, &mut chunk.dirty_rect) {
-							update_byte(chunk, i, j, &[0, 0, 0, 0]);
-						}
+						handle_actions(&mut chunk.future_grid, i, j, &mut mov_dt);
+						liquid_movement(&mut chunk.future_grid, i, j, &mut mov_dt);
 					},
 					Element::Steam | Element::Smoke => {
-						if gas_movement(&mut chunk.future_grid, i, j, chunks, chunk.index, &mut keep_active, &mut chunk.dirty_rect) {
-							update_byte(chunk, i, j, &[0, 0, 0, 0]);
-						}
+						gas_movement(&mut chunk.future_grid, i, j, &mut mov_dt);
 					},
 					Element::Methane => {
-						handle_actions(&mut chunk.future_grid, i, j, chunks, chunk.index, &mut keep_active, &mut chunk.dirty_rect);
-						if gas_movement(&mut chunk.future_grid, i, j, chunks, chunk.index, &mut keep_active, &mut chunk.dirty_rect) {
-							update_byte(chunk, i, j, &[0, 0, 0, 0]);
-						}
+						handle_actions(&mut chunk.future_grid, i, j, &mut mov_dt);
+						gas_movement(&mut chunk.future_grid, i, j, &mut mov_dt);
 					},
 					Element::Fire => {
-						if fire_movement(&mut chunk.future_grid, i, j, chunks, chunk.index, &mut keep_active, &mut chunk.dirty_rect) {
-							update_byte(chunk, i, j, &[0, 0, 0, 0]);
-						}
+						fire_movement(&mut chunk.future_grid, i, j, &mut mov_dt);
 					},
-					Element::Wood | Element::Coal => handle_actions(&mut chunk.future_grid, i, j, chunks, chunk.index, &mut keep_active, &mut chunk.dirty_rect),
+					Element::Wood | Element::Coal => handle_actions(&mut chunk.future_grid, i, j, &mut mov_dt),
 					_ => ()
 				}
 			}
@@ -245,9 +247,9 @@ fn update_chunk_tex_data(chunk: &mut Chunk, gfx: &mut Graphics, update_chunks: b
 	}
 }
 
-pub fn update_byte(chunk: &mut Chunk, i: usize, j: usize, color: &[u8; 4]) {
+pub fn update_byte(bytes: &mut Vec<u8>, i: usize, j: usize, color: &[u8; 4]) {
 	let index = j * COLS + i;
-	chunk.bytes[index * 4..index * 4 + 4].copy_from_slice(color);
+	bytes[index * 4..index * 4 + 4].copy_from_slice(color);
 }
 
 fn update_bytes(chunk: &mut Chunk, update_chunks: bool) {
@@ -275,15 +277,6 @@ pub struct DirtyRect {
 }
 
 impl DirtyRect {
-	pub fn new() -> Self {
-		Self {
-			min_xy: (0, 0),
-			max_xy: (COLS - 1, ROWS - 1),
-			temp_min_xy: (COLS - 1, ROWS - 1),
-			temp_max_xy: (0, 0)
-		}
-	}
-
 	pub fn set_temp(&mut self, i: usize, j: usize) {
 		// INFO: we have to get these in i32 format and the cast to usize because usize value flips to max value when index is smaller than amount
 		let amount = 10;
@@ -309,4 +302,15 @@ impl DirtyRect {
 		self.temp_min_xy = (COLS - 1, ROWS - 1);
 		self.temp_max_xy = (0, 0);
 	}
+}
+
+impl Default for DirtyRect {
+    fn default() -> Self {
+        Self {
+			min_xy: (0, 0),
+			max_xy: (COLS - 1, ROWS - 1),
+			temp_min_xy: (COLS - 1, ROWS - 1),
+			temp_max_xy: (0, 0)
+		}
+    }
 }

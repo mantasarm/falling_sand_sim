@@ -3,7 +3,7 @@ use ahash::RandomState;
 
 use notan::{prelude::*, draw::*, random::rand::{prelude::SliceRandom, thread_rng}};
 
-use crate::{camera::Camera2D, input_manager::get_mouse_in_world, element::{Cell, sand_element}, chunk::{Chunk, self, COLS, UPSCALE_FACTOR, ROWS}};
+use crate::{camera::Camera2D, input_manager::get_mouse_in_world, element::{Cell, sand_element}, chunk::{Chunk, self, COLS, UPSCALE_FACTOR, ROWS}, DebugInfo};
 
 const CHUNK_UPDATE_FPS: f32 = 60.;
 
@@ -192,7 +192,7 @@ impl ChunkManager {
 		if chunks_to_update.len() > 1 { // INFO: Create threads only if there are multiple chunks to update
 			let mut thread_handles = vec![];
 			for chunk_index in chunks_to_update {
-				let mut chunk = self.chunks.remove(&chunk_index).unwrap();
+				let mut chunk = self.chunks.remove(chunk_index).unwrap();
 
 				let ptr = HoldRawPtr {
 					ptr: &mut self.chunks as *mut WorldChunks
@@ -223,8 +223,16 @@ impl ChunkManager {
 		}
 	}
 
-	pub fn render(&mut self, gfx: &mut Graphics, draw: &mut Draw, debug_render_boundaries: bool, debug_chunk_coords: bool, debug_dirty_rects: bool) {
-		if debug_chunk_coords {
+	pub fn render(&mut self, gfx: &mut Graphics, draw: &mut Draw) {
+		let now = Instant::now();
+		for chunk in self.chunks.values_mut() {
+			chunk::render_chunk(chunk, gfx, draw, self.update_chunks);
+		}
+		self.chunks_render_time = now.elapsed();
+	}
+
+	pub fn debug_render(&mut self, draw: &mut Draw, debug_info: &DebugInfo) {
+		if debug_info.debug_chunk_coords {
 			for index in self.chunks.keys() {
 				draw.text(&self.font, &format!("{:?}", index))
 					.position((COLS as f32 / 2. + (index.0 as f32 * COLS as f32)) * UPSCALE_FACTOR, (ROWS as f32 / 2. + (index.1 as f32 * ROWS as f32)) * UPSCALE_FACTOR)
@@ -233,7 +241,7 @@ impl ChunkManager {
 			}
 		}
 
-		if debug_render_boundaries {
+		if debug_info.debug_chunk_bounds {
 			for index in self.chunks.keys() {
 				draw.rect((index.0 as f32 * COLS as f32 * UPSCALE_FACTOR + 0.5, index.1 as f32 * ROWS as f32 * UPSCALE_FACTOR + 0.5), (COLS as f32 * UPSCALE_FACTOR - 1., ROWS as f32 * UPSCALE_FACTOR - 1.))
 					.fill_color(Color::from_rgba(0., 0., 0., 0.))
@@ -242,7 +250,7 @@ impl ChunkManager {
 			}
 		}
 
-		if debug_dirty_rects {
+		if debug_info.debug_dirty_rects {
 			for (index, chunk) in self.chunks.iter() {
 				if chunk.active {
 					draw.rect(((index.0 as f32 * COLS as f32 + chunk.dirty_rect.min_xy.0 as f32) * UPSCALE_FACTOR,
@@ -255,12 +263,6 @@ impl ChunkManager {
 				}
 			}
 		}
-
-		let now = Instant::now();
-		for chunk in self.chunks.values_mut() {
-			chunk::render_chunk(chunk, gfx, draw, self.update_chunks);
-		}
-		self.chunks_render_time = now.elapsed();
 	}
 }
 
