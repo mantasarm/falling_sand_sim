@@ -20,7 +20,7 @@ pub fn air_element() -> Cell {
 		state: State::Gas,
 		color: [0, 0, 0, 0],
 		velocity: Vec2::ZERO,
-		drag: 1.,
+		drag: 0.95,
 		lifetime: -1
 	}
 }
@@ -72,7 +72,7 @@ pub fn sand_element() -> Cell {
 		state: State::Powder,
 		color: [243, 239, 118, 255],
 		velocity: Vec2::ZERO,
-		drag: 0.9,
+		drag: 1.0,
 		lifetime: -1
 	}
 }
@@ -111,7 +111,7 @@ pub fn water_element() -> Cell {
 		state:State::Liquid,
 		color: [55, 46, 229, 175],
 		velocity: Vec2::ZERO,
-		drag: 0.8,
+		drag: 0.4,
 		lifetime: -1
 	}
 }
@@ -120,11 +120,11 @@ pub fn petrol_element() -> Cell {
 	Cell {
 		element: Element::Petrol,
 		action: None,
-		density: 40.,
+		density: 35.,
 		state:State::Liquid,
 		color: [0, 95, 106, 175],
 		velocity: Vec2::ZERO,
-		drag: 0.8,
+		drag: 0.4,
 		lifetime: -1
 	}
 }
@@ -160,7 +160,7 @@ pub fn fire_element() -> Cell {
 	Cell {
 		element: Element::Fire,
 		action: None,
-		density: 1.,
+		density: 4.,
 		state: State::Plasma,
 		color: [255, 170, 0, 220],
 		velocity: Vec2::ZERO,

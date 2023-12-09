@@ -21,7 +21,7 @@ pub fn liquid_movement(f_grid: &mut Grid, i: usize, j: usize, mov_dt: &mut MovDa
 
 	let down_density = get(i as i32, j as i32 + 1, f_grid, mov_dt).density;
 
-	if down_density >= f_grid[i][j].density && f_grid[i][j].velocity.x.abs() <= 10. {
+	if down_density >= f_grid[i][j].density && f_grid[i][j].velocity.x.abs() <= 7. {
 		let mut left = f_grid[i][j].velocity.x < 0.;
 		let mut right = f_grid[i][j].velocity.x > 0.;
 
@@ -36,16 +36,17 @@ pub fn liquid_movement(f_grid: &mut Grid, i: usize, j: usize, mov_dt: &mut MovDa
 			}
 		}
 
+		let acc = 1.2;
 		if right {
 			if f_grid[i][j].velocity.x < 0. {
 				f_grid[i][j].velocity.x = 0.;
 			}
-			f_grid[i][j].velocity.x += 1.4;
+			f_grid[i][j].velocity.x += acc;
 		} else if left {
 			if f_grid[i][j].velocity.x > 0. {
 				f_grid[i][j].velocity.x = 0.;
 			}
-			f_grid[i][j].velocity.x -= 1.4;
+			f_grid[i][j].velocity.x -= acc;
 		}
 	}
 

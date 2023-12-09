@@ -53,7 +53,6 @@ pub fn apply_velocity(f_grid: &mut Grid, i: usize, j: usize, mov_dt: &mut MovDat
 	f_grid[i][j].velocity.x = f_grid[i][j].velocity.x.clamp(-max_vel(), max_vel());
 	f_grid[i][j].velocity.y = f_grid[i][j].velocity.y.clamp(-max_vel(), max_vel());
 
-	f_grid[i][j].velocity.x /= 1.05;
 	// INFO: We do this only for Powder elements, so other States could have slower accelarations
 	if f_grid[i][j].state == State::Powder {
 		if f_grid[i][j].velocity.x.abs() < 1.0 {
@@ -67,30 +66,41 @@ pub fn apply_velocity(f_grid: &mut Grid, i: usize, j: usize, mov_dt: &mut MovDat
 		return false;
 	}
 
-	let d = f_grid[i][j].density;
-	let (mut dx, mut dy) = (i as i32, j as i32);
+	let (mut max_x, mut max_y) = (i as i32, j as i32);
+	let mut max_drag = 1.;
 	for m in 1..=dist.round() as i32 {
-		let (x, y) = ((i as f32 + (force_x * m as f32)).round() as i32, (j as f32 + (force_y * m as f32)).round() as i32);
+		let (x, y) = ((i as f32 + (force_x * m as f32)).round() as i32, (j as f32 + (force_y * m as f32)).round() as i32); // INFO: Next step index
+		let get_el = get(x, y, f_grid, mov_dt); // INFO: Get the element that the moving element wants to move into
 
-		let get_el = get(x, y, f_grid, mov_dt);
-
-		if m == dist.round() as i32 {
-			return swap(f_grid, i, j, dx, dy, mov_dt);
-		} else if get_el.density >= d && get_el.state != State::Plasma && get_el.state != State::Gas { // INFO: Ignore Plasma and Gas elements so they could pass each other
+		if get_el.state == State::Solid {
 			if m == 1 {
 				f_grid[i][j].velocity = Vec2::ZERO;
 				return false;
+			} else {
+				if max_x != i as i32 || max_y != j as i32 {
+					f_grid[i][j].velocity *= max_drag;
+					return swap(f_grid, i, j, max_x, max_y, mov_dt);
+				} else {
+					f_grid[i][j].velocity = Vec2::ZERO;
+					return false;
+				}
 			}
-			if get_el.state == State::Solid {
-				f_grid[i][j].velocity = Vec2::ZERO;
-			}
-			return swap(f_grid, i, j, dx, dy, mov_dt);
 		} else {
-			let drag = get(x, y, f_grid, mov_dt).drag;
-			f_grid[i][j].velocity *= drag;
+			if get_el.density < f_grid[i][j].density {
+				max_drag = get_el.drag;
+				(max_x, max_y) = (x, y);
+			}
 		}
-		
-		(dx, dy) = (x, y);
+
+		if m == dist.round() as i32 {
+			if max_x != i as i32 || max_y != j as i32 {
+				f_grid[i][j].velocity *= max_drag;
+				return swap(f_grid, i, j, max_x, max_y, mov_dt);
+			} else {
+				f_grid[i][j].velocity = Vec2::ZERO;
+				return false;
+			}
+		}
 	}
 	false
 }
@@ -103,7 +113,7 @@ pub fn apply_gravity(future_grid: &mut Grid, i: usize, j: usize, mov_dt: &mut Mo
 	future_grid[i][j].velocity = future_grid[i][j].velocity.clamp(Vec2::new(-max_speed, -max_speed), Vec2::new(max_speed, max_speed));
 	
 	if below_element.density < future_grid[i][j].density {
-		const LIMIT: f32 = 7.;
+		const LIMIT: f32 = 5.;
 		if future_grid[i][j].velocity.y < LIMIT {
 			let g = 1.;
 			future_grid[i][j].velocity.y += g;
