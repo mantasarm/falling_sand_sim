@@ -156,6 +156,7 @@ pub fn debug_render(ctx: &Context, debug_info: &mut DebugInfo, chunk_manager: &C
 pub fn debug_metrics(ctx: &Context, app: &App, debug_info: &mut DebugInfo, chunk_manager: &ChunkManager) {
     Window::new("Metrics").resizable(false).collapsible(true).open(&mut debug_info.debug_metrics).show(ctx, |ui| {
         ui.label(format!("fps: {}", app.timer.fps().round()));
+        ui.label(format!("Chunk frame count: {:?}", chunk_manager.chunk_frame_count));
 
         ui.label(format!("Chunks render time: {:?}", chunk_manager.chunks_render_time));
 

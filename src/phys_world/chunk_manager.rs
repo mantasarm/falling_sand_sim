@@ -24,7 +24,7 @@ pub struct ChunkManager {
 	pub chunks_render_time: Duration,
 	pub	num_of_threads: [usize; 4],
 	font: Font,
-	chunk_frame_count: u128
+	pub chunk_frame_count: u128
 }
 
 impl ChunkManager {
@@ -97,76 +97,77 @@ impl ChunkManager {
 	fn update_chunks(&mut self, app: &mut App) {
 		if self.update_chunks {
 			self.update_time += app.timer.delta_f32();
-			let now = Instant::now();
 
-			let mut all_chunks_to_update = vec![];
-
-			// INFO: Separate chunks into updatable chunk pools
-			let mut chunks_to_update = (vec![], vec![], vec![], vec![]);
-			for j in self.range_y.0..=self.range_y.1 {
-				if j % 2 == 0 {
-					for i in self.range_x.0..=self.range_x.1 {
-						if i % 2 == 0 {
-							if self.chunks.get(&(i, j)).unwrap().active {
-								chunks_to_update.0.push((i, j));
-							}
-						} else {
-							if self.chunks.get(&(i, j)).unwrap().active {
-								chunks_to_update.1.push((i, j));
-							}
-						}
-					}
-				} else {
-					for i in self.range_x.0..=self.range_x.1 {
-						if i % 2 == 0 {
-							if self.chunks.get(&(i, j)).unwrap().active {
-								chunks_to_update.2.push((i, j));
-							}
-						} else {
-							if self.chunks.get(&(i, j)).unwrap().active {
-								chunks_to_update.3.push((i, j));
-							}
-						}
-					}
-				}
-			}
-			if !chunks_to_update.0.is_empty() {
-				all_chunks_to_update.push(chunks_to_update.0);
-			}
-			if !chunks_to_update.1.is_empty() {
-				all_chunks_to_update.push(chunks_to_update.1);
-			}
-			if !chunks_to_update.2.is_empty() {
-				all_chunks_to_update.push(chunks_to_update.2);
-			}
-			if !chunks_to_update.3.is_empty() {
-				all_chunks_to_update.push(chunks_to_update.3);
-			}
-
-			let mut updates_needed = 0;
-			while self.update_time >= 1. / CHUNK_UPDATE_FPS {
-				self.update_time -= 1. / CHUNK_UPDATE_FPS;
+			if self.update_time >= 1. / CHUNK_UPDATE_FPS {
+				let now = Instant::now();
+				
+				self.update_time = 0.;
 				self.chunk_frame_count += 1;
-				updates_needed += 1;
-			}
 
-			if !all_chunks_to_update.is_empty() && updates_needed > 0 {
-				self.num_of_threads = [0; 4];
-				let mut order: Vec<usize> = (0..all_chunks_to_update.len()).collect();
-				order.shuffle(&mut thread_rng());
+				let mut all_chunks_to_update = vec![];
 
-				for i in order {
-					self.update_select_chunks(&all_chunks_to_update[i], i, updates_needed);
+				// INFO: Separate chunks into updatable chunk pools
+				let mut chunks_to_update = (vec![], vec![], vec![], vec![]);
+				for j in self.range_y.0..=self.range_y.1 {
+					if j % 2 == 0 {
+						for i in self.range_x.0..=self.range_x.1 {
+							if i % 2 == 0 {
+								if self.chunks.get(&(i, j)).unwrap().active {
+									chunks_to_update.0.push((i, j));
+								}
+							} else {
+								if self.chunks.get(&(i, j)).unwrap().active {
+									chunks_to_update.1.push((i, j));
+								}
+							}
+						}
+					} else {
+						for i in self.range_x.0..=self.range_x.1 {
+							if i % 2 == 0 {
+								if self.chunks.get(&(i, j)).unwrap().active {
+									chunks_to_update.2.push((i, j));
+								}
+							} else {
+								if self.chunks.get(&(i, j)).unwrap().active {
+									chunks_to_update.3.push((i, j));
+								}
+							}
+						}
+					}
 				}
-			} else if all_chunks_to_update.is_empty() {
-				self.num_of_threads = [0; 4];
-			}
+			
+				if !chunks_to_update.0.is_empty() {
+					all_chunks_to_update.push(chunks_to_update.0);
+				}
+				if !chunks_to_update.1.is_empty() {
+					all_chunks_to_update.push(chunks_to_update.1);
+				}
+				if !chunks_to_update.2.is_empty() {
+					all_chunks_to_update.push(chunks_to_update.2);
+				}
+				if !chunks_to_update.3.is_empty() {
+					all_chunks_to_update.push(chunks_to_update.3);
+				}
 
-			self.chunks_update_time = now.elapsed();
+				if !all_chunks_to_update.is_empty() {
+					self.num_of_threads = [0; 4];
+					let mut order: Vec<usize> = (0..all_chunks_to_update.len()).collect();
+					order.shuffle(&mut thread_rng());
+
+					for i in order {
+						self.update_select_chunks(&all_chunks_to_update[i], i);
+					}
+				
+				} else if all_chunks_to_update.is_empty() {
+					self.num_of_threads = [0; 4];
+				}
+
+				self.chunks_update_time = now.elapsed();
+			}
 		}
 	}
 
-	fn update_select_chunks(&mut self, chunks_to_update: &Vec<(i32, i32)>, index: usize, updates_needed: i32) {
+	fn update_select_chunks(&mut self, chunks_to_update: &Vec<(i32, i32)>, index: usize) {
 		self.num_of_threads[index] = 0;
 		if chunks_to_update.len() > 1 { // INFO: Create threads only if there are multiple chunks to update
 			let mut thread_handles = vec![];
@@ -179,10 +180,8 @@ impl ChunkManager {
 			
 				let handle = thread::spawn(move || {
 					let world_chunks_ptr = ptr;
-					for _ in 0..updates_needed {
-						unsafe {
-							chunk::update_chunk(&mut chunk, &mut *world_chunks_ptr.ptr);
-						}
+					unsafe {
+						chunk::update_chunk(&mut chunk, &mut *world_chunks_ptr.ptr);
 					}
 					chunk
 				});
@@ -198,9 +197,7 @@ impl ChunkManager {
 			}
 		} else {
 			let mut chunk = self.chunks.remove(&chunks_to_update[0]).unwrap();
-			for _ in 0..updates_needed {
-				chunk::update_chunk(&mut chunk, &mut self.chunks);
-			}
+			chunk::update_chunk(&mut chunk, &mut self.chunks);
 			self.chunks.insert(chunks_to_update[0], chunk);
 		}
 	}
