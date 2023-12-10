@@ -16,7 +16,7 @@ pub struct Chunk {
 	pub active: bool,
 	pub dirty_tex: bool,
 	pub dirty_rect: DirtyRect,
-	bytes: Vec<u8>,
+	pub bytes: Vec<u8>,
 	texture: Texture,
 }
 
@@ -47,6 +47,11 @@ impl Chunk {
 	}
 }
 
+/*
+	INFO: We have to manually create this array on the heap
+	because usual array creation ([[air_element(); ROWS]; COLS])
+	still utilizes the stack which results in a stackoverflow error
+*/
 fn create_cells_array() -> Grid {
     let mut data = std::mem::ManuallyDrop::new(vec![air_element(); ROWS * COLS]);
     unsafe {
@@ -82,8 +87,6 @@ pub fn update_chunk(chunk: &mut Chunk, chunks: &mut WorldChunks) {
 			/* TODO: Bug: Elements when moving into other chunk sometimes do not activate the chunk and get stuck.
       			This affects all elements, happens only sometimes, issue unknown */
 			
-			// TODO: Change the way the update_byte function is called
-
 			let mut mov_dt = MovData {
 				chunks,
 				index: chunk.index,
@@ -178,6 +181,7 @@ pub fn modify_chunk_element(chunk: &mut Chunk, i: i32, j: i32, cell: &Cell) {
 		c_cell.color = [cell.color[0] - c, cell.color[1] - c, cell.color[2] - c, cell.color[3]];
 		chunk.grid[i as usize][j as usize] = c_cell;
 
+		update_byte(&mut chunk.bytes, i as usize, j as usize, &c_cell.color);
 		chunk.dirty_tex = true;
 
 		if !chunk.active {
@@ -237,7 +241,14 @@ pub fn render_chunk(chunk: &mut Chunk, gfx: &mut Graphics, draw: &mut Draw, upda
 
 fn update_chunk_tex_data(chunk: &mut Chunk, gfx: &mut Graphics, update_chunks: bool) {
 	if chunk.dirty_tex {
-		update_bytes(chunk, update_chunks);
+		/*
+			INFO: Texture data is updated at the same time as movements are done
+			we need to only manualy update the texture data when the chunks are paused
+		*/
+		if !update_chunks {
+			update_bytes(chunk);
+		}
+		
 		gfx.update_texture(&mut chunk.texture)
     		.with_data(&chunk.bytes)
     		.update()
@@ -247,28 +258,18 @@ fn update_chunk_tex_data(chunk: &mut Chunk, gfx: &mut Graphics, update_chunks: b
 	}
 }
 
+fn update_bytes(chunk: &mut Chunk) {
+	for i in 0..chunk.bytes.len() / 4 {
+		chunk.bytes[i * 4..i * 4 + 4].copy_from_slice(&chunk.grid[i % COLS][i / COLS].color);
+	}
+}
+
 pub fn update_byte(bytes: &mut Vec<u8>, i: usize, j: usize, color: &[u8; 4]) {
 	let index = j * COLS + i;
 	bytes[index * 4..index * 4 + 4].copy_from_slice(color);
 }
 
-fn update_bytes(chunk: &mut Chunk, update_chunks: bool) {
-	if !update_chunks {
-		for i in 0..chunk.bytes.len() / 4 {
-			chunk.bytes[i * 4..i * 4 + 4].copy_from_slice(&chunk.grid[i % COLS][i / COLS].color);
-		}
-	} else {
-		for i in chunk.dirty_rect.min_xy.0..=chunk.dirty_rect.max_xy.0 {
-			for j in chunk.dirty_rect.min_xy.1..=chunk.dirty_rect.max_xy.1 {
-				let index = j * COLS + i;
-
-				chunk.bytes[index * 4..index * 4 + 4].copy_from_slice(&chunk.grid[i][j].color);
-			
-			}
-		}
-	}
-}
-
+// INFO: Dirty rects are used for updating parts of the chunk and not the whole chunk
 pub struct DirtyRect {
 	pub min_xy: (usize, usize),
 	pub max_xy: (usize, usize),

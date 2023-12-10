@@ -2,6 +2,7 @@ use notan::math::Vec2;
 
 use crate::{phys_world::element::{Cell, State, solid_element}, phys_world::chunk::{ROWS, COLS, in_bound, self, Grid, MovData}, phys_world::chunk_manager::WorldChunks};
 
+// INFO: We set a max velocity so that elements wouldn't be able to jump over chunks
 pub const fn max_vel() -> f32 {
 	if COLS / 2 > ROWS / 2 {
 		return (ROWS / 2) as f32;
@@ -49,7 +50,7 @@ pub fn apply_velocity(f_grid: &mut Grid, i: usize, j: usize, mov_dt: &mut MovDat
 		return false;
 	}
 
-	// Clamp the elements speed to the maximum velocity
+	// INFO: Clamp the elements speed to the maximum velocity
 	f_grid[i][j].velocity.x = f_grid[i][j].velocity.x.clamp(-max_vel(), max_vel());
 	f_grid[i][j].velocity.y = f_grid[i][j].velocity.y.clamp(-max_vel(), max_vel());
 
@@ -66,6 +67,11 @@ pub fn apply_velocity(f_grid: &mut Grid, i: usize, j: usize, mov_dt: &mut MovDat
 		return false;
 	}
 
+	/*
+		INFO: Elements move to the furthest spot possible.
+		Elements can pass through all states except Solid elements,
+		however, they can only move into elements that have a lower density.
+	*/
 	let (mut max_x, mut max_y) = (i as i32, j as i32);
 	let mut max_drag = 1.;
 	for m in 1..=dist.round() as i32 {
@@ -73,26 +79,26 @@ pub fn apply_velocity(f_grid: &mut Grid, i: usize, j: usize, mov_dt: &mut MovDat
 		let get_el = get(x, y, f_grid, mov_dt); // INFO: Get the element that the moving element wants to move into
 
 		if get_el.state == State::Solid {
-			if m == 1 {
+			if m == 1 { // INFO: This means that the element immediately encountered a Solid element
 				f_grid[i][j].velocity = Vec2::ZERO;
 				return false;
 			} else {
-				if max_x != i as i32 || max_y != j as i32 {
+				if max_x != i as i32 || max_y != j as i32 { // INFO: Otherwise, it tries to move to the fursthest spot
 					f_grid[i][j].velocity *= max_drag;
 					return swap(f_grid, i, j, max_x, max_y, mov_dt);
-				} else {
+				} else { // INFO: This means there are no available spots
 					f_grid[i][j].velocity = Vec2::ZERO;
 					return false;
 				}
 			}
 		} else {
-			if get_el.density < f_grid[i][j].density {
+			if get_el.density < f_grid[i][j].density { // INFO: Set the new furthest available spot
 				max_drag = get_el.drag;
 				(max_x, max_y) = (x, y);
 			}
 		}
 
-		if m == dist.round() as i32 {
+		if m == dist.round() as i32 { // INFO: this means we encountered no Solid elements and we try to move to the furthest available spot
 			if max_x != i as i32 || max_y != j as i32 {
 				f_grid[i][j].velocity *= max_drag;
 				return swap(f_grid, i, j, max_x, max_y, mov_dt);
@@ -170,12 +176,15 @@ pub fn set(i: i32, j: i32, f_grid: &mut Grid, mov_dt: &mut MovData, cell: Cell) 
 
 #[inline]
 pub fn swap(grid: &mut Grid, i1: usize, j1: usize, i2: i32, j2: i32, mov_dt: &mut MovData) -> bool {
-	if in_bound(i2, j2) {
-		// INFO: Element swap happening inside of the chunk
+	if in_bound(i2, j2) { // INFO: Element swap happening inside of the chunk
+
+		// INFO: Update the chunk texture bytes
+		chunk::update_byte(mov_dt.bytes, i1, j1, &grid[i2 as usize][j2 as usize].color);
+		chunk::update_byte(mov_dt.bytes, i2 as usize, j2 as usize, &grid[i1][j1].color);
+			
 		(grid[i1][j1], grid[i2 as usize][j2 as usize]) = (grid[i2 as usize][j2 as usize], grid[i1][j1]);
 
 		mov_dt.dirty_rect.set_temp(i2 as usize, j2 as usize);
-		chunk::update_byte(mov_dt.bytes, i1, j1, &[0, 0, 0, 0]);
 
 		// INFO: Wake up neighboring sleeping chunks if chunk edge element moves
 		if i1 == 0 || i2 == 0 {
@@ -191,16 +200,18 @@ pub fn swap(grid: &mut Grid, i1: usize, j1: usize, i2: i32, j2: i32, mov_dt: &mu
 		}
 
 		return true;
-	} else {
-		// INFO: Element swap happening between two chunks
+	} else { // INFO: Element swap happening between two chunks
 		let wanted_chunk = get_wanted_chunk(mov_dt.index, i2, j2);
 		
 		if mov_dt.chunks.contains_key(&wanted_chunk) {
 			let (x, y) = get_new_element_coord(i2, j2);
 			
-			chunk::update_byte(mov_dt.bytes, i1, j1, &[0, 0, 0, 0]);
-
 			let chunk = mov_dt.chunks.get_mut(&wanted_chunk).unwrap();
+
+			// INFO: Update the chunk texture bytes
+			chunk::update_byte(mov_dt.bytes, i1, j1, &chunk.grid[x as usize][y as usize].color);
+			chunk::update_byte(&mut chunk.bytes, x as usize, y as usize, &grid[i1][j1].color);
+			
 			(grid[i1][j1], chunk.grid[x as usize][y as usize]) = (chunk.grid[x as usize][y as usize], grid[i1][j1]);
 
 			if !chunk.active {
@@ -220,7 +231,7 @@ pub fn swap(grid: &mut Grid, i1: usize, j1: usize, i2: i32, j2: i32, mov_dt: &mu
 fn wake_up_chunk(chunks: &mut WorldChunks, index: (i32, i32), dir: (i32, i32), dirty_coord: (usize, usize)) {
 	if let Some(chunk) = chunks.get_mut(&(index.0 + dir.0, index.1 + dir.1)) {
 		if !chunk.active { 
-			chunk::activate(chunk)
+			chunk::activate(chunk);
 		} else {
 			chunk.dirty_rect.set_temp(dirty_coord.0, dirty_coord.1);
 		}

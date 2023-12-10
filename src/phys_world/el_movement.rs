@@ -59,8 +59,6 @@ pub fn liquid_movement(f_grid: &mut Grid, i: usize, j: usize, mov_dt: &mut MovDa
 	false
 }
 
-// TODO: fix weird interaction between different gasses
-// TODO: improve gas interaction with itself
 #[inline]
 pub fn gas_movement(f_grid: &mut Grid, i: usize, j: usize, mov_dt: &mut MovData) -> bool {
 	let up_density = get(i as i32, j as i32 - 1, f_grid, mov_dt).density;

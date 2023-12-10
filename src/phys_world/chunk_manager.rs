@@ -5,7 +5,7 @@ use notan::{prelude::*, draw::*, random::rand::{prelude::SliceRandom, thread_rng
 
 use crate::{camera::Camera2D, input_manager::get_mouse_in_world, phys_world::element::{Cell, sand_element}, phys_world::chunk::{Chunk, self, COLS, UPSCALE_FACTOR, ROWS}, DebugInfo};
 
-const CHUNK_UPDATE_FPS: f32 = 60.;
+const CHUNK_UPDATE_DELTA: f32 = 0.016; // INFO: The chunks update at 60 FPS
 
 pub type WorldChunks = HashMap<(i32, i32), Chunk, RandomState>;
 
@@ -98,7 +98,7 @@ impl ChunkManager {
 		if self.update_chunks {
 			self.update_time += app.timer.delta_f32();
 
-			if self.update_time >= 1. / CHUNK_UPDATE_FPS {
+			if self.update_time >= CHUNK_UPDATE_DELTA {
 				let now = Instant::now();
 				
 				self.update_time = 0.;
