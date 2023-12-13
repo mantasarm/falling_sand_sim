@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use memory_stats::memory_stats;
 use notan::{egui::{Window, RichText, Color32, Context, Slider, Visuals, epaint::Shadow}, app::App, input::keyboard::KeyCode};
 
@@ -11,6 +13,7 @@ pub struct DebugInfo {
     pub debug_chunk_coords: bool,
     pub debug_dirty_rects: bool,
     pub debug_metrics: bool,
+    pub longest_update_time: Duration,
     pub debug_mem_usage: bool,
     pub sky_color: [u8; 3],
     pub sky_editor: bool
@@ -25,6 +28,7 @@ impl Default for DebugInfo {
             debug_chunk_bounds: false,
             debug_chunk_coords: true,
             debug_dirty_rects: false,
+            longest_update_time: Duration::ZERO,
             debug_metrics: false,
             debug_mem_usage: false,
             sky_color: [70, 35, 70],
@@ -71,7 +75,9 @@ pub fn debug_ui(ctx: &Context, app: &App, debug_info: &mut DebugInfo, chunk_mana
 
 pub fn debug_editor(ctx: &Context, app: &App, debug_info: &mut DebugInfo, chunk_manager: &mut ChunkManager) {
     Window::new("Editor").resizable(false).collapsible(true).title_bar(true).open(&mut debug_info.editor_open).show(ctx, |ui| {
-        ui.label(format!("fps: {}", app.timer.fps().round()));
+        if !debug_info.debug_metrics {
+            ui.label(format!("fps: {}", app.timer.fps().round()));
+        }
 
         ui.add_space(5.);
 
@@ -160,9 +166,21 @@ pub fn debug_metrics(ctx: &Context, app: &App, debug_info: &mut DebugInfo, chunk
 
         ui.label(format!("Chunks render time: {:?}", chunk_manager.chunks_render_time));
 
-        ui.label("                                                            "); // This is necessery because egui is annoying and without this the window twitches
+        ui.label("                                                            "); // INFO: This is necessery because egui is annoying and without this the window twitches
 
         ui.label(format!("Chunks update time: {:?}", chunk_manager.chunks_update_time));
+
+        if chunk_manager.chunks_update_time > debug_info.longest_update_time {
+            debug_info.longest_update_time = chunk_manager.chunks_update_time.clone();
+        }
+        
+        ui.label(format!("Biggest drop: {:?}", debug_info.longest_update_time));
+        if ui.button("Reset").clicked() {
+            debug_info.longest_update_time = Duration::ZERO;
+        }
+
+        ui.add_space(5.);
+        
         for i in 0..chunk_manager.num_of_threads.len() {
             ui.label(format!("Pass {} num of threads: {}", i, chunk_manager.num_of_threads[i]));
         }

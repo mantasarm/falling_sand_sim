@@ -98,7 +98,7 @@ pub fn gas_movement(f_grid: &mut Grid, i: usize, j: usize, mov_dt: &mut MovData)
 
 #[inline]
 pub fn fire_movement(f_grid: &mut Grid, i: usize, j: usize, mov_dt: &mut MovData) -> bool {
-	let rand =  fastrand::i32(2..8);
+	let rand = fastrand::i32(2..8);
 	f_grid[i][j].lifetime -= rand;
 
 	*mov_dt.keep_active = true;

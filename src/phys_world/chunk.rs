@@ -1,4 +1,4 @@
-use notan::{graphics::Texture, draw::{Draw, DrawImages}, prelude::Graphics, math::Vec2};
+use notan::{graphics::{Texture, TextureFilter}, draw::{Draw, DrawImages}, prelude::Graphics, math::Vec2};
 
 use crate::{phys_world::element::*, phys_world::el_movement::*, phys_world::chunk_manager::WorldChunks, phys_world::element_actions::handle_actions};
 
@@ -27,6 +27,7 @@ impl Chunk {
 		let texture = gfx
 			.create_texture()
 			.from_bytes(&bytes, COLS as u32, ROWS as u32)
+			.with_filter(TextureFilter::Nearest, TextureFilter::Nearest)
 			.build()
 			.unwrap();
 
