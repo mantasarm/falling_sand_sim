@@ -1,5 +1,5 @@
 # falling_sand_sim
-WIP falling sand simulation made with rust and notan. Currently trying to make this my best attempt at it.
+WIP falling sand simulation made with rust and notan.
 
 Completed tasks:
 * Base physics
