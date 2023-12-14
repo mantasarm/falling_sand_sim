@@ -116,6 +116,7 @@ pub fn fire_movement(f_grid: &mut Grid, i: usize, j: usize, mov_dt: &mut MovData
 
 	f_grid[i][j].color[1] = (f_grid[i][j].color[1] as f32 - (rand as f32).powf(2.) * 0.3).clamp(0., 200.) as u8;
 	f_grid[i][j].color[3] = (f_grid[i][j].color[3] as f32 - (rand as f32).powf(2.)).clamp(220., 255.) as u8;
+	chunk::update_byte(mov_dt.bytes, i, j, &f_grid[i][j].color);
 
 	if is_flammable(&get(i as i32, j as i32 - 1, f_grid, mov_dt)) {
 		set_action(i as i32, j as i32 - 1, f_grid, mov_dt, Some(Action::Burn));

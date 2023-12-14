@@ -177,7 +177,7 @@ impl ChunkManager {
 				let ptr = RawPtrHolder {
 					ptr: &mut self.chunks as *mut WorldChunks
 				};
-			
+
 				let handle = thread::spawn(move || {
 					let world_chunks_ptr = ptr;
 					unsafe {

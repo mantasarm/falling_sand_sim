@@ -1,5 +1,7 @@
 use crate::{phys_world::element::*, phys_world::chunk::{Grid, in_bound, MovData}, phys_world::base_movement::*};
 
+use super::chunk;
+
 pub fn handle_actions(future_grid: &mut Grid, i: usize, j: usize, mov_dt: &mut MovData) {
     match future_grid[i][j].action {
         Some(action) => 'action: {
@@ -12,6 +14,7 @@ pub fn handle_actions(future_grid: &mut Grid, i: usize, j: usize, mov_dt: &mut M
                             future_grid[i][j].color[0] /= 2;
                             future_grid[i][j].color[1] /= 2;
                             future_grid[i][j].color[2] /= 2;
+                            chunk::update_byte(&mut mov_dt.bytes, i, j, &future_grid[i][j].color);
                         }
                     } else if future_grid[i][j].lifetime < 0 {
                         future_grid[i][j] = burn_element;

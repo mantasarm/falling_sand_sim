@@ -150,11 +150,13 @@ pub fn get(i: i32, j: i32, f_grid: &mut Grid, mov_dt: &mut MovData) -> Cell {
 		return f_grid[i as usize][j as usize]
 	} else {
 		let wanted_chunk = get_wanted_chunk(mov_dt.index, i, j);
-		
-		if mov_dt.chunks.contains_key(&wanted_chunk) {
-			let (x, y) = get_new_element_coord(i, j);
-			
-			return mov_dt.chunks.get(&wanted_chunk).unwrap().grid[x as usize][y as usize];
+
+		match mov_dt.chunks.get(&wanted_chunk) {
+			Some(chunk) => {
+				let (x, y) = get_new_element_coord(i, j);
+				return chunk.grid[x as usize][y as usize];
+			},
+			_ => ()
 		}
 	}
 	solid_element()
@@ -166,10 +168,13 @@ pub fn set(i: i32, j: i32, f_grid: &mut Grid, mov_dt: &mut MovData, cell: Cell) 
 		f_grid[i as usize][j as usize] = cell;
 	} else {
 		let wanted_chunk = get_wanted_chunk(mov_dt.index, i, j);
-		
-		if mov_dt.chunks.contains_key(&wanted_chunk) {
-			let (x, y) = get_new_element_coord(i, j);
-			mov_dt.chunks.get_mut(&wanted_chunk).unwrap().grid[x as usize][y as usize] = cell;
+
+		match mov_dt.chunks.get_mut(&wanted_chunk) {
+			Some(chunk) => {
+				let (x, y) = get_new_element_coord(i, j);
+				chunk.grid[x as usize][y as usize] = cell;
+			},
+			_ => ()
 		}
 	}
 }
@@ -202,26 +207,27 @@ pub fn swap(grid: &mut Grid, i1: usize, j1: usize, i2: i32, j2: i32, mov_dt: &mu
 		return true;
 	} else { // INFO: Element swap happening between two chunks
 		let wanted_chunk = get_wanted_chunk(mov_dt.index, i2, j2);
-		
-		if mov_dt.chunks.contains_key(&wanted_chunk) {
-			let (x, y) = get_new_element_coord(i2, j2);
+
+		match mov_dt.chunks.get_mut(&wanted_chunk) {
+			Some(chunk) => {
+				let (x, y) = get_new_element_coord(i2, j2);
+
+				// INFO: Update the chunk texture bytes
+				chunk::update_byte(mov_dt.bytes, i1, j1, &chunk.grid[x as usize][y as usize].color);
+				chunk::update_byte(&mut chunk.bytes, x as usize, y as usize, &grid[i1][j1].color);
 			
-			let chunk = mov_dt.chunks.get_mut(&wanted_chunk).unwrap();
+				(grid[i1][j1], chunk.grid[x as usize][y as usize]) = (chunk.grid[x as usize][y as usize], grid[i1][j1]);
 
-			// INFO: Update the chunk texture bytes
-			chunk::update_byte(mov_dt.bytes, i1, j1, &chunk.grid[x as usize][y as usize].color);
-			chunk::update_byte(&mut chunk.bytes, x as usize, y as usize, &grid[i1][j1].color);
-			
-			(grid[i1][j1], chunk.grid[x as usize][y as usize]) = (chunk.grid[x as usize][y as usize], grid[i1][j1]);
-
-			if !chunk.active {
-				chunk::activate(chunk);
-				chunk.dirty_rect.set_temp(x as usize, y as usize);
-			} else {
-				chunk.dirty_rect.set_temp(x as usize, y as usize);
-			}
-
-			return true;
+				if !chunk.active {
+					chunk::activate(chunk);
+					chunk.dirty_rect.set_temp(x as usize, y as usize);
+				} else {
+					chunk.dirty_rect.set_temp(x as usize, y as usize);
+				}
+				
+				return true;
+			},
+			_ => ()
 		}
 	}
 	false
