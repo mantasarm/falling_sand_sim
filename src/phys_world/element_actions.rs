@@ -18,6 +18,7 @@ pub fn handle_actions(future_grid: &mut Grid, i: usize, j: usize, mov_dt: &mut M
                         }
                     } else if future_grid[i][j].lifetime < 0 {
                         future_grid[i][j] = burn_element;
+                        chunk::update_byte(&mut mov_dt.bytes, i, j, &future_grid[i][j].color);
                         break 'action;
                     }
 
