@@ -83,7 +83,7 @@ pub fn apply_velocity(f_grid: &mut Grid, i: usize, j: usize, mov_dt: &mut MovDat
 				f_grid[i][j].velocity = Vec2::ZERO;
 				return false;
 			} else {
-				if max_x != i as i32 || max_y != j as i32 { // INFO: Otherwise, it tries to move to the fursthest spot
+				if max_x != i as i32 || max_y != j as i32 { // INFO: Otherwise, it tries to move to the furthest spot
 					f_grid[i][j].velocity *= max_drag;
 					return swap(f_grid, i, j, max_x, max_y, mov_dt);
 				} else { // INFO: This means there are no available spots
@@ -204,7 +204,7 @@ pub fn swap(grid: &mut Grid, i1: usize, j1: usize, i2: i32, j2: i32, mov_dt: &mu
 			wake_up_chunk(mov_dt.chunks, mov_dt.index, (0, 1), (i1, 0));
 		}
 
-		return true;
+		true
 	} else { // INFO: Element swap happening between two chunks
 		let wanted_chunk = get_wanted_chunk(mov_dt.index, i2, j2);
 
@@ -225,12 +225,11 @@ pub fn swap(grid: &mut Grid, i1: usize, j1: usize, i2: i32, j2: i32, mov_dt: &mu
 					chunk.dirty_rect.set_temp(x as usize, y as usize);
 				}
 				
-				return true;
+				true
 			},
-			_ => ()
+			_ => false
 		}
 	}
-	false
 }
 
 #[inline]
