@@ -112,25 +112,33 @@ impl ChunkManager {
 					if j % 2 == 0 {
 						for i in self.range_x.0..=self.range_x.1 {
 							if i % 2 == 0 {
-								if self.chunks.get(&(i, j)).unwrap().active {
-									chunks_to_update.0.push((i, j));
-								}
+								if let Some(chunk) = self.chunks.get(&(i, j)) {
+							        if chunk.active {
+								        chunks_to_update.0.push((i, j));
+							        }
+						        }
 							} else {
-								if self.chunks.get(&(i, j)).unwrap().active {
-									chunks_to_update.1.push((i, j));
-								}
+								if let Some(chunk) = self.chunks.get(&(i, j)) {
+							        if chunk.active {
+								        chunks_to_update.1.push((i, j));
+							        }
+						        }
 							}
 						}
 					} else {
 						for i in self.range_x.0..=self.range_x.1 {
 							if i % 2 == 0 {
-								if self.chunks.get(&(i, j)).unwrap().active {
-									chunks_to_update.2.push((i, j));
-								}
+								if let Some(chunk) = self.chunks.get(&(i, j)) {
+							        if chunk.active {
+								        chunks_to_update.2.push((i, j));
+							        }
+						        }
 							} else {
-								if self.chunks.get(&(i, j)).unwrap().active {
-									chunks_to_update.3.push((i, j));
-								}
+								if let Some(chunk) = self.chunks.get(&(i, j)) {
+							        if chunk.active {
+								        chunks_to_update.3.push((i, j));
+							        }
+						        }
 							}
 						}
 					}
