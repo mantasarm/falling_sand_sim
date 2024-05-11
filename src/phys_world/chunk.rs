@@ -304,6 +304,10 @@ impl DirtyRect {
 		self.temp_min_xy = (COLS - 1, ROWS - 1);
 		self.temp_max_xy = (0, 0);
 	}
+
+	pub fn get_area(&self) -> u32 {
+		(self.max_xy.0 - self.min_xy.0) as u32 * (self.max_xy.1 - self.min_xy.1) as u32
+	}
 }
 
 impl Default for DirtyRect {

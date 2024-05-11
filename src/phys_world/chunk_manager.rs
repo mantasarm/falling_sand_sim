@@ -179,31 +179,83 @@ impl ChunkManager {
 		self.num_of_threads[index] = 0;
 		if chunks_to_update.len() > 1 { // INFO: Create threads only if there are multiple chunks to update
 			let mut thread_handles = vec![];
+
+			// Separate chunks into pools for optimized use of threads
+			// INFO: Here the chunks are sorted in increasing size by area
+			let mut ordered_chunks_to_update = vec![];
 			for chunk_index in chunks_to_update {
-				let mut chunk = self.chunks.remove(chunk_index).unwrap();
-
-				let ptr = RawPtrHolder {
-					ptr: &mut self.chunks as *mut WorldChunks
-				};
-
-				let handle = thread::spawn(move || {
-					let world_chunks_ptr = ptr;
-					unsafe {
-						chunk::update_chunk(&mut chunk, &mut *world_chunks_ptr.ptr);
+				let mut inserted = false;
+				for i in 0..(ordered_chunks_to_update.len()) {
+					if self.chunks.get(chunk_index).unwrap().dirty_rect.get_area() < self.chunks.get(&ordered_chunks_to_update[i]).unwrap().dirty_rect.get_area() {
+						ordered_chunks_to_update.insert(i, chunk_index.clone());
+						inserted = true;
+						break;
 					}
-					chunk
-				});
-
-				thread_handles.push(handle);
+				}
+				if !inserted {
+					ordered_chunks_to_update.insert(ordered_chunks_to_update.len(), chunk_index.clone());
+				}
 			}
 
-			self.num_of_threads[index] = thread_handles.len();
-
-			for handle in thread_handles {
-				let chunk = handle.join().unwrap();
-				self.chunks.insert(chunk.index, chunk);
+			// INFO: Here the chunks are separated into threadable pools
+			let mut chunk_pools_to_update = vec![];
+			let mut chunk_pool = vec![];
+			let mut sum = 0;
+			while !ordered_chunks_to_update.is_empty() {
+				if sum + self.chunks.get(&ordered_chunks_to_update[0]).unwrap().dirty_rect.get_area() > (COLS * ROWS) as u32 {
+					chunk_pools_to_update.push(chunk_pool.clone());
+					chunk_pool.clear();
+					sum = 0;
+				}
+				sum += self.chunks.get(&ordered_chunks_to_update[0]).unwrap().dirty_rect.get_area();
+				chunk_pool.push(ordered_chunks_to_update.remove(0));
 			}
-		} else {
+			if !chunk_pool.is_empty() {
+				chunk_pools_to_update.push(chunk_pool);
+			}
+
+			// Update the chunks
+			if chunk_pools_to_update.len() > 1 { // INFO: Only create threads if there is more than one pool to update
+				for chunk_pool_indices in chunk_pools_to_update {
+					let mut chunk_pool = vec![];
+					for chunk_index in &chunk_pool_indices {
+						chunk_pool.push(self.chunks.remove(chunk_index).unwrap());
+					}
+
+					let ptr = RawPtrHolder {
+						ptr: &mut self.chunks as *mut WorldChunks
+					};
+
+					let handle = thread::spawn(move || {
+						let world_chunks_ptr = ptr;
+						unsafe {
+							for i in 0..chunk_pool.len() {
+								chunk::update_chunk(&mut chunk_pool[i], &mut *world_chunks_ptr.ptr);
+							}
+						}
+						chunk_pool
+					});
+
+					thread_handles.push(handle);
+				}
+			
+				self.num_of_threads[index] = thread_handles.len();
+
+				for handle in thread_handles {
+					let mut chunk_pool = handle.join().unwrap();
+					while !chunk_pool.is_empty() {
+						let chunk = chunk_pool.remove(0);
+						self.chunks.insert(chunk.index, chunk);
+					}
+				}
+			} else { // INFO: Update single pool
+				for i in 0..chunk_pools_to_update[0].len() {
+					let mut chunk = self.chunks.remove(&chunk_pools_to_update[0][i]).unwrap();
+					chunk::update_chunk(&mut chunk, &mut self.chunks);
+					self.chunks.insert(chunk.index, chunk);
+				}
+			}
+		} else { // INFO: Update single chunk
 			let mut chunk = self.chunks.remove(&chunks_to_update[0]).unwrap();
 			chunk::update_chunk(&mut chunk, &mut self.chunks);
 			self.chunks.insert(chunks_to_update[0], chunk);
