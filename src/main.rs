@@ -88,8 +88,6 @@ fn draw(app: &mut App, gfx: &mut Graphics, plugins: &mut Plugins, state: &mut St
     let output = plugins.egui(|ctx| {
         state.chunk_manager.modify = !ctx.is_pointer_over_area();
 
-        ctx.set_pixels_per_point(app.window().dpi() as f32);
-
         debug_ui::debug_ui(ctx, app, &mut state.debug_info, &mut state.chunk_manager);
     });
 

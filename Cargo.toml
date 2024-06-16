@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-ahash = "0.8.6"
-fastrand = "2.0.1"
-notan = { version = "0.12", features = ["egui"] }
+ahash = "0.8.11"
+fastrand = "2.1.0"
+notan = { version = "0.12.1", features = ["egui"] }
 memory-stats = "1.1.0"
