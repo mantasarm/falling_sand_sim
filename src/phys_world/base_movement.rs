@@ -2,6 +2,8 @@ use notan::math::Vec2;
 
 use crate::{phys_world::element::{Cell, State, solid_element}, phys_world::chunk::{ROWS, COLS, in_bound, self, Grid, MovData}, phys_world::chunk_manager::WorldChunks};
 
+use super::{element::Action, element_actions::{is_flammable, set_action}};
+
 // INFO: We set a max velocity so that elements wouldn't be able to jump over chunks
 pub const fn max_vel() -> f32 {
 	if COLS / 2 > ROWS / 2 {
@@ -24,8 +26,10 @@ pub fn downward(f_grid: &mut Grid, i: usize, j: usize, mov_dt: &mut MovData) -> 
 pub fn downward_sides(f_grid: &mut Grid, i: usize, j: usize, mov_dt: &mut MovData) -> bool {
 	let d = f_grid[i][j].density;
 
-	let mut left = get(i as i32 - 1, j as i32 + 1, f_grid, mov_dt).density < d;
-	let mut right = get(i as i32 + 1, j as i32 + 1, f_grid, mov_dt).density < d;
+	let mut left = get(i as i32 - 1, j as i32 + 1, f_grid, mov_dt).density < d
+					&& get(i as i32 - 1, j as i32 + 1, f_grid, mov_dt).state != State::Solid;
+	let mut right = get(i as i32 + 1, j as i32 + 1, f_grid, mov_dt).density < d
+					&& get(i as i32 + 1, j as i32 + 1, f_grid, mov_dt).state != State::Solid;
 	
 	if left && right {
 		let rand = fastrand::bool();
@@ -143,6 +147,23 @@ pub fn apply_gravity(future_grid: &mut Grid, i: usize, j: usize, mov_dt: &mut Mo
 		}
 	}
 }
+
+#[inline]
+pub fn spread_fire(f_grid: &mut Grid, i: usize, j: usize, mov_dt: &mut MovData) {
+	if is_flammable(&get(i as i32, j as i32 - 1, f_grid, mov_dt)) {
+		set_action(i as i32, j as i32 - 1, f_grid, mov_dt, Some(Action::Burn));
+	}
+	if is_flammable(&get(i as i32, j as i32 + 1, f_grid, mov_dt)) {
+		set_action(i as i32, j as i32 + 1, f_grid, mov_dt, Some(Action::Burn));
+	}
+	if is_flammable(&get(i as i32 - 1, j as i32, f_grid, mov_dt)) {
+		set_action(i as i32 - 1, j as i32, f_grid, mov_dt, Some(Action::Burn));
+	}
+	if is_flammable(&get(i as i32 + 1, j as i32, f_grid, mov_dt)) {
+		set_action(i as i32 + 1, j as i32, f_grid, mov_dt, Some(Action::Burn));
+	}
+}
+
 
 #[inline]
 pub fn get(i: i32, j: i32, f_grid: &mut Grid, mov_dt: &mut MovData) -> Cell {

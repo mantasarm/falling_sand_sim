@@ -1,4 +1,6 @@
-use crate::{phys_world::base_movement::*, phys_world::chunk::{Grid, MovData, self}, phys_world::element_actions::{set_action, is_flammable}, phys_world::element::{Action, air_element}};
+use crate::{phys_world::base_movement::*, phys_world::chunk::{Grid, MovData, self}};
+
+use super::element::air_element;
 
 #[inline]
 pub fn falling_sand(f_grid: &mut Grid, i: usize, j: usize, mov_dt: &mut MovData) -> bool {
@@ -36,7 +38,7 @@ pub fn liquid_movement(f_grid: &mut Grid, i: usize, j: usize, mov_dt: &mut MovDa
 			}
 		}
 
-		let acc = 1.2;
+		let acc = 3. * f_grid[i][j].drag;
 		if right {
 			if f_grid[i][j].velocity.x < 0. {
 				f_grid[i][j].velocity.x = 0.;
@@ -118,18 +120,7 @@ pub fn fire_movement(f_grid: &mut Grid, i: usize, j: usize, mov_dt: &mut MovData
 	f_grid[i][j].color[3] = (f_grid[i][j].color[3] as f32 - (rand as f32).powf(2.)).clamp(220., 255.) as u8;
 	chunk::update_byte(mov_dt.bytes, i, j, &f_grid[i][j].color);
 
-	if is_flammable(&get(i as i32, j as i32 - 1, f_grid, mov_dt)) {
-		set_action(i as i32, j as i32 - 1, f_grid, mov_dt, Some(Action::Burn));
-	}
-	if is_flammable(&get(i as i32, j as i32 + 1, f_grid, mov_dt)) {
-		set_action(i as i32, j as i32 + 1, f_grid, mov_dt, Some(Action::Burn));
-	}
-	if is_flammable(&get(i as i32 - 1, j as i32, f_grid, mov_dt)) {
-		set_action(i as i32 - 1, j as i32, f_grid, mov_dt, Some(Action::Burn));
-	}
-	if is_flammable(&get(i as i32 + 1, j as i32, f_grid, mov_dt)) {
-		set_action(i as i32 + 1, j as i32, f_grid, mov_dt, Some(Action::Burn));
-	}
+	spread_fire(f_grid, i, j, mov_dt);
 	
 	if !apply_velocity(f_grid, i, j, mov_dt) {
 		mov_dt.dirty_rect.set_temp(i, j);

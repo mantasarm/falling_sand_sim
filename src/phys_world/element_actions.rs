@@ -2,12 +2,12 @@ use crate::{phys_world::element::*, phys_world::chunk::{Grid, in_bound, MovData}
 
 use super::chunk;
 
-pub fn handle_actions(future_grid: &mut Grid, i: usize, j: usize, mov_dt: &mut MovData) {
+pub fn handle_actions(future_grid: &mut Grid, i: usize, j: usize, mov_dt: &mut MovData, frame_count: u128) {
     match future_grid[i][j].action {
         Some(action) => 'action: {
             match action {
                 Action::Burn => {
-                    let (lifetime, burn_element, emit_fire, darken) = get_flammable_info(&future_grid[i][j].element);
+                    let (lifetime, burn_element, emit_fire, darken, light_other) = get_flammable_info(&future_grid[i][j].element);
                     if future_grid[i][j].lifetime == -1 {
                         future_grid[i][j].lifetime = lifetime;
                         if darken {
@@ -16,21 +16,28 @@ pub fn handle_actions(future_grid: &mut Grid, i: usize, j: usize, mov_dt: &mut M
                             future_grid[i][j].color[2] /= 2;
                             chunk::update_byte(&mut mov_dt.bytes, i, j, &future_grid[i][j].color);
                         }
-                    } else if future_grid[i][j].lifetime < 0 {
+                    } else if future_grid[i][j].lifetime < 0 && future_grid[i][j].lifetime != -100 {
                         future_grid[i][j] = burn_element;
                         chunk::update_byte(&mut mov_dt.bytes, i, j, &future_grid[i][j].color);
                         break 'action;
                     }
 
-                    let rand = fastrand::i32(0..8);
-
                     *mov_dt.keep_active = true;
                     mov_dt.dirty_rect.set_temp(i, j);
 
-                    future_grid[i][j].lifetime -= rand;
-                    if future_grid[i][j].lifetime == -1 {
-                        future_grid[i][j].lifetime -= 1;
+                    // INFO: We do this instead of fastrand for performace reasons
+                    let rand = (i as u128 + j as u128 + frame_count) as i32 % 10;
+                    if future_grid[i][j].lifetime != -100 {
+                        future_grid[i][j].lifetime -= rand;
+                        if future_grid[i][j].lifetime == -1 {
+                            future_grid[i][j].lifetime -= 1;
+                        }
                     }
+
+                    if light_other {
+                        spread_fire(future_grid, i, j, mov_dt);
+                    }
+                    
 
                     if emit_fire {
                         match rand {
@@ -50,6 +57,39 @@ pub fn handle_actions(future_grid: &mut Grid, i: usize, j: usize, mov_dt: &mut M
                         }
                     }
                 }
+                Action::EmitSource(emit_element) => {
+                    let up = get(i as i32, j as i32 - 1,  future_grid, mov_dt);
+                    let down = get(i as i32, j as i32 + 1,  future_grid, mov_dt);
+                    let left = get(i as i32 - 1, j as i32,  future_grid, mov_dt);
+                    let right = get(i as i32 + 1, j as i32,  future_grid, mov_dt);
+                    match emit_element {
+                        Element::Air => {
+                            if up.state != State::Solid {
+                                future_grid[i][j].action = Some(Action::EmitSource(up.element));
+                            } else if down.state != State::Solid {
+                                future_grid[i][j].action = Some(Action::EmitSource(down.element));
+                            } else if left.state != State::Solid {
+                                future_grid[i][j].action = Some(Action::EmitSource(left.element));
+                            } else if right.state != State::Solid {
+                                future_grid[i][j].action = Some(Action::EmitSource(right.element));
+                            }
+                        },
+                        _ => {
+                            if up.state == State::Gas {
+                                set(i as i32, j as i32 - 1,  future_grid, mov_dt, el_from_enum(emit_element));
+                            }
+                            if down.state == State::Gas {
+                                set(i as i32, j as i32 + 1,  future_grid, mov_dt, el_from_enum(emit_element));
+                            }
+                            if left.state == State::Gas {
+                                set(i as i32 - 1, j as i32,  future_grid, mov_dt, el_from_enum(emit_element));
+                            }
+                            if right.state == State::Gas {
+                                set(i as i32 + 1, j as i32,  future_grid, mov_dt, el_from_enum(emit_element));
+                            }
+                        }
+                    }
+                },
             }
         },
         _ => ()
@@ -60,15 +100,17 @@ pub fn is_flammable(cell: &Cell) -> bool {
     matches!(cell.element, Element::Wood | Element::SawDust | Element::Coal | Element::Methane | Element::Water  | Element::Petrol)
 }
 
-pub fn get_flammable_info(element: &Element) -> (i32, Cell, bool, bool) {
+// Lifetime -1 burns up immediately, -100 burns forever
+pub fn get_flammable_info(element: &Element) -> (i32, Cell, bool, bool, bool) {
     match element {
-        Element::Wood => (300, air_element(), true, true),
-        Element::Coal => (400, smoke_element(), true, true),
-        Element::SawDust => (215, air_element(), true, true),
-        Element::Methane => (0, fire_element(), true, false),
-        Element::Water => (-1, steam_element(), false, false),
-        Element::Petrol => (80, fire_element(), true, false),
-        _ => (0, air_element(), false, false)
+        Element::Wood => (300, air_element(), true, true, false),
+        Element::Coal => (400, smoke_element(), true, true, false),
+        Element::SawDust => (215, air_element(), true, true, false),
+        Element::Methane => (0, fire_element(), true, false, false),
+        Element::Water => (-1, steam_element(), false, false, false),
+        Element::Petrol => (80, fire_element(), true, false, false),
+        Element::Lava => (-100, fire_element(), true, false, true),
+        _ => (0, air_element(), false, false, false)
     }
 }
 
@@ -78,9 +120,12 @@ pub fn set_action(i: i32, j: i32, f_grid: &mut Grid, mov_dt: &mut MovData, actio
 	} else {
 		let wanted_chunk = get_wanted_chunk(mov_dt.index, i, j);
 		
-		if mov_dt.chunks.contains_key(&wanted_chunk) {
-			let (x, y) = get_new_element_coord(i, j);
-			mov_dt.chunks.get_mut(&wanted_chunk).unwrap().grid[x as usize][y as usize].action = action;
+		match mov_dt.chunks.get_mut(&wanted_chunk) {
+		    Some(chunk) => {
+		        let (x, y) = get_new_element_coord(i, j);
+		        chunk.grid[x as usize][y as usize].action = action;
+		    },
+		    _ => ()
 		}
 	}
 }
