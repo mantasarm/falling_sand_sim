@@ -187,6 +187,7 @@ pub fn get(i: i32, j: i32, f_grid: &mut Grid, mov_dt: &mut MovData) -> Cell {
 pub fn set(i: i32, j: i32, f_grid: &mut Grid, mov_dt: &mut MovData, cell: Cell) {
 	if in_bound(i, j) {
 		f_grid[i as usize][j as usize] = cell;
+        chunk::update_byte(&mut mov_dt.bytes, i as usize, j as usize, &f_grid[i as usize][j as usize].color);
 	} else {
 		let wanted_chunk = get_wanted_chunk(mov_dt.index, i, j);
 
@@ -194,6 +195,14 @@ pub fn set(i: i32, j: i32, f_grid: &mut Grid, mov_dt: &mut MovData, cell: Cell) 
 			Some(chunk) => {
 				let (x, y) = get_new_element_coord(i, j);
 				chunk.grid[x as usize][y as usize] = cell;
+		        chunk::update_byte(&mut chunk.bytes, x as usize, y as usize, &chunk.grid[x as usize][y as usize].color);
+
+				if !chunk.active {
+					chunk::activate(chunk);
+					chunk.dirty_rect.set_temp(x as usize, y as usize);
+				} else {
+					chunk.dirty_rect.set_temp(x as usize, y as usize);
+				}
 			},
 			_ => ()
 		}
@@ -303,7 +312,5 @@ pub fn get_new_element_coord(i: i32, j: i32) -> (i32, i32) {
 		}
 	}
 	
-	x = x.clamp(0, COLS as i32 - 1);
-	y = y.clamp(0, ROWS as i32 - 1);
 	(x, y)
 }

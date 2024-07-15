@@ -187,7 +187,7 @@ pub fn lava_element() -> Cell {
         action: Some(Action::Burn),
         density: 120.,
         state: State::Liquid,
-        color: [234, 46, 56, 255],
+        color: [255, 102, 0, 255],
         velocity: Vec2::ZERO,
         drag: 0.1,
         lifetime: -1,
@@ -212,7 +212,7 @@ pub fn gravel_element() -> Cell {
         element: Element::Gravel,
         action: None,
         density: 130.,
-        state: State::Solid,
+        state: State::Powder,
         color: [83, 84, 78, 255],
         velocity: Vec2::ZERO,
         drag: 0.9,
@@ -233,7 +233,60 @@ pub fn soliddirt_element() -> Cell {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+pub fn grass_element() -> Cell {
+    Cell {
+        element: Element::Grass,
+        action: Some(Action::Grow),
+        density: 60.,
+        state: State::Solid,
+        color: [19, 109, 21, 255],
+        velocity: Vec2::ZERO,
+        drag: 0.,
+        lifetime: -1,
+    }
+}
+
+pub fn brick_element() -> Cell {
+    Cell {
+        element: Element::Brick,
+        action: None,
+        density: 100.,
+        state: State::Solid,
+        color: [156, 89, 89, 255],
+        velocity: Vec2::ZERO,
+        drag: 0.,
+        lifetime: -1,
+    }
+}
+
+pub fn snow_element() -> Cell {
+    Cell {
+        element: Element::Snow,
+        action: None,
+        density: 40.,
+        state: State::Powder,
+        color: [255, 255, 255, 255],
+        velocity: Vec2::ZERO,
+        drag: 0.9,
+        lifetime: -1,
+    }
+}
+
+
+pub fn ice_element() -> Cell {
+    Cell {
+        element: Element::Ice,
+        action: None,
+        density: 100.,
+        state: State::Solid,
+        color: [154, 176, 221, 255],
+        velocity: Vec2::ZERO,
+        drag: 0.,
+        lifetime: -1,
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Element {
     Air,
     Solid,
@@ -251,7 +304,11 @@ pub enum Element {
     Lava,
     Source,
     Gravel,
-    SolidDirt
+    SolidDirt,
+    Grass,
+    Brick,
+    Snow,
+    Ice
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -265,7 +322,7 @@ pub enum State {
 
 #[derive(Clone, Copy, Debug)]
 pub enum Action {
-    Burn, EmitSource(Element)
+    Burn, EmitSource(Element), Grow
 }
 
 pub fn el_from_enum(element: Element) -> Cell {
@@ -286,7 +343,10 @@ pub fn el_from_enum(element: Element) -> Cell {
         Element::Lava => lava_element(),
         Element::Source => source_element(),
         Element::Gravel => gravel_element(),
-        Element::SolidDirt => soliddirt_element()
+        Element::SolidDirt => soliddirt_element(),
+        Element::Grass => grass_element(),
+        Element::Brick => brick_element(),
+        Element::Snow => snow_element(),
+        Element::Ice => ice_element()
     }
 }
-

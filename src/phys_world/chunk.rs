@@ -10,6 +10,8 @@ use crate::{
     phys_world::element_actions::handle_actions,
 };
 
+use super::element_texture_handler::{ElementTexHandler, EL_TEX_WIDTH, EL_TEX_HEIGHT};
+
 pub const COLS: usize = 256;
 pub const ROWS: usize = 144;
 pub const UPSCALE_FACTOR: f32 = 2.;
@@ -117,7 +119,7 @@ pub fn update_chunk(chunk: &mut Chunk, chunks: &mut WorldChunks, frame_count: u1
                     Element::Sand | Element::Dirt | Element::Gravel => {
                         falling_sand(&mut chunk.future_grid, i, j, &mut mov_dt);
                     }
-                    Element::SawDust => {
+                    Element::SawDust | Element::Snow => {
                         handle_actions(&mut chunk.future_grid, i, j, &mut mov_dt, frame_count);
                         falling_sand(&mut chunk.future_grid, i, j, &mut mov_dt);
                     }
@@ -135,7 +137,7 @@ pub fn update_chunk(chunk: &mut Chunk, chunks: &mut WorldChunks, frame_count: u1
                     Element::Fire => {
                         fire_movement(&mut chunk.future_grid, i, j, &mut mov_dt);
                     }
-                    Element::Wood | Element::Coal | Element::Source => {
+                    Element::Wood | Element::Coal | Element::Source | Element::Grass | Element::Ice => {
                         handle_actions(&mut chunk.future_grid, i, j, &mut mov_dt, frame_count);
                     }
                     _ => (),
@@ -164,24 +166,20 @@ pub fn modify_chunk_elements(
     brush_size: i32,
     cell: &Cell,
     empty_only: bool,
+    element_texs: &ElementTexHandler
 ) {
     if brush_size != 1 {
         for x in -brush_size / 2..=brush_size / 2 {
             for y in -brush_size / 2..brush_size / 2 {
-                if (((i as f32 + 0.5) - (i as f32 - x as f32)).powf(2.)
-                    + ((j as f32 + 0.5) - (j as f32 - y as f32)).powf(2.))
-                    <= (brush_size as f32 / 2.).powf(2.)
-                {
+                if (((i as f32 + 0.5) - (i as f32 - x as f32)).powf(2.) + ((j as f32 + 0.5) - (j as f32 - y as f32)).powf(2.)) <= (brush_size as f32 / 2.).powf(2.) {
                     if empty_only && cell.element != Element::Air {
                         if in_bound(i - x, j - y) {
-                            if chunk.grid[(i - x) as usize][(j - y) as usize].element
-                                == Element::Air
-                            {
-                                modify_chunk_element(chunk, i - x, j - y, cell);
+                            if chunk.grid[(i - x) as usize][(j - y) as usize].element == Element::Air {
+                                modify_chunk_element(chunk, i - x, j - y, cell, element_texs);
                             }
                         }
                     } else {
-                        modify_chunk_element(chunk, i - x, j - y, cell);
+                        modify_chunk_element(chunk, i - x, j - y, cell, element_texs);
                     }
                 }
             }
@@ -190,31 +188,22 @@ pub fn modify_chunk_elements(
         if in_bound(i, j) {
             if empty_only && cell.element != Element::Air {
                 if chunk.grid[i as usize][j as usize].element == Element::Air {
-                    modify_chunk_element(chunk, i, j, cell);
+                    modify_chunk_element(chunk, i, j, cell, element_texs);
                 }
             } else {
-                modify_chunk_element(chunk, i, j, cell);
+                modify_chunk_element(chunk, i, j, cell, element_texs);
             }
         }
     }
 }
 
-pub fn modify_chunk_element(chunk: &mut Chunk, i: i32, j: i32, cell: &Cell) {
+pub fn modify_chunk_element(chunk: &mut Chunk, i: i32, j: i32, cell: &Cell, element_texs: &ElementTexHandler) {
     if in_bound(i, j) {
         let mut c_cell = cell.to_owned();
 
-        let amount = 40;
-        let mut c = fastrand::u8(0..=amount);
-        if c_cell.color[0] < c || c_cell.color[1] < c || c_cell.color[2] < c {
-            c = 0;
+        if let Some(tex_data) = element_texs.get_texture(cell.element) {
+            c_cell.color = tex_data[i as usize % EL_TEX_WIDTH][j as usize % EL_TEX_HEIGHT];
         }
-
-        c_cell.color = [
-            cell.color[0] - c,
-            cell.color[1] - c,
-            cell.color[2] - c,
-            cell.color[3],
-        ];
         chunk.grid[i as usize][j as usize] = c_cell;
 
         update_byte(&mut chunk.bytes, i as usize, j as usize, &c_cell.color);
@@ -256,10 +245,10 @@ pub fn get_chunk_cell(chunk: &Chunk, i: i32, j: i32) -> Option<&Cell> {
     None
 }
 
-pub fn mouse_in_chunk(chunk: &Chunk, mouse_world: (f32, f32)) -> (i32, i32) {
+pub fn mouse_in_chunk(chunk_index: (f32, f32), mouse_world: (f32, f32)) -> (i32, i32) {
     let mut mouse_pos = (0, 0);
-    mouse_pos.0 = ((mouse_world.0 - chunk.pos.0) / UPSCALE_FACTOR) as i32;
-    mouse_pos.1 = ((mouse_world.1 - chunk.pos.1) / UPSCALE_FACTOR) as i32;
+    mouse_pos.0 = ((mouse_world.0 - chunk_index.0) / UPSCALE_FACTOR) as i32;
+    mouse_pos.1 = ((mouse_world.1 - chunk_index.1) / UPSCALE_FACTOR) as i32;
 
     mouse_pos
 }

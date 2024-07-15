@@ -8,3 +8,4 @@ ahash = "0.8.11"
 fastrand = "2.1.0"
 notan = { version = "0.12.1", features = ["egui"] }
 memory-stats = "1.1.0"
+image = "0.25.1"

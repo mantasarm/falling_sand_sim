@@ -17,8 +17,10 @@ pub fn handle_actions(future_grid: &mut Grid, i: usize, j: usize, mov_dt: &mut M
                             chunk::update_byte(&mut mov_dt.bytes, i, j, &future_grid[i][j].color);
                         }
                     } else if future_grid[i][j].lifetime < 0 && future_grid[i][j].lifetime != -100 {
-                        future_grid[i][j] = burn_element;
-                        chunk::update_byte(&mut mov_dt.bytes, i, j, &future_grid[i][j].color);
+                        // TODO: Grass stops get stuck while burning
+                        set(i as i32, j as i32, future_grid, mov_dt, burn_element);
+                        *mov_dt.keep_active = true;
+                        mov_dt.dirty_rect.set_temp(i, j);
                         break 'action;
                     }
 
@@ -37,7 +39,6 @@ pub fn handle_actions(future_grid: &mut Grid, i: usize, j: usize, mov_dt: &mut M
                     if light_other {
                         spread_fire(future_grid, i, j, mov_dt);
                     }
-                    
 
                     if emit_fire {
                         match rand {
@@ -90,6 +91,74 @@ pub fn handle_actions(future_grid: &mut Grid, i: usize, j: usize, mov_dt: &mut M
                         }
                     }
                 },
+                Action::Grow => {
+                    let up = get(i as i32, j as i32 - 1,  future_grid, mov_dt);
+                    let down = get(i as i32, j as i32 + 1,  future_grid, mov_dt);
+                    let left = get(i as i32 - 1, j as i32,  future_grid, mov_dt);
+                    let right = get(i as i32 + 1, j as i32,  future_grid, mov_dt);
+
+                    let up_right = get(i as i32 + 1, j as i32 - 1,  future_grid, mov_dt);
+                    let up_left = get(i as i32 - 1, j as i32 - 1,  future_grid, mov_dt);
+                    let down_right = get(i as i32 + 1, j as i32 + 1,  future_grid, mov_dt);
+                    let down_left = get(i as i32 - 1, j as i32 + 1,  future_grid, mov_dt);
+
+                    let mut active = false;
+                    if left.element == Element::Air && down_left.element == Element::SolidDirt {
+                        set(i as i32 - 1, j as i32, future_grid, mov_dt, grass_element());
+                        active = true;
+                    }
+                    if right.element == Element::Air && down_right.element == Element::SolidDirt {
+                        set(i as i32 + 1, j as i32, future_grid, mov_dt, grass_element());
+                        active = true;
+                    }
+                    if down.element == Element::SolidDirt {
+                        if down_right.element == Element::Air {
+                            set(i as i32 + 1, j as i32 + 1, future_grid, mov_dt, grass_element());
+                            active = true;
+                        }
+                        if down_left.element == Element::Air {
+                            set(i as i32 - 1, j as i32 + 1, future_grid, mov_dt, grass_element());
+                            active = true;
+                        }
+                    }
+                    if down.element == Element::Air &&
+                       (down_right.element == Element::SolidDirt || down_left.element == Element::SolidDirt) {
+                            set(i as i32, j as i32 + 1, future_grid, mov_dt, grass_element());
+                            active = true;
+                    }
+                    if up.element == Element::Air &&
+                       (up_right.element == Element::SolidDirt || up_left.element == Element::SolidDirt) {
+                            set(i as i32, j as i32 - 1, future_grid, mov_dt, grass_element());
+                            active = true;
+                    }
+                    if right.element == Element::SolidDirt && up_right.element == Element::Air {
+                        set(i as i32 + 1, j as i32 - 1, future_grid, mov_dt, grass_element());
+                        active = true;
+                    }
+                    if left.element == Element::SolidDirt && up_left.element == Element::Air {
+                        set(i as i32 - 1, j as i32 - 1, future_grid, mov_dt, grass_element());
+                        active = true;
+                    }
+
+                    let mut height = 1;
+                    let growth_chance = fastrand::f32();
+                    while growth_chance < 1 as f32 / (height as f32).powf(2.) {
+                        if get(i as i32, j as i32 - height,  future_grid, mov_dt).element != Element::Air || height >= 6 {
+                            break;
+                        }
+                        let mut grass_el = grass_element();
+                        grass_el.action = None;
+                        set(i as i32, j as i32 - height, future_grid, mov_dt, grass_el.clone());
+                        height += 1;
+                    }
+
+                    if !active {
+                        future_grid[i][j].action = None;
+                    }
+
+                    *mov_dt.keep_active = true;
+                    mov_dt.dirty_rect.set_temp(i, j);
+                }
             }
         },
         _ => ()
@@ -97,10 +166,12 @@ pub fn handle_actions(future_grid: &mut Grid, i: usize, j: usize, mov_dt: &mut M
 }
 
 pub fn is_flammable(cell: &Cell) -> bool {
-    matches!(cell.element, Element::Wood | Element::SawDust | Element::Coal | Element::Methane | Element::Water  | Element::Petrol)
+    matches!(cell.element, Element::Wood | Element::SawDust | Element::Coal
+                            | Element::Methane | Element::Water  | Element::Petrol | Element::Grass
+                            | Element::Snow | Element::Ice)
 }
 
-// Lifetime -1 burns up immediately, -100 burns forever
+// INFO: Lifetime -1 burns up immediately, -100 burns forever
 pub fn get_flammable_info(element: &Element) -> (i32, Cell, bool, bool, bool) {
     match element {
         Element::Wood => (300, air_element(), true, true, false),
@@ -110,6 +181,9 @@ pub fn get_flammable_info(element: &Element) -> (i32, Cell, bool, bool, bool) {
         Element::Water => (-1, steam_element(), false, false, false),
         Element::Petrol => (80, fire_element(), true, false, false),
         Element::Lava => (-100, fire_element(), true, false, true),
+        Element::Grass => (2, fire_element(), true, true, false),
+        Element::Snow => (-1, water_element(), false, false, false),
+        Element::Ice => (-1, water_element(), false, false, false),
         _ => (0, air_element(), false, false, false)
     }
 }

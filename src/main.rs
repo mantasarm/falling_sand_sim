@@ -96,9 +96,7 @@ fn draw(app: &mut App, gfx: &mut Graphics, plugins: &mut Plugins, state: &mut St
     state.camera.apply(&mut render_draw);
 
     state.chunk_manager.render(gfx, &mut render_draw);
-    state
-        .chunk_manager
-        .debug_render(&mut render_draw, &state.debug_info);
+    state.chunk_manager.debug_render(&mut render_draw, &state.debug_info);
 
     render_draw.transform().pop();
 

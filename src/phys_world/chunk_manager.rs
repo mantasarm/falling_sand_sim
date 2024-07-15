@@ -19,6 +19,8 @@ use crate::{
     DebugInfo,
 };
 
+use super::element_texture_handler::ElementTexHandler;
+
 const CHUNK_UPDATE_DELTA: f32 = 0.016; // INFO: The chunks update at 60 FPS
 
 pub type WorldChunks = HashMap<(i32, i32), Chunk, RandomState>;
@@ -31,7 +33,7 @@ pub struct ChunkManager {
     pub update_chunks: bool,
     pub range_x: (i32, i32),
     pub range_y: (i32, i32),
-    pub hovering_cell: Cell,
+    pub hovering_cell: (Cell, (i32, i32), (i32, i32)),
     pub update_time: f32,
     pub replace_air: bool,
     pub chunks_update_time: Duration,
@@ -39,6 +41,7 @@ pub struct ChunkManager {
     pub num_of_threads: [usize; 4],
     font: Font,
     pub chunk_frame_count: u128,
+    pub tex_handler: ElementTexHandler
 }
 
 impl ChunkManager {
@@ -61,7 +64,7 @@ impl ChunkManager {
             update_chunks: true,
             range_x,
             range_y,
-            hovering_cell: sand_element(),
+            hovering_cell: (sand_element(), (0, 0), (0, 0)),
             update_time: 0.,
             replace_air: true,
             chunks_update_time: Duration::default(),
@@ -71,6 +74,7 @@ impl ChunkManager {
                 .create_font(include_bytes!("../assets/UbuntuMono.ttf"))
                 .unwrap(),
             chunk_frame_count: 0,
+            tex_handler: ElementTexHandler::new()
         }
     }
 
@@ -94,7 +98,7 @@ impl ChunkManager {
                 let key = &(i, j);
 
                 if let Some(chunk) = self.chunks.get_mut(key) {
-                    let mouse = chunk::mouse_in_chunk(chunk, mouse_world);
+                    let mouse = chunk::mouse_in_chunk(chunk.pos, mouse_world);
 
                     if app.mouse.left_is_down() && self.modify {
                         chunk::modify_chunk_elements(
@@ -104,6 +108,7 @@ impl ChunkManager {
                             self.brush_size,
                             &self.selected_element,
                             self.replace_air,
+                            &self.tex_handler
                         );
                     }
 
@@ -118,7 +123,9 @@ impl ChunkManager {
                     }
 
                     if let Some(c) = chunk::get_chunk_cell(chunk, mouse.0, mouse.1) {
-                        self.hovering_cell = c.to_owned();
+                        self.hovering_cell.0 = c.to_owned();
+                        self.hovering_cell.1 = chunk.index;
+                        self.hovering_cell.2 = mouse;
                     }
                 }
             }

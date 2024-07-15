@@ -154,6 +154,18 @@ pub fn debug_editor(
                 if ui.button(RichText::new("Solid Dirt").color(Color32::from_rgb(136, 107, 82))).clicked() {
                     chunk_manager.selected_element = soliddirt_element();
                 }
+                if ui.button(RichText::new("Grass").color(Color32::from_rgb(19, 109, 21))).clicked() {
+                    chunk_manager.selected_element = grass_element();
+                }
+                if ui.button(RichText::new("Brick").color(Color32::from_rgb(156, 89, 89))).clicked() {
+                    chunk_manager.selected_element = brick_element();
+                }
+                if ui.button(RichText::new("Snow").color(Color32::from_rgb(200, 200, 200))).clicked() {
+                    chunk_manager.selected_element = snow_element();
+                }
+                if ui.button(RichText::new("Ice").color(Color32::from_rgb(154, 176, 221))).clicked() {
+                    chunk_manager.selected_element = ice_element();
+                }
             });
             ui.add_space(5.);
 
@@ -180,36 +192,39 @@ pub fn debug_render(ctx: &Context, debug_info: &mut DebugInfo, chunk_manager: &C
             ui.checkbox(&mut debug_info.debug_dirty_rects, "Dirty rects");
             ui.add_space(5.);
 
+            ui.label(format!("Chunk hovered: {:?}", chunk_manager.hovering_cell.1));
+            ui.label(format!("Index hovered: {:?}", chunk_manager.hovering_cell.2));
+
             ui.label(RichText::new("Mouse is on: ").color(Color32::from_rgb(180, 180, 180)));
             ui.label("Cell {");
             ui.label(format!(
                 "    element: {:?} ",
-                chunk_manager.hovering_cell.element
+                chunk_manager.hovering_cell.0.element
             ));
             ui.label(format!(
                 "    action: {:?} ",
-                chunk_manager.hovering_cell.action
+                chunk_manager.hovering_cell.0.action
             ));
             ui.label(format!(
                 "    state: {:?}",
-                chunk_manager.hovering_cell.state
+                chunk_manager.hovering_cell.0.state
             ));
             ui.label(format!(
                 "    velocity: Vec2({:.2}, {:.2})",
-                chunk_manager.hovering_cell.velocity.x, chunk_manager.hovering_cell.velocity.y
+                chunk_manager.hovering_cell.0.velocity.x, chunk_manager.hovering_cell.0.velocity.y
             ));
             ui.label(format!(
                 "    density: {:?}",
-                chunk_manager.hovering_cell.density
+                chunk_manager.hovering_cell.0.density
             ));
-            ui.label(format!("    drag: {:?}", chunk_manager.hovering_cell.drag));
+            ui.label(format!("    drag: {:?}", chunk_manager.hovering_cell.0.drag));
             ui.label(format!(
                 "    color: {:?}",
-                chunk_manager.hovering_cell.color
+                chunk_manager.hovering_cell.0.color
             ));
             ui.label(format!(
                 "    lifetime: {:?}",
-                chunk_manager.hovering_cell.lifetime
+                chunk_manager.hovering_cell.0.lifetime
             ));
             ui.label("}");
         });

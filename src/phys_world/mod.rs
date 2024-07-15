@@ -4,3 +4,4 @@ pub mod base_movement;
 pub mod element;
 pub mod el_movement;
 pub mod element_actions;
+pub mod element_texture_handler;
