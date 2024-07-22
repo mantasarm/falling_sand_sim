@@ -9,9 +9,11 @@ Completed tasks:
 * Other optimizations (such as disabling and enabling chunks)
 * Multithreading
 
+IN PROGRESS:
+* Integration with rapier2d for rigid body simulation
+
 TODO:
 * Bug fixes and code clean up
-* Integration with rapier2d for rigid body simulation
 
 Progression:
 
