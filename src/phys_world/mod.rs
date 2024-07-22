@@ -5,3 +5,6 @@ pub mod element;
 pub mod el_movement;
 pub mod element_actions;
 pub mod element_texture_handler;
+pub mod rapier_edge_gen;
+pub mod rapier_world_handler;
+pub mod all_physics_manager;

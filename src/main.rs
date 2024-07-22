@@ -8,16 +8,16 @@ use debug_ui::DebugInfo;
 use notan::draw::*;
 use notan::egui::{EguiConfig, EguiPluginSugar};
 use notan::prelude::*;
+use phys_world::all_physics_manager::PhysicsManager;
 use phys_world::chunk::{COLS, ROWS, UPSCALE_FACTOR};
-use phys_world::chunk_manager::ChunkManager;
 
 #[derive(AppState)]
 struct State {
-    chunk_manager: ChunkManager,
     camera: Camera2D,
     camera_zoom: f32,
     sky_gradient: Texture,
     debug_info: DebugInfo,
+    physics_manager: PhysicsManager
 }
 
 #[notan_main]
@@ -50,7 +50,6 @@ fn init(app: &mut App, gfx: &mut Graphics) -> State {
     );
 
     State {
-        chunk_manager: ChunkManager::new(gfx),
         camera: Camera2D::new(
             COLS as f32 / 2. * UPSCALE_FACTOR,
             ROWS as f32 / 2. * UPSCALE_FACTOR,
@@ -65,12 +64,13 @@ fn init(app: &mut App, gfx: &mut Graphics) -> State {
             .build()
             .unwrap(),
         debug_info: DebugInfo::default(),
+        physics_manager: PhysicsManager::new(gfx)
     }
 }
 
 fn update(app: &mut App, state: &mut State) {
-    state.chunk_manager.update(app, &state.camera);
-
+    state.physics_manager.update(app, &state.camera);
+    
     if app.keyboard.was_pressed(KeyCode::Escape) {
         app.exit();
     }
@@ -95,8 +95,7 @@ fn draw(app: &mut App, gfx: &mut Graphics, plugins: &mut Plugins, state: &mut St
 
     state.camera.apply(&mut render_draw);
 
-    state.chunk_manager.render(gfx, &mut render_draw);
-    state.chunk_manager.debug_render(&mut render_draw, &state.debug_info);
+    state.physics_manager.render(gfx, &mut render_draw, &state.debug_info);
 
     render_draw.transform().pop();
 
@@ -104,8 +103,8 @@ fn draw(app: &mut App, gfx: &mut Graphics, plugins: &mut Plugins, state: &mut St
         .ellipse(
             (app.mouse.x, app.mouse.y),
             (
-                state.chunk_manager.brush_size as f32 * state.camera_zoom * 0.5 * UPSCALE_FACTOR,
-                state.chunk_manager.brush_size as f32 * state.camera_zoom * 0.5 * UPSCALE_FACTOR,
+                state.physics_manager.chunk_manager.brush_size as f32 * state.camera_zoom * 0.5 * UPSCALE_FACTOR,
+                state.physics_manager.chunk_manager.brush_size as f32 * state.camera_zoom * 0.5 * UPSCALE_FACTOR,
             ),
         )
         .stroke_color(Color::WHITE)
@@ -115,9 +114,9 @@ fn draw(app: &mut App, gfx: &mut Graphics, plugins: &mut Plugins, state: &mut St
     gfx.render(&render_draw);
 
     let output = plugins.egui(|ctx| {
-        state.chunk_manager.modify = !ctx.is_pointer_over_area();
+        state.physics_manager.chunk_manager.modify = !ctx.is_pointer_over_area();
 
-        debug_ui::debug_ui(ctx, app, &mut state.debug_info, &mut state.chunk_manager);
+        debug_ui::debug_ui(ctx, app, &mut state.debug_info, &mut state.physics_manager);
     });
 
     gfx.render(&output);

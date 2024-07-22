@@ -37,7 +37,7 @@ impl ElementTexHandler {
 
 pub fn get_tex_data(data: &[u8]) -> TextureData {
 	let img = image::load_from_memory(data).unwrap();
-
+		
 	let mut tex_data = [[[0; 4]; EL_TEX_WIDTH]; EL_TEX_HEIGHT];
 
 	let img_data = img.into_rgba8();

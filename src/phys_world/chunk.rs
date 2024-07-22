@@ -4,13 +4,14 @@ use notan::{
     math::Vec2,
     prelude::Graphics,
 };
+use rapier2d::math::Real;
 
 use crate::{
     phys_world::chunk_manager::WorldChunks, phys_world::el_movement::*, phys_world::element::*,
     phys_world::element_actions::handle_actions,
 };
 
-use super::element_texture_handler::{ElementTexHandler, EL_TEX_WIDTH, EL_TEX_HEIGHT};
+use super::{element_texture_handler::{ElementTexHandler, EL_TEX_WIDTH, EL_TEX_HEIGHT}, rapier_edge_gen::edges_from_chunk};
 
 pub const COLS: usize = 256;
 pub const ROWS: usize = 144;
@@ -28,6 +29,8 @@ pub struct Chunk {
     pub dirty_rect: DirtyRect,
     pub bytes: Vec<u8>,
     texture: Texture,
+    pub edges: Vec<Vec<rapier2d::math::Point<Real>>>,
+    pub colliders_dirty: bool
 }
 
 impl Chunk {
@@ -57,6 +60,8 @@ impl Chunk {
             dirty_rect: DirtyRect::default(),
             bytes,
             texture,
+            edges: vec![],
+            colliders_dirty: false
         }
     }
 }
@@ -77,6 +82,7 @@ pub struct MovData<'a> {
     pub keep_active: &'a mut bool,
     pub dirty_rect: &'a mut DirtyRect,
     pub bytes: &'a mut Vec<u8>,
+    pub colliders_dirty: &'a mut bool
 }
 
 pub fn update_chunk(chunk: &mut Chunk, chunks: &mut WorldChunks, frame_count: u128) {
@@ -112,6 +118,7 @@ pub fn update_chunk(chunk: &mut Chunk, chunks: &mut WorldChunks, frame_count: u1
                 keep_active: &mut keep_active,
                 dirty_rect: &mut chunk.dirty_rect,
                 bytes: &mut chunk.bytes,
+                colliders_dirty: &mut chunk.colliders_dirty
             };
 
             if chunk.grid[i][j].element == chunk.future_grid[i][j].element {
@@ -151,6 +158,10 @@ pub fn update_chunk(chunk: &mut Chunk, chunks: &mut WorldChunks, frame_count: u1
     chunk.dirty_tex = true;
 
     chunk.grid = chunk.future_grid.clone();
+
+	if chunk.colliders_dirty {
+        edges_from_chunk(chunk);
+    }
 }
 
 pub fn activate(chunk: &mut Chunk) {
@@ -201,8 +212,12 @@ pub fn modify_chunk_element(chunk: &mut Chunk, i: i32, j: i32, cell: &Cell, elem
     if in_bound(i, j) {
         let mut c_cell = cell.to_owned();
 
+        if c_cell.state == State::Solid || chunk.grid[i as usize][j as usize].state == State::Solid {
+            chunk.colliders_dirty = true;
+        }
+        
         if let Some(tex_data) = element_texs.get_texture(cell.element) {
-            c_cell.color = tex_data[i as usize % EL_TEX_WIDTH][j as usize % EL_TEX_HEIGHT];
+            c_cell.color = tex_data[i as usize % (EL_TEX_WIDTH)][j as usize % (EL_TEX_HEIGHT)];
         }
         chunk.grid[i as usize][j as usize] = c_cell;
 

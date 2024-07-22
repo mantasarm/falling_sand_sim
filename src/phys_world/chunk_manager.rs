@@ -19,14 +19,12 @@ use crate::{
     DebugInfo,
 };
 
-use super::element_texture_handler::ElementTexHandler;
-
-const CHUNK_UPDATE_DELTA: f32 = 0.016; // INFO: The chunks update at 60 FPS
+use super::{element_texture_handler::ElementTexHandler, rapier_world_handler::PHYS_SCALE};
 
 pub type WorldChunks = HashMap<(i32, i32), Chunk, RandomState>;
 
 pub struct ChunkManager {
-    chunks: WorldChunks,
+    pub chunks: WorldChunks,
     pub selected_element: Cell,
     pub modify: bool,
     pub brush_size: i32,
@@ -130,87 +128,80 @@ impl ChunkManager {
                 }
             }
         }
-
-        self.update_chunks(app);
     }
 
-    fn update_chunks(&mut self, app: &mut App) {
+    pub fn update_chunks_fixed(&mut self) {
         if self.update_chunks {
-            self.update_time += app.timer.delta_f32();
+            let now = Instant::now();
 
-            if self.update_time >= CHUNK_UPDATE_DELTA {
-                let now = Instant::now();
+            self.chunk_frame_count += 1;
 
-                self.update_time = 0.;
-                self.chunk_frame_count += 1;
+            let mut all_chunks_to_update = vec![];
 
-                let mut all_chunks_to_update = vec![];
-
-                // INFO: Separate chunks into updatable chunk pools
-                let mut chunks_to_update = (vec![], vec![], vec![], vec![]);
-                for j in self.range_y.0..=self.range_y.1 {
-                    if j % 2 == 0 {
-                        for i in self.range_x.0..=self.range_x.1 {
-                            if i % 2 == 0 {
-                                if let Some(chunk) = self.chunks.get(&(i, j)) {
-                                    if chunk.active {
-                                        chunks_to_update.0.push((i, j));
-                                    }
+            // INFO: Separate chunks into updatable chunk pools
+            let mut chunks_to_update = (vec![], vec![], vec![], vec![]);
+            for j in self.range_y.0..=self.range_y.1 {
+                if j % 2 == 0 {
+                    for i in self.range_x.0..=self.range_x.1 {
+                        if i % 2 == 0 {
+                            if let Some(chunk) = self.chunks.get(&(i, j)) {
+                                if chunk.active {
+                                    chunks_to_update.0.push((i, j));
                                 }
-                            } else {
-                                if let Some(chunk) = self.chunks.get(&(i, j)) {
-                                    if chunk.active {
-                                        chunks_to_update.1.push((i, j));
-                                    }
+                            }
+                        } else {
+                            if let Some(chunk) = self.chunks.get(&(i, j)) {
+                                if chunk.active {
+                                    chunks_to_update.1.push((i, j));
                                 }
                             }
                         }
-                    } else {
-                        for i in self.range_x.0..=self.range_x.1 {
-                            if i % 2 == 0 {
-                                if let Some(chunk) = self.chunks.get(&(i, j)) {
-                                    if chunk.active {
-                                        chunks_to_update.2.push((i, j));
-                                    }
+                    }
+                } else {
+                    for i in self.range_x.0..=self.range_x.1 {
+                        if i % 2 == 0 {
+                            if let Some(chunk) = self.chunks.get(&(i, j)) {
+                                if chunk.active {
+                                    chunks_to_update.2.push((i, j));
                                 }
-                            } else {
-                                if let Some(chunk) = self.chunks.get(&(i, j)) {
-                                    if chunk.active {
-                                        chunks_to_update.3.push((i, j));
-                                    }
+                            }
+                        } else {
+                            if let Some(chunk) = self.chunks.get(&(i, j)) {
+                                if chunk.active {
+                                    chunks_to_update.3.push((i, j));
                                 }
                             }
                         }
                     }
                 }
-
-                if !chunks_to_update.0.is_empty() {
-                    all_chunks_to_update.push(chunks_to_update.0);
-                }
-                if !chunks_to_update.1.is_empty() {
-                    all_chunks_to_update.push(chunks_to_update.1);
-                }
-                if !chunks_to_update.2.is_empty() {
-                    all_chunks_to_update.push(chunks_to_update.2);
-                }
-                if !chunks_to_update.3.is_empty() {
-                    all_chunks_to_update.push(chunks_to_update.3);
-                }
-
-                if !all_chunks_to_update.is_empty() {
-                    self.num_of_threads = [0; 4];
-                    let mut order: Vec<usize> = (0..all_chunks_to_update.len()).collect();
-                    order.shuffle(&mut thread_rng());
-
-                    for i in order {
-                        self.update_select_chunks(&all_chunks_to_update[i], i);
-                    }
-                } else if all_chunks_to_update.is_empty() {
-                    self.num_of_threads = [0; 4];
-                }
-
-                self.chunks_update_time = now.elapsed();
             }
+
+            if !chunks_to_update.0.is_empty() {
+                all_chunks_to_update.push(chunks_to_update.0);
+            }
+            if !chunks_to_update.1.is_empty() {
+                all_chunks_to_update.push(chunks_to_update.1);
+            }
+            if !chunks_to_update.2.is_empty() {
+                all_chunks_to_update.push(chunks_to_update.2);
+            }
+            if !chunks_to_update.3.is_empty() {
+                all_chunks_to_update.push(chunks_to_update.3);
+            }
+
+            if !all_chunks_to_update.is_empty() {
+                self.num_of_threads = [0; 4];
+                let mut order: Vec<usize> = (0..all_chunks_to_update.len()).collect();
+                order.shuffle(&mut thread_rng());
+
+                for i in order {
+                    self.update_select_chunks(&all_chunks_to_update[i], i);
+                }
+            } else if all_chunks_to_update.is_empty() {
+                self.num_of_threads = [0; 4];
+            }
+
+            self.chunks_update_time = now.elapsed();
         }
     }
 
@@ -390,6 +381,29 @@ impl ChunkManager {
                     .fill_color(Color::from_rgba(0., 0., 0., 0.))
                     .stroke_color(Color::BLUE)
                     .stroke(1.);
+                }
+            }
+        }
+
+        if debug_info.debug_chunk_edges {
+            for (index, chunk) in self.chunks.iter() {
+                if !chunk.edges.is_empty() {
+                    let mut i = 0;
+                    for line in chunk.edges.iter() {
+                        if !line.is_empty() {
+                            let mut prev_point = &line[0];
+                            for point in line {
+                                draw.line(
+                                    ((index.0 as f32 * COLS as f32 / (PHYS_SCALE / UPSCALE_FACTOR) + prev_point.x) * UPSCALE_FACTOR * PHYS_SCALE / UPSCALE_FACTOR,
+                                     (index.1 as f32 * ROWS as f32 / (PHYS_SCALE / UPSCALE_FACTOR) + prev_point.y) * UPSCALE_FACTOR * PHYS_SCALE / UPSCALE_FACTOR),
+                                    ((index.0 as f32 * COLS as f32 / (PHYS_SCALE / UPSCALE_FACTOR) + point.x) * UPSCALE_FACTOR * PHYS_SCALE / UPSCALE_FACTOR,
+                                     (index.1 as f32 * ROWS as f32 / (PHYS_SCALE / UPSCALE_FACTOR) + point.y) * UPSCALE_FACTOR * PHYS_SCALE / UPSCALE_FACTOR)
+                                ).color(Color::from_bytes(i * 100 + 150, i * 25, i * 50 + 150, 255));
+                                prev_point = point;
+                            }
+                            i += 1;
+                        }
+                    }
                 }
             }
         }

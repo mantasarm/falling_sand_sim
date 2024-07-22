@@ -17,10 +17,10 @@ pub fn handle_actions(future_grid: &mut Grid, i: usize, j: usize, mov_dt: &mut M
                             chunk::update_byte(&mut mov_dt.bytes, i, j, &future_grid[i][j].color);
                         }
                     } else if future_grid[i][j].lifetime < 0 && future_grid[i][j].lifetime != -100 {
-                        // TODO: Grass stops get stuck while burning
                         set(i as i32, j as i32, future_grid, mov_dt, burn_element);
                         *mov_dt.keep_active = true;
                         mov_dt.dirty_rect.set_temp(i, j);
+                        *mov_dt.colliders_dirty = true;
                         break 'action;
                     }
 

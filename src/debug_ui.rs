@@ -7,7 +7,7 @@ use notan::{
     input::keyboard::KeyCode,
 };
 
-use crate::{phys_world::chunk_manager::ChunkManager, phys_world::element::*};
+use crate::{phys_world::chunk_manager::ChunkManager, phys_world::{element::*, rapier_world_handler::RapierHandler, all_physics_manager::PhysicsManager}};
 
 pub struct DebugInfo {
     pub set_visuals: bool,
@@ -16,6 +16,8 @@ pub struct DebugInfo {
     pub debug_chunk_bounds: bool,
     pub debug_chunk_coords: bool,
     pub debug_dirty_rects: bool,
+    pub debug_chunk_edges: bool,
+    pub debug_rapier2d: bool,
     pub debug_metrics: bool,
     pub longest_update_time: Duration,
     pub debug_mem_usage: bool,
@@ -28,10 +30,12 @@ impl Default for DebugInfo {
         Self {
             set_visuals: false,
             editor_open: true,
-            debug_window: false,
+            debug_window: true,
             debug_chunk_bounds: false,
             debug_chunk_coords: true,
             debug_dirty_rects: false,
+            debug_chunk_edges: false,
+            debug_rapier2d: true,
             longest_update_time: Duration::ZERO,
             debug_metrics: false,
             debug_mem_usage: false,
@@ -41,7 +45,7 @@ impl Default for DebugInfo {
     }
 }
 
-pub fn debug_update(app: &App, debug_info: &mut DebugInfo, chunk_manager: &mut ChunkManager) {
+pub fn debug_update(app: &App, debug_info: &mut DebugInfo, physics_manager: &mut PhysicsManager) {
     if app.keyboard.was_pressed(KeyCode::R) {
         debug_info.editor_open = !debug_info.editor_open;
     }
@@ -49,7 +53,7 @@ pub fn debug_update(app: &App, debug_info: &mut DebugInfo, chunk_manager: &mut C
         debug_info.sky_editor = !debug_info.sky_editor;
     }
     if app.keyboard.was_pressed(KeyCode::Space) {
-        chunk_manager.update_chunks = !chunk_manager.update_chunks;
+        physics_manager.pause_all_phys = !physics_manager.pause_all_phys;
     }
     if app.keyboard.was_pressed(KeyCode::F) {
         debug_info.debug_chunk_bounds = !debug_info.debug_chunk_bounds;
@@ -60,33 +64,38 @@ pub fn debug_update(app: &App, debug_info: &mut DebugInfo, chunk_manager: &mut C
     if app.keyboard.was_pressed(KeyCode::M) {
         debug_info.debug_metrics = !debug_info.debug_metrics;
     }
+    if app.keyboard.was_pressed(KeyCode::U) {
+        debug_info.debug_rapier2d = !debug_info.debug_rapier2d;
+    }
 }
 
 pub fn debug_ui(
     ctx: &Context,
     app: &App,
     debug_info: &mut DebugInfo,
-    chunk_manager: &mut ChunkManager,
+    physics_manager: &mut PhysicsManager
 ) {
     if !debug_info.set_visuals {
         let mut visuals = Visuals::dark();
         visuals.window_shadow = Shadow::NONE;
         ctx.set_visuals(visuals);
+        debug_info.set_visuals = true;
     }
 
-    debug_update(app, debug_info, chunk_manager);
-    debug_editor(ctx, app, debug_info, chunk_manager);
-    debug_render(ctx, debug_info, chunk_manager);
-    debug_metrics(ctx, app, debug_info, chunk_manager);
+    debug_update(app, debug_info, physics_manager);
+    debug_editor(ctx, app, debug_info, physics_manager);
+    debug_render(ctx, debug_info, &mut physics_manager.chunk_manager);
+    debug_metrics(ctx, app, debug_info, &mut physics_manager.chunk_manager);
     debug_mem_usage(ctx, debug_info);
     debug_sky_editor(ctx, debug_info);
+    debug_rapier_window(ctx, debug_info, &mut physics_manager.rapier_handler);
 }
 
 pub fn debug_editor(
     ctx: &Context,
     app: &App,
     debug_info: &mut DebugInfo,
-    chunk_manager: &mut ChunkManager,
+    physics_manager: &mut PhysicsManager
 ) {
     Window::new("Editor")
         .resizable(false)
@@ -102,95 +111,97 @@ pub fn debug_editor(
 
             ui.horizontal_wrapped(|ui| {
                 if ui.button(RichText::new("Air").color(Color32::from_rgb(255, 255, 255))).clicked() {
-                    chunk_manager.selected_element = air_element();
+                    physics_manager.chunk_manager.selected_element = air_element();
                 }
                 if ui.button(RichText::new("Solid").color(Color32::from_rgb(169, 162, 166))).clicked() {
-                    chunk_manager.selected_element = solid_element();
+                    physics_manager.chunk_manager.selected_element = solid_element();
                 }
                 if ui.button(RichText::new("Sand").color(Color32::from_rgb(243, 239, 118))).clicked() {
-                    chunk_manager.selected_element = sand_element();
+                    physics_manager.chunk_manager.selected_element = sand_element();
                 }
                 if ui.button(RichText::new("Dirt").color(Color32::from_rgb(136, 107, 82))).clicked() {
-                    chunk_manager.selected_element = dirt_element();
+                    physics_manager.chunk_manager.selected_element = dirt_element();
                 }
                 if ui.button(RichText::new("Coal").color(Color32::from_rgb(130, 130, 130))).clicked() {
-                    chunk_manager.selected_element = coal_element();
+                    physics_manager.chunk_manager.selected_element = coal_element();
                 }
                 if ui.button(RichText::new("Wood").color(Color32::from_rgb(111, 83, 57))).clicked() {
-                    chunk_manager.selected_element = wood_element();
+                    physics_manager.chunk_manager.selected_element = wood_element();
                 }
                 if ui.button(RichText::new("SawDust").color(Color32::from_rgb(181, 137, 100))).clicked() {
-                    chunk_manager.selected_element = sawdust_element();
+                    physics_manager.chunk_manager.selected_element = sawdust_element();
                 }
                 if ui.button(RichText::new("Water").color(Color32::from_rgb(75, 66, 249))).clicked() {
-                    chunk_manager.selected_element = water_element();
+                    physics_manager.chunk_manager.selected_element = water_element();
                 }
                 if ui.button(RichText::new("Smoke").color(Color32::from_rgb(142, 142, 142))).clicked() {
-                    chunk_manager.selected_element = smoke_element();
+                    physics_manager.chunk_manager.selected_element = smoke_element();
                 }
                 if ui.button(RichText::new("Steam").color(Color32::from_rgb(143, 159, 234))).clicked() {
-                    chunk_manager.selected_element = steam_element();
+                    physics_manager.chunk_manager.selected_element = steam_element();
                 }
                 if ui.button(RichText::new("Petrol").color(Color32::from_rgb(0, 95, 106))).clicked() {
-                    chunk_manager.selected_element = petrol_element();
+                    physics_manager.chunk_manager.selected_element = petrol_element();
                 }
                 if ui.button(RichText::new("Methane").color(Color32::from_rgb(130, 171, 41))).clicked() {
-                    chunk_manager.selected_element = methane_element();
+                    physics_manager.chunk_manager.selected_element = methane_element();
                 }
                 if ui.button(RichText::new("Fire").color(Color32::from_rgb(255, 0, 0))).clicked() {
                     let mut element = fire_element();
                     element.lifetime = 150;
-                    chunk_manager.selected_element = element;
+                    physics_manager.chunk_manager.selected_element = element;
                 }
                 if ui.button(RichText::new("Lava").color(Color32::from_rgb(234, 46, 56))).clicked() {
-                    chunk_manager.selected_element = lava_element();
+                    physics_manager.chunk_manager.selected_element = lava_element();
                 }
                 if ui.button(RichText::new("Source").color(Color32::from_rgb(252, 186, 3))).clicked() {
-                    chunk_manager.selected_element = source_element();
+                    physics_manager.chunk_manager.selected_element = source_element();
                 }
                 if ui.button(RichText::new("Gravel").color(Color32::from_rgb(83, 84, 78))).clicked() {
-                    chunk_manager.selected_element = gravel_element();
+                    physics_manager.chunk_manager.selected_element = gravel_element();
                 }
                 if ui.button(RichText::new("Solid Dirt").color(Color32::from_rgb(136, 107, 82))).clicked() {
-                    chunk_manager.selected_element = soliddirt_element();
+                    physics_manager.chunk_manager.selected_element = soliddirt_element();
                 }
                 if ui.button(RichText::new("Grass").color(Color32::from_rgb(19, 109, 21))).clicked() {
-                    chunk_manager.selected_element = grass_element();
+                    physics_manager.chunk_manager.selected_element = grass_element();
                 }
                 if ui.button(RichText::new("Brick").color(Color32::from_rgb(156, 89, 89))).clicked() {
-                    chunk_manager.selected_element = brick_element();
+                    physics_manager.chunk_manager.selected_element = brick_element();
                 }
                 if ui.button(RichText::new("Snow").color(Color32::from_rgb(200, 200, 200))).clicked() {
-                    chunk_manager.selected_element = snow_element();
+                    physics_manager.chunk_manager.selected_element = snow_element();
                 }
                 if ui.button(RichText::new("Ice").color(Color32::from_rgb(154, 176, 221))).clicked() {
-                    chunk_manager.selected_element = ice_element();
+                    physics_manager.chunk_manager.selected_element = ice_element();
                 }
             });
             ui.add_space(5.);
 
-            let brush_slider = Slider::new(&mut chunk_manager.brush_size, 1..=200).clamp_to_range(false);
+            let brush_slider = Slider::new(&mut physics_manager.chunk_manager.brush_size, 1..=200).clamp_to_range(false);
             ui.add(brush_slider);
-            ui.checkbox(&mut chunk_manager.replace_air, "Replace only air");
-            ui.checkbox(&mut chunk_manager.update_chunks, "Update");
+            ui.checkbox(&mut physics_manager.chunk_manager.replace_air, "Replace only air");
+            ui.checkbox(&mut physics_manager.pause_all_phys, "Pause all");
 
             ui.label("Press Y to modify sky color");
             ui.label("Press T for debug info");
             ui.label("Press M for metrics");
+            ui.label("Press U for rapier2D info");
         });
 }
 
-pub fn debug_render(ctx: &Context, debug_info: &mut DebugInfo, chunk_manager: &ChunkManager) {
+pub fn debug_render(ctx: &Context, debug_info: &mut DebugInfo, chunk_manager: &mut ChunkManager) {
     Window::new("Debug window")
         .resizable(false)
         .collapsible(true)
         .title_bar(true)
         .open(&mut debug_info.debug_window)
         .show(ctx, |ui| {
+            ui.checkbox(&mut chunk_manager.update_chunks, "Update falling sand sim");
+            ui.add_space(5.);
             ui.checkbox(&mut debug_info.debug_chunk_bounds, "Chunk borders");
             ui.checkbox(&mut debug_info.debug_chunk_coords, "Chunk indices");
             ui.checkbox(&mut debug_info.debug_dirty_rects, "Dirty rects");
-            ui.add_space(5.);
 
             ui.label(format!("Chunk hovered: {:?}", chunk_manager.hovering_cell.1));
             ui.label(format!("Index hovered: {:?}", chunk_manager.hovering_cell.2));
@@ -333,4 +344,20 @@ pub fn debug_sky_editor(ctx: &Context, debug_info: &mut DebugInfo) {
                     .prefix("b: "),
             );
         });
+}
+
+pub fn debug_rapier_window(ctx: &Context, debug_info: &mut DebugInfo, rapier_handler: &mut RapierHandler) {
+    Window::new("Rapier2D").resizable(false).collapsible(true).open(&mut debug_info.debug_rapier2d).show(ctx, |ui| {
+        ui.checkbox(&mut rapier_handler.update_phys, "Update rapier physics");
+        ui.checkbox(&mut debug_info.debug_chunk_edges, "Show chunk colliders");
+        ui.small("(Impacts performance)");
+        ui.add_space(5.);
+
+        if ui.button("Clear balls").clicked() {
+            rapier_handler.remove_balls();
+        }
+        
+        ui.label(format!("Num of colliders: {}", rapier_handler.collider_set.len()));
+        ui.label(format!("Num of rigid bodies: {}", rapier_handler.rigid_body_set.len()));
+    });
 }
