@@ -8,3 +8,4 @@ pub mod element_texture_handler;
 pub mod rapier_edge_gen;
 pub mod rapier_world_handler;
 pub mod all_physics_manager;
+pub mod rigid_sand_body;

@@ -3,11 +3,11 @@ use std::time::Duration;
 use memory_stats::memory_stats;
 use notan::{
     app::App,
-    egui::{epaint::Shadow, Color32, Context, RichText, Slider, Visuals, Window},
+    egui::{epaint::Shadow, Color32, Context, RichText, Slider, Visuals, Window, ComboBox},
     input::keyboard::KeyCode,
 };
 
-use crate::{phys_world::chunk_manager::ChunkManager, phys_world::{element::*, rapier_world_handler::RapierHandler, all_physics_manager::PhysicsManager}};
+use crate::{phys_world::chunk_manager::ChunkManager, phys_world::{element::*, rapier_world_handler::{RapierHandler, SelectBody}, all_physics_manager::PhysicsManager}};
 
 pub struct DebugInfo {
     pub set_visuals: bool,
@@ -18,6 +18,7 @@ pub struct DebugInfo {
     pub debug_dirty_rects: bool,
     pub debug_chunk_edges: bool,
     pub debug_rapier2d: bool,
+    pub debug_rs_body_edges: bool,
     pub debug_metrics: bool,
     pub longest_update_time: Duration,
     pub debug_mem_usage: bool,
@@ -36,6 +37,7 @@ impl Default for DebugInfo {
             debug_dirty_rects: false,
             debug_chunk_edges: false,
             debug_rapier2d: true,
+            debug_rs_body_edges: false,
             longest_update_time: Duration::ZERO,
             debug_metrics: false,
             debug_mem_usage: false,
@@ -351,10 +353,22 @@ pub fn debug_rapier_window(ctx: &Context, debug_info: &mut DebugInfo, rapier_han
         ui.checkbox(&mut rapier_handler.update_phys, "Update rapier physics");
         ui.checkbox(&mut debug_info.debug_chunk_edges, "Show chunk colliders");
         ui.small("(Impacts performance)");
+        ui.checkbox(&mut debug_info.debug_rs_body_edges, "Show rigid body edges");
+
+        ui.add_space(5.);
+
+        ComboBox::from_label("Rigid body type").selected_text(format!("{:?}", rapier_handler.select_body)).show_ui(ui, |ui| {
+            ui.selectable_value(&mut rapier_handler.select_body, SelectBody::SandBody, "SandBody");
+            ui.selectable_value(&mut rapier_handler.select_body, SelectBody::Ball, "Ball");
+        });
+
         ui.add_space(5.);
 
         if ui.button("Clear balls").clicked() {
             rapier_handler.remove_balls();
+        }
+        if ui.button("Clear sand bodies").clicked() {
+            rapier_handler.remove_sand_bodies();
         }
         
         ui.label(format!("Num of colliders: {}", rapier_handler.collider_set.len()));

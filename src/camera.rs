@@ -1,4 +1,4 @@
-use notan::{math::{Vec2, vec2, Mat3}, draw::Draw};
+use notan::{math::{Vec2, vec2, Mat3, Mat4}, draw::Draw};
 
 pub struct Camera2D {
     pub work_size: Vec2,
@@ -30,6 +30,8 @@ impl Camera2D {
             self.calculate_transform();
         }
 
+    	let projection = Mat4::orthographic_rh_gl(0., self.work_size.x, self.work_size.y, 0., -1., 1.);
+        draw.set_projection(Some(projection));
         draw.transform().push(self.transform);
     }
 

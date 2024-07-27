@@ -1,10 +1,10 @@
 use ahash::HashMap;
-use notan::{draw::{Draw, DrawShapes, DrawTransform}, prelude::{App, KeyCode}};
+use notan::{draw::{Draw, DrawShapes, DrawTransform}, prelude::{App, Graphics}};
 use rapier2d::prelude::*;
 
-use crate::phys_world::chunk::{COLS, ROWS};
+use crate::{phys_world::chunk::{COLS, ROWS}, debug_ui::DebugInfo, camera::Camera2D};
 
-use super::{chunk_manager::WorldChunks, chunk::UPSCALE_FACTOR};
+use super::{chunk_manager::WorldChunks, chunk::UPSCALE_FACTOR, rigid_sand_body::RigidSandBody, element_texture_handler::ElementTexHandler};
 
 pub const PHYS_SCALE: f32 = 50.0;
 pub const GRAVITY: f32 = 9.81;
@@ -25,8 +25,10 @@ pub struct RapierHandler {
     event_handler: (),
 	chunk_colliders: HashMap<(i32, i32), Vec<ColliderHandle>>,
 	pub update_phys: bool,
+	pub rigid_sand_bodies: Vec<RigidSandBody>,
 	
 	ball_body_handles: Vec<RigidBodyHandle>,
+	pub select_body: SelectBody
 }
 
 impl RapierHandler {
@@ -48,6 +50,8 @@ impl RapierHandler {
 	    let physics_hooks = ();
 	    let event_handler = ();
 
+		let rigid_sand_bodies = vec![];
+
 	    Self {
 	        rigid_body_set,
 	        collider_set,
@@ -64,18 +68,14 @@ impl RapierHandler {
 	        event_handler,
 			chunk_colliders: HashMap::default(),
 			update_phys: true,
+			rigid_sand_bodies,
 			
 			ball_body_handles,
+			select_body: SelectBody::SandBody
 	    }
 	}
 
-	pub fn update(&mut self, app: &App) {
-		if app.keyboard.was_pressed(KeyCode::Right) {
-	        self.rigid_body_set[self.ball_body_handles[0]].apply_torque_impulse(2., true);
-	    }
-	    if app.keyboard.was_pressed(KeyCode::Left) {
-	        self.rigid_body_set[self.ball_body_handles[0]].apply_torque_impulse(-2., true);
-	    }
+	pub fn update(&mut self, _app: &mut App, _camera: &Camera2D) {
 	}
 
 	pub fn update_fixed(&mut self) {
@@ -114,11 +114,20 @@ impl RapierHandler {
 		self.ball_body_handles.clear();
 	}
 
+	pub fn add_sand_body(&mut self, mouse: (f32, f32), gfx: &mut Graphics, element_texs: &ElementTexHandler) {
+		self.rigid_sand_bodies.push(RigidSandBody::new(mouse.0 / PHYS_SCALE, mouse.1 / PHYS_SCALE, &mut self.rigid_body_set, &mut self.collider_set, gfx, element_texs));
+	}
+
+	pub fn remove_sand_bodies(&mut self) {
+		for i in 0..self.rigid_sand_bodies.len() {
+			self.rigid_body_set.remove(self.rigid_sand_bodies[i].rigid_body_handle, &mut self.island_manager, &mut self.collider_set, &mut self.impulse_joint_set, &mut self.multibody_joint_set, true);
+		}
+		self.rigid_sand_bodies.clear();
+	}
+
 	pub fn create_chunk_colliders(&mut self, chunks: &mut WorldChunks) {
 		for (index, chunk) in chunks.iter_mut() {
 			if chunk.colliders_dirty {
-			    // edges_from_chunk(chunk);
-				
 				if let Some(collider_handles) = self.chunk_colliders.get(index) {
 					for i in 0..collider_handles.len() {
 						self.collider_set.remove(collider_handles[i], &mut self.island_manager, &mut self.rigid_body_set, false);
@@ -142,11 +151,22 @@ impl RapierHandler {
 		}
 	}
 
-	pub fn render(&self, render_draw: &mut Draw) {
+	pub fn debug_render(&self, render_draw: &mut Draw, debug_info: &DebugInfo) {
 		for i in 0..self.ball_body_handles.len() {
 			let ball_body = &self.rigid_body_set[self.ball_body_handles[i]];
 			let pos = ball_body.translation();
 			render_draw.circle(8.).translate(pos.x * PHYS_SCALE, pos.y * PHYS_SCALE);
 		}
+
+		if debug_info.debug_rs_body_edges {
+			for i in 0..self.rigid_sand_bodies.len() {
+				self.rigid_sand_bodies[i].debug_render(render_draw, &self.rigid_body_set);
+			}
+		}
 	}
+}
+
+#[derive(Debug, PartialEq)]
+pub enum SelectBody {
+    Ball, SandBody
 }

@@ -19,7 +19,7 @@ use crate::{
     DebugInfo,
 };
 
-use super::{element_texture_handler::ElementTexHandler, rapier_world_handler::PHYS_SCALE};
+use super::{element_texture_handler::ElementTexHandler, rapier_world_handler::PHYS_SCALE, element::solid_element};
 
 pub type WorldChunks = HashMap<(i32, i32), Chunk, RandomState>;
 
@@ -56,7 +56,7 @@ impl ChunkManager {
 
         Self {
             chunks,
-            selected_element: sand_element(),
+            selected_element: solid_element(),
             modify: true,
             brush_size: 32,
             update_chunks: true,

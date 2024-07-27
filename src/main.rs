@@ -5,6 +5,7 @@ pub mod phys_world;
 
 use camera::Camera2D;
 use debug_ui::DebugInfo;
+use input_manager::map;
 use notan::draw::*;
 use notan::egui::{EguiConfig, EguiPluginSugar};
 use notan::prelude::*;
@@ -29,7 +30,7 @@ fn main() -> Result<(), String> {
                 .set_fullscreen(false)
                 .set_vsync(false)
                 .set_title("arm'st sandbox")
-                .set_resizable(false)
+                .set_resizable(true)
                 .set_multisampling(0)
                 .set_high_dpi(false),
         )
@@ -85,7 +86,7 @@ fn draw(app: &mut App, gfx: &mut Graphics, plugins: &mut Plugins, state: &mut St
     render_draw
         .image(&state.sky_gradient)
         .position(0., 0.)
-        .size(app.window().width() as f32, app.window().height() as f32)
+        .size(state.camera.work_size.x, state.camera.work_size.y)
         .color(Color::from_bytes(
             state.debug_info.sky_color[0],
             state.debug_info.sky_color[1],
@@ -95,13 +96,16 @@ fn draw(app: &mut App, gfx: &mut Graphics, plugins: &mut Plugins, state: &mut St
 
     state.camera.apply(&mut render_draw);
 
-    state.physics_manager.render(gfx, &mut render_draw, &state.debug_info);
+    state.physics_manager.render(app, gfx, &mut render_draw, &state.debug_info, &state.camera);
 
     render_draw.transform().pop();
 
+
+    let mouse_proj_x = map(app.mouse.x, 0., app.window().width().clone() as f32, 0., state.camera.work_size.x);
+    let mouse_proj_y = map(app.mouse.y, 0., app.window().height().clone() as f32, 0., state.camera.work_size.y);
     render_draw
         .ellipse(
-            (app.mouse.x, app.mouse.y),
+            (mouse_proj_x, mouse_proj_y),
             (
                 state.physics_manager.chunk_manager.brush_size as f32 * state.camera_zoom * 0.5 * UPSCALE_FACTOR,
                 state.physics_manager.chunk_manager.brush_size as f32 * state.camera_zoom * 0.5 * UPSCALE_FACTOR,

@@ -4,7 +4,6 @@ use simplify_polyline::*;
 use super::{chunk::{Chunk, COLS, ROWS, UPSCALE_FACTOR}, element::State, rapier_world_handler::PHYS_SCALE};
 
 pub fn edges_from_chunk(chunk: &mut Chunk) {
-	let c = ContourBuilder::new(COLS, ROWS, false);
 	let mut map = vec![];
 	for i in 0..ROWS {
 		for j in 0..COLS {
@@ -15,9 +14,11 @@ pub fn edges_from_chunk(chunk: &mut Chunk) {
 			}
 		}
 	}
+	
+	let c = ContourBuilder::new(COLS, ROWS, false);
+	let edges = c.contours(&map, &[0.5]).unwrap();
 
 	let mut gotten_edges = vec![];
-	let edges = c.contours(&map, &[0.5]).unwrap();
 	for edge in edges {
 		for polygon in &edge.geometry().0 {
 			let mut edge_points = vec![];
