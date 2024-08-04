@@ -1,6 +1,6 @@
 use notan::{
     draw::{Draw, DrawImages},
-    graphics::{Texture, TextureFilter, RenderTexture},
+    graphics::{Texture, TextureFilter},
     math::Vec2,
     prelude::Graphics,
 };
@@ -31,7 +31,6 @@ pub struct Chunk {
     texture: Texture,
     pub edges: Vec<Vec<rapier2d::math::Point<Real>>>,
     pub colliders_dirty: bool,
-    pub render_texture: RenderTexture
 }
 
 impl Chunk {
@@ -48,12 +47,6 @@ impl Chunk {
         let grid = create_cells_array();
         let future_grid = grid.clone();
 
-        let render_texture = gfx
-            .create_render_texture(COLS as u32, ROWS as u32)
-            .with_filter(TextureFilter::Nearest, TextureFilter::Nearest)
-            .build()
-            .unwrap();
-
         Self {
             pos: (
                 i as f32 * COLS as f32 * UPSCALE_FACTOR,
@@ -69,7 +62,6 @@ impl Chunk {
             texture,
             edges: vec![],
             colliders_dirty: false,
-            render_texture
         }
     }
 }

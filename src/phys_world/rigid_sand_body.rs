@@ -5,12 +5,19 @@ use simplify_polyline::*;
 
 use super::{element::*, rapier_world_handler::PHYS_SCALE, chunk::UPSCALE_FACTOR, element_texture_handler::{EL_TEX_WIDTH, EL_TEX_HEIGHT, ElementTexHandler}};
 
+pub struct ElInWorldInfo {
+	pub chunk: (i32, i32),
+	pub index_chunk: (usize, usize),
+	pub index_body: (usize, usize)
+}
+
 pub struct RigidSandBody {
 	pub body_elements: Vec<Vec<Option<Cell>>>,
+	pub body_elements_in_chunks: Vec<ElInWorldInfo>,
 	pub rigid_body_handle: RigidBodyHandle,
 	pub body_edge: Vec<rapier2d::na::OPoint<f32, rapier2d::na::Const<2>>>,
     pub bytes: Vec<u8>,
-    pub texture: Texture,
+    pub texture: Texture
 }
 
 impl RigidSandBody {
@@ -20,6 +27,7 @@ impl RigidSandBody {
 			let mut row = vec![];
 			for j in 0..100 {
 				let mut element = wood_element();
+				element.collider_type = ElColliderType::Body;
 		        if let Some(tex_data) = element_texs.get_texture(element.element) {
 		            element.color = tex_data[i as usize % (EL_TEX_WIDTH)][j as usize % (EL_TEX_HEIGHT)];
 		        }
@@ -28,12 +36,14 @@ impl RigidSandBody {
 			body_elements.push(row);
 		}
 
-		for i in 0..50 {
-			for j in 0..70 {
-				// if Vec2::new(i as f32, j as f32).distance(Vec2::new(50., 50.)) > 50. {
-				// 	body_elements[i][j] = None;
-				// }
-				body_elements[i + 25][j] = None;
+		for i in 0..100 {
+			for j in 0..100 {
+				if Vec2::new(i as f32, j as f32).distance(Vec2::new(50., 50.)) > 50. {
+					body_elements[i][j] = None;
+				}
+				if i < 50 && j < 75 {
+					body_elements[i + 25][j] = None;
+				}
 			}
 		}
 
@@ -97,10 +107,11 @@ impl RigidSandBody {
 
 		Self {
 			body_elements,
+			body_elements_in_chunks: vec![],
 			rigid_body_handle,
 			body_edge: simplified_formated[0].to_owned(),
 			bytes,
-			texture,
+			texture
 		}
 	}
 
@@ -124,6 +135,19 @@ impl RigidSandBody {
 	        prev_point = point;
 	    }
 		draw.transform().pop();
+	}
+
+	pub fn update_texture(&mut self, gfx: &mut Graphics) {
+	    for i in 0..self.bytes.len() / 4 {
+			if let Some(element) = &self.body_elements[i % self.body_elements[0].len()][i / self.body_elements.len()] {
+		        self.bytes[i * 4..i * 4 + 4].copy_from_slice(&element.color);
+			}
+	    }
+		
+		gfx.update_texture(&mut self.texture)
+			.with_data(&self.bytes)
+			.update()
+			.unwrap()
 	}
 }
 

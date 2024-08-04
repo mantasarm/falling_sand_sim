@@ -120,6 +120,22 @@ impl ChunkManager {
                         );
                     }
 
+                    // let mouse_in_chunk_x = 
+                    //     (mouse_world.0 / (COLS as f32 * UPSCALE_FACTOR)) as i32 - if mouse_world.0 < 0. { 1 } else { 0 };
+                    // let mouse_in_chunk_y = 
+                    //     (mouse_world.1 / (ROWS as f32 * UPSCALE_FACTOR)) as i32 - if mouse_world.1 < 0. { 1 } else { 0 };
+
+                    // let mut cell_index_x =
+                    //     ((mouse_world.0 + mouse_in_chunk_x as f32 * UPSCALE_FACTOR) / UPSCALE_FACTOR).round() as i32 % COLS as i32 - mouse_in_chunk_x;
+                    // if cell_index_x < 0 {
+                    //     cell_index_x = COLS as i32 + cell_index_x - 1;
+                    // }
+                    // let mut cell_index_y =
+                    //     ((mouse_world.1 + mouse_in_chunk_y as f32 * UPSCALE_FACTOR) / UPSCALE_FACTOR).round() as i32 % ROWS as i32 - mouse_in_chunk_y;
+                    // if cell_index_y < 0 {
+                    //     cell_index_y = ROWS as i32 + cell_index_y - 1;
+                    // }
+
                     if let Some(c) = chunk::get_chunk_cell(chunk, mouse.0, mouse.1) {
                         self.hovering_cell.0 = c.to_owned();
                         self.hovering_cell.1 = chunk.index;

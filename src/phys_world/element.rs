@@ -10,6 +10,7 @@ pub struct Cell {
     pub velocity: Vec2,
     pub drag: f32,
     pub lifetime: i32,
+    pub collider_type: ElColliderType
 }
 
 pub fn air_element() -> Cell {
@@ -22,6 +23,7 @@ pub fn air_element() -> Cell {
         velocity: Vec2::ZERO,
         drag: 0.95,
         lifetime: -1,
+        collider_type: ElColliderType::None
     }
 }
 
@@ -35,6 +37,7 @@ pub fn solid_element() -> Cell {
         velocity: Vec2::ZERO,
         drag: 0.,
         lifetime: -1,
+        collider_type: ElColliderType::Chunk
     }
 }
 
@@ -48,6 +51,7 @@ pub fn wood_element() -> Cell {
         velocity: Vec2::ZERO,
         drag: 0.,
         lifetime: -1,
+        collider_type: ElColliderType::Chunk
     }
 }
 
@@ -61,6 +65,7 @@ pub fn coal_element() -> Cell {
         velocity: Vec2::ZERO,
         drag: 0.,
         lifetime: -1,
+        collider_type: ElColliderType::Chunk
     }
 }
 
@@ -74,6 +79,7 @@ pub fn sand_element() -> Cell {
         velocity: Vec2::ZERO,
         drag: 1.0,
         lifetime: -1,
+        collider_type: ElColliderType::None
     }
 }
 
@@ -87,6 +93,7 @@ pub fn dirt_element() -> Cell {
         velocity: Vec2::ZERO,
         drag: 0.9,
         lifetime: -1,
+        collider_type: ElColliderType::None
     }
 }
 
@@ -100,6 +107,7 @@ pub fn sawdust_element() -> Cell {
         velocity: Vec2::ZERO,
         drag: 0.9,
         lifetime: -1,
+        collider_type: ElColliderType::None
     }
 }
 
@@ -113,6 +121,7 @@ pub fn water_element() -> Cell {
         velocity: Vec2::ZERO,
         drag: 0.4,
         lifetime: -1,
+        collider_type: ElColliderType::None
     }
 }
 
@@ -126,6 +135,7 @@ pub fn petrol_element() -> Cell {
         velocity: Vec2::ZERO,
         drag: 0.4,
         lifetime: -1,
+        collider_type: ElColliderType::None
     }
 }
 
@@ -139,6 +149,7 @@ pub fn smoke_element() -> Cell {
         velocity: Vec2::ZERO,
         drag: 0.95,
         lifetime: -1,
+        collider_type: ElColliderType::None
     }
 }
 
@@ -152,6 +163,7 @@ pub fn steam_element() -> Cell {
         velocity: Vec2::ZERO,
         drag: 0.95,
         lifetime: -1,
+        collider_type: ElColliderType::None
     }
 }
 
@@ -165,6 +177,7 @@ pub fn fire_element() -> Cell {
         velocity: Vec2::ZERO,
         drag: 1.,
         lifetime: 50,
+        collider_type: ElColliderType::None
     }
 }
 
@@ -178,6 +191,7 @@ pub fn methane_element() -> Cell {
         velocity: Vec2::ZERO,
         drag: 0.95,
         lifetime: -1,
+        collider_type: ElColliderType::None
     }
 }
 
@@ -191,6 +205,7 @@ pub fn lava_element() -> Cell {
         velocity: Vec2::ZERO,
         drag: 0.1,
         lifetime: -1,
+        collider_type: ElColliderType::None
     }
 }
 
@@ -204,6 +219,7 @@ pub fn source_element() -> Cell {
         velocity: Vec2::ZERO,
         drag: 0.,
         lifetime: -1,
+        collider_type: ElColliderType::Chunk
     }
 }
 
@@ -217,6 +233,7 @@ pub fn gravel_element() -> Cell {
         velocity: Vec2::ZERO,
         drag: 0.9,
         lifetime: -1,
+        collider_type: ElColliderType::None
     }
 }
 
@@ -230,6 +247,7 @@ pub fn soliddirt_element() -> Cell {
         velocity: Vec2::ZERO,
         drag: 0.,
         lifetime: -1,
+        collider_type: ElColliderType::Chunk
     }
 }
 
@@ -243,6 +261,7 @@ pub fn grass_element() -> Cell {
         velocity: Vec2::ZERO,
         drag: 0.,
         lifetime: -1,
+        collider_type: ElColliderType::None
     }
 }
 
@@ -256,6 +275,7 @@ pub fn brick_element() -> Cell {
         velocity: Vec2::ZERO,
         drag: 0.,
         lifetime: -1,
+        collider_type: ElColliderType::Chunk
     }
 }
 
@@ -269,6 +289,7 @@ pub fn snow_element() -> Cell {
         velocity: Vec2::ZERO,
         drag: 0.9,
         lifetime: -1,
+        collider_type: ElColliderType::None
     }
 }
 
@@ -283,6 +304,7 @@ pub fn ice_element() -> Cell {
         velocity: Vec2::ZERO,
         drag: 0.,
         lifetime: -1,
+        collider_type: ElColliderType::Chunk
     }
 }
 
@@ -349,4 +371,11 @@ pub fn el_from_enum(element: Element) -> Cell {
         Element::Snow => snow_element(),
         Element::Ice => ice_element()
     }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum ElColliderType {
+    None,
+    Chunk,
+    Body
 }
