@@ -98,7 +98,7 @@ impl PhysicsManager {
 			let rotation = Mat3::from_angle(body_angle);
 			let matrix = translation * rotation;
 
-			// TODO: rotations are probably not quite fixed yet, also use variables instead of set values
+			// FIXME: rotations are probably not quite fixed yet, also use variables instead of set values
 			let body_world = 
 				matrix * 
 				Vec3::new(rsbody.body_elements.len() as f32 * UPSCALE_FACTOR / 2., rsbody.body_elements[0].len() as f32 * UPSCALE_FACTOR / 2., 1.);
@@ -107,28 +107,30 @@ impl PhysicsManager {
 			for i in 0..body_els_rotated.len() {
 				for j in 0..body_els_rotated[0].len() {
 
-					// TODO: Elements are still incorrectly placed
-
+					// INFO: Element coordinates in world space
 					let el_world = (
-						(body_world.x + (i as f32 * UPSCALE_FACTOR)) as i32,
-						(body_world.y + (j as f32 * UPSCALE_FACTOR)) as i32
+					    (body_world.x + (i as f32 * UPSCALE_FACTOR)) as i32,
+					    (body_world.y + (j as f32 * UPSCALE_FACTOR)) as i32
 					);
 
-                    let el_chunk_x = 
-                        (el_world.0 / (COLS as f32 * UPSCALE_FACTOR) as i32) as i32 - if el_world.0 < 0 { 1 } else { 0 };
-                    let el_chunk_y = 
-                        (el_world.1 / (ROWS as f32 * UPSCALE_FACTOR) as i32) as i32 - if el_world.1 < 0 { 1 } else { 0 };
+					// INFO: Compute chunk coordinates
+					let el_chunk_x = 
+					    el_world.0.div_euclid((COLS as f32 * UPSCALE_FACTOR) as i32);
+					let el_chunk_y = 
+					    el_world.1.div_euclid((ROWS as f32 * UPSCALE_FACTOR) as i32);
 
-                    let mut cell_index_x =
-                        ((el_world.0 as f32 + el_chunk_x as f32 * UPSCALE_FACTOR) / UPSCALE_FACTOR).round() as i32 % COLS as i32 - el_chunk_x;
-                    if cell_index_x < 0 {
-                        cell_index_x = COLS as i32 + cell_index_x - 1;
-                    }
-                    let mut cell_index_y =
-                        ((el_world.1 as f32 + el_chunk_y as f32 * UPSCALE_FACTOR) / UPSCALE_FACTOR).round() as i32 % ROWS as i32 - el_chunk_y;
-                    if cell_index_y < 0 {
-                        cell_index_y = ROWS as i32 + cell_index_y - 1;
-                    }
+					// INFO: Compute cell indices within the chunk
+					let mut cell_index_x =
+					    ((el_world.0 as f32 - el_chunk_x as f32 * COLS as f32 * UPSCALE_FACTOR) / UPSCALE_FACTOR).floor() as i32 % COLS as i32;
+					if cell_index_x < 0 {
+					    cell_index_x += COLS as i32;
+					}
+
+					let mut cell_index_y =
+					    ((el_world.1 as f32 - el_chunk_y as f32 * ROWS as f32 * UPSCALE_FACTOR) / UPSCALE_FACTOR).floor() as i32 % ROWS as i32;
+					if cell_index_y < 0 {
+					    cell_index_y += ROWS as i32;
+					}
 
 					if let Some(chunk) = self.chunk_manager.chunks.get_mut(&(el_chunk_x, el_chunk_y)) {
 
@@ -165,8 +167,8 @@ impl PhysicsManager {
 				if let Some(chunk) = self.chunk_manager.chunks.get_mut(&el_info.chunk) {
 
 					// TODO: This will work when elements are properly placed
-					let _retrieved_element = chunk.grid[el_info.index_chunk.0][el_info.index_chunk.1];
-					// rsbody.body_elements[el_info.index_body.0][el_info.index_body.1] = Some(retrieved_element);
+					let retrieved_element = chunk.grid[el_info.index_chunk.0][el_info.index_chunk.1];
+					rsbody.body_elements[el_info.index_body.0][el_info.index_body.1] = Some(retrieved_element);
 
 					chunk.grid[el_info.index_chunk.0][el_info.index_chunk.1] = air_element();
 				}
