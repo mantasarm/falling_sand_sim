@@ -265,7 +265,8 @@ pub fn debug_metrics(
                 chunk_manager.chunks_render_time
             ));
 
-            ui.label("                                                            "); // INFO: This is necessery because egui is annoying and without this the window twitches
+            // INFO: This is necessery because egui is annoying and without this the window twitches
+            ui.label("                                                            ");
 
             ui.label(format!(
                 "Chunks update time: {:?}",
@@ -358,7 +359,9 @@ pub fn debug_rapier_window(ctx: &Context, debug_info: &mut DebugInfo, rapier_han
         ui.add_space(5.);
 
         ComboBox::from_label("Rigid body type").selected_text(format!("{:?}", rapier_handler.select_body)).show_ui(ui, |ui| {
-            ui.selectable_value(&mut rapier_handler.select_body, SelectBody::SandBody, "SandBody");
+            ui.selectable_value(&mut rapier_handler.select_body, SelectBody::SandBodyBall, "SandBodyBall");
+            ui.selectable_value(&mut rapier_handler.select_body, SelectBody::SandBodySquare, "SandBodySquare");
+            ui.selectable_value(&mut rapier_handler.select_body, SelectBody::SandBodyRectangle, "SandBodyRectangle");
             ui.selectable_value(&mut rapier_handler.select_body, SelectBody::Ball, "Ball");
         });
 

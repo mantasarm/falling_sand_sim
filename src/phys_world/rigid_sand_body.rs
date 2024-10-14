@@ -3,7 +3,7 @@ use notan::{draw::{Draw, DrawShapes}, prelude::{Color, Graphics}, math::{Mat3, V
 use rapier2d::{prelude::{RigidBodyHandle, RigidBodyBuilder, ColliderBuilder, RigidBodySet, ColliderSet, nalgebra}, na::vector, parry::transformation::vhacd::VHACDParameters};
 use simplify_polyline::*;
 
-use super::{element::*, rapier_world_handler::PHYS_SCALE, chunk::UPSCALE_FACTOR, element_texture_handler::{EL_TEX_WIDTH, EL_TEX_HEIGHT, ElementTexHandler}};
+use super::{element::*, rapier_world_handler::{PHYS_SCALE, SelectBody}, chunk::UPSCALE_FACTOR, element_texture_handler::{EL_TEX_WIDTH, EL_TEX_HEIGHT, ElementTexHandler}};
 
 pub struct ElInWorldInfo {
 	pub chunk: (i32, i32),
@@ -21,32 +21,63 @@ pub struct RigidSandBody {
 }
 
 impl RigidSandBody {
-	pub fn new(x: f32, y: f32, rigid_body_set: &mut RigidBodySet, collider_set: &mut ColliderSet, gfx: &mut Graphics, element_texs: &ElementTexHandler) -> Self {
+	pub fn new(x: f32, y: f32, rigid_body_set: &mut RigidBodySet, collider_set: &mut ColliderSet, gfx: &mut Graphics, element_texs: &ElementTexHandler, body_shape: SelectBody) -> Self {
 		let mut body_elements = vec![];
-		for i in 0..100 {
-			let mut row = vec![];
-			for j in 0..100 {
-				let mut element = wood_element();
-				element.collider_type = ElColliderType::Body;
-		        if let Some(tex_data) = element_texs.get_texture(element.element) {
-		            element.color = tex_data[i as usize % (EL_TEX_WIDTH)][j as usize % (EL_TEX_HEIGHT)];
-		        }
-				row.push(Some(element));
-			}
-			body_elements.push(row);
-		}
 
-		for i in 0..100 {
-			for j in 0..100 {
-				if Vec2::new(i as f32, j as f32).distance(Vec2::new(50., 50.)) > 50. {
-					body_elements[i][j] = None;
+		match body_shape {
+		    SelectBody::Ball => (),
+		    SelectBody::SandBodyBall => {
+				for i in 0..100 {
+					let mut row = vec![];
+					for j in 0..100 {
+						let mut element = wood_element();
+						element.collider_type = ElColliderType::Body;
+				        if let Some(tex_data) = element_texs.get_texture(element.element) {
+				            element.color = tex_data[i as usize % (EL_TEX_WIDTH)][j as usize % (EL_TEX_HEIGHT)];
+				        }
+						row.push(Some(element));
+					}
+					body_elements.push(row);
 				}
-				if i < 50 && j < 75 {
-					body_elements[i + 25][j] = None;
+		
+				for i in 0..100 {
+					for j in 0..100 {
+						if Vec2::new(i as f32, j as f32).distance(Vec2::new(50., 50.)) > 50. {
+							body_elements[i][j] = None;
+						}
+					}
 				}
-			}
+			},
+		    SelectBody::SandBodySquare =>  {
+				for i in 0..100 {
+					let mut row = vec![];
+					for j in 0..100 {
+						let mut element = wood_element();
+						element.collider_type = ElColliderType::Body;
+				        if let Some(tex_data) = element_texs.get_texture(element.element) {
+				            element.color = tex_data[i as usize % (EL_TEX_WIDTH)][j as usize % (EL_TEX_HEIGHT)];
+				        }
+						row.push(Some(element));
+					}
+					body_elements.push(row);
+				}
+			},
+		    SelectBody::SandBodyRectangle => {
+				for i in 0..100 {
+					let mut row = vec![];
+					for j in 0..50 {
+						let mut element = wood_element();
+						element.collider_type = ElColliderType::Body;
+				        if let Some(tex_data) = element_texs.get_texture(element.element) {
+				            element.color = tex_data[i as usize % (EL_TEX_WIDTH)][j as usize % (EL_TEX_HEIGHT)];
+				        }
+						row.push(Some(element));
+					}
+					body_elements.push(row);
+				}
+			},
 		}
-
+		
 		// INFO: Create the body map
 		let body_map = gen_body_map(&body_elements);
 

@@ -71,7 +71,7 @@ impl RapierHandler {
 			rigid_sand_bodies,
 			
 			ball_body_handles,
-			select_body: SelectBody::SandBody
+			select_body: SelectBody::SandBodyBall
 	    }
 	}
 
@@ -114,8 +114,8 @@ impl RapierHandler {
 		self.ball_body_handles.clear();
 	}
 
-	pub fn add_sand_body(&mut self, mouse: (f32, f32), gfx: &mut Graphics, element_texs: &ElementTexHandler) {
-		self.rigid_sand_bodies.push(RigidSandBody::new(mouse.0 / PHYS_SCALE, mouse.1 / PHYS_SCALE, &mut self.rigid_body_set, &mut self.collider_set, gfx, element_texs));
+	pub fn add_sand_body(&mut self, mouse: (f32, f32), gfx: &mut Graphics, element_texs: &ElementTexHandler, body_shape: SelectBody) {
+		self.rigid_sand_bodies.push(RigidSandBody::new(mouse.0 / PHYS_SCALE, mouse.1 / PHYS_SCALE, &mut self.rigid_body_set, &mut self.collider_set, gfx, element_texs, body_shape));
 	}
 
 	pub fn remove_sand_bodies(&mut self) {
@@ -168,5 +168,5 @@ impl RapierHandler {
 
 #[derive(Debug, PartialEq)]
 pub enum SelectBody {
-    Ball, SandBody
+    Ball, SandBodyBall, SandBodySquare, SandBodyRectangle
 }

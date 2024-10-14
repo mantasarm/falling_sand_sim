@@ -75,7 +75,9 @@ impl PhysicsManager {
 		if app.mouse.middle_was_released() {
 			match self.rapier_handler.select_body {
 			    SelectBody::Ball => self.rapier_handler.add_ball(mouse_world),
-			    SelectBody::SandBody => self.rapier_handler.add_sand_body(mouse_world, gfx, &self.chunk_manager.tex_handler),
+			    SelectBody::SandBodyBall => self.rapier_handler.add_sand_body(mouse_world, gfx, &self.chunk_manager.tex_handler, SelectBody::SandBodyBall),
+			    SelectBody::SandBodySquare => self.rapier_handler.add_sand_body(mouse_world, gfx, &self.chunk_manager.tex_handler, SelectBody::SandBodySquare),
+			    SelectBody::SandBodyRectangle => self.rapier_handler.add_sand_body(mouse_world, gfx, &self.chunk_manager.tex_handler, SelectBody::SandBodyRectangle),
 			}
 		}
 	}
@@ -91,14 +93,14 @@ impl PhysicsManager {
 			let body_pos = &self.rapier_handler.rigid_body_set[rsbody.rigid_body_handle].translation();
 			let body_world = Vec2::new(body_pos.x, body_pos.y) * PHYS_SCALE;
 
-			let body_world_x = body_world.x.round() as i32 as f32 - off_x as f32;
-			let body_world_y = body_world.y.round() as i32 as f32 - off_y as f32;
+			// INFO: I don't know why x and y are switched
+			let body_world_x = body_world.x.round() as i32 as f32 - off_y as f32;
+			let body_world_y = body_world.y.round() as i32 as f32 - off_x as f32;
 
 			let translation = Mat3::from_translation(Vec2::new(body_world_x, body_world_y));
 			let rotation = Mat3::from_angle(body_angle);
 			let matrix = translation * rotation;
 
-			// FIXME: rotations are probably not quite fixed yet, also use variables instead of set values
 			let body_world = 
 				matrix * 
 				Vec3::new(rsbody.body_elements.len() as f32 * UPSCALE_FACTOR / 2., rsbody.body_elements[0].len() as f32 * UPSCALE_FACTOR / 2., 1.);
