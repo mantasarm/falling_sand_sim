@@ -36,6 +36,7 @@ impl PhysicsManager {
 				return;
 			}
 
+		
 			self.rsbodies_to_chunks();
 			self.chunk_manager.update_chunks_fixed();
 			self.retrieve_els_to_rsbodies();
@@ -57,12 +58,6 @@ impl PhysicsManager {
 			}
 		}
 
-		for rsbody_index in 0..self.rapier_handler.rigid_sand_bodies.len() {
-			let rs_body = &mut self.rapier_handler.rigid_sand_bodies[rsbody_index];
-
-			rs_body.update_texture(gfx);
-		}
-		
 	    self.chunk_manager.debug_render(render_draw, debug_info);
 		self.rapier_handler.debug_render(render_draw, debug_info);
 
@@ -75,9 +70,9 @@ impl PhysicsManager {
 		if app.mouse.middle_was_released() {
 			match self.rapier_handler.select_body {
 			    SelectBody::Ball => self.rapier_handler.add_ball(mouse_world),
-			    SelectBody::SandBodyBall => self.rapier_handler.add_sand_body(mouse_world, gfx, &self.chunk_manager.tex_handler, SelectBody::SandBodyBall),
-			    SelectBody::SandBodySquare => self.rapier_handler.add_sand_body(mouse_world, gfx, &self.chunk_manager.tex_handler, SelectBody::SandBodySquare),
-			    SelectBody::SandBodyRectangle => self.rapier_handler.add_sand_body(mouse_world, gfx, &self.chunk_manager.tex_handler, SelectBody::SandBodyRectangle),
+			    SelectBody::SandBodyBall => self.rapier_handler.add_sand_body(mouse_world, &self.chunk_manager.tex_handler, SelectBody::SandBodyBall),
+			    SelectBody::SandBodySquare => self.rapier_handler.add_sand_body(mouse_world, &self.chunk_manager.tex_handler, SelectBody::SandBodySquare),
+			    SelectBody::SandBodyRectangle => self.rapier_handler.add_sand_body(mouse_world, &self.chunk_manager.tex_handler, SelectBody::SandBodyRectangle),
 			}
 		}
 	}
@@ -135,9 +130,6 @@ impl PhysicsManager {
 					}
 
 					if let Some(chunk) = self.chunk_manager.chunks.get_mut(&(el_chunk_x, el_chunk_y)) {
-
-						// chunk::update_byte(&mut chunk.bytes, cell_index_x as usize, cell_index_y as usize, &[255, 255, 255, 255]);
-						
 						if let Some(element) = body_els_rotated[i][j] {
 							chunk.grid[cell_index_x as usize][cell_index_y as usize] = element.0;
 							chunk::update_byte(&mut chunk.bytes, cell_index_x as usize, cell_index_y as usize, &chunk.grid[cell_index_x as usize][cell_index_y as usize].color);
@@ -145,7 +137,7 @@ impl PhysicsManager {
 							if !chunk.active {
 								chunk::activate(chunk);
 							}
-							chunk.dirty_rect.set_temp(cell_index_x as usize, cell_index_y as usize);
+							// chunk.dirty_rect.set_temp(cell_index_x as usize, cell_index_y as usize);
 							
 							rsbody.body_elements_in_chunks.push(
 								ElInWorldInfo {

@@ -1,5 +1,5 @@
 use ahash::HashMap;
-use notan::{draw::{Draw, DrawShapes, DrawTransform}, prelude::{App, Graphics}};
+use notan::{draw::{Draw, DrawShapes, DrawTransform}, prelude::App};
 use rapier2d::prelude::*;
 
 use crate::{phys_world::chunk::{COLS, ROWS}, debug_ui::DebugInfo, camera::Camera2D};
@@ -114,8 +114,8 @@ impl RapierHandler {
 		self.ball_body_handles.clear();
 	}
 
-	pub fn add_sand_body(&mut self, mouse: (f32, f32), gfx: &mut Graphics, element_texs: &ElementTexHandler, body_shape: SelectBody) {
-		self.rigid_sand_bodies.push(RigidSandBody::new(mouse.0 / PHYS_SCALE, mouse.1 / PHYS_SCALE, &mut self.rigid_body_set, &mut self.collider_set, gfx, element_texs, body_shape));
+	pub fn add_sand_body(&mut self, mouse: (f32, f32), element_texs: &ElementTexHandler, body_shape: SelectBody) {
+		self.rigid_sand_bodies.push(RigidSandBody::new(mouse.0 / PHYS_SCALE, mouse.1 / PHYS_SCALE, &mut self.rigid_body_set, &mut self.collider_set, element_texs, body_shape));
 	}
 
 	pub fn remove_sand_bodies(&mut self) {

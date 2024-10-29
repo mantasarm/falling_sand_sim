@@ -1,9 +1,11 @@
 use contour::ContourBuilder;
-use notan::{draw::{Draw, DrawShapes}, prelude::{Color, Graphics}, math::{Mat3, Vec2}, graphics::{Texture, TextureFilter}};
+use notan::{draw::{Draw, DrawShapes}, prelude::Color, math::{Mat3, Vec2}};
 use rapier2d::{prelude::{RigidBodyHandle, RigidBodyBuilder, ColliderBuilder, RigidBodySet, ColliderSet, nalgebra}, na::vector, parry::transformation::vhacd::VHACDParameters};
 use simplify_polyline::*;
 
 use super::{element::*, rapier_world_handler::{PHYS_SCALE, SelectBody}, chunk::UPSCALE_FACTOR, element_texture_handler::{EL_TEX_WIDTH, EL_TEX_HEIGHT, ElementTexHandler}};
+
+pub type RSBodyEdge = Vec<rapier2d::na::OPoint<f32, rapier2d::na::Const<2>>>;
 
 pub struct ElInWorldInfo {
 	pub chunk: (i32, i32),
@@ -15,13 +17,11 @@ pub struct RigidSandBody {
 	pub body_elements: Vec<Vec<Option<Cell>>>,
 	pub body_elements_in_chunks: Vec<ElInWorldInfo>,
 	pub rigid_body_handle: RigidBodyHandle,
-	pub body_edge: Vec<rapier2d::na::OPoint<f32, rapier2d::na::Const<2>>>,
-    pub bytes: Vec<u8>,
-    pub texture: Texture
+	pub body_edge: RSBodyEdge ,
 }
 
 impl RigidSandBody {
-	pub fn new(x: f32, y: f32, rigid_body_set: &mut RigidBodySet, collider_set: &mut ColliderSet, gfx: &mut Graphics, element_texs: &ElementTexHandler, body_shape: SelectBody) -> Self {
+	pub fn new(x: f32, y: f32, rigid_body_set: &mut RigidBodySet, collider_set: &mut ColliderSet, element_texs: &ElementTexHandler, body_shape: SelectBody) -> Self {
 		let mut body_elements = vec![];
 
 		match body_shape {
@@ -77,46 +77,15 @@ impl RigidSandBody {
 				}
 			},
 		}
+
+		let (rigid_body_handle, final_edge) = create_rigid_body_handle(x, y, &body_elements, rigid_body_set, collider_set);
 		
-		// INFO: Create the body map
-		let body_map = gen_body_map(&body_elements);
-
-		// INFO: Get edges from the body map
-		let final_edge = get_edge_from_body_map(body_map, &body_elements)[0].to_owned();
-		
-		let rigid_body = RigidBodyBuilder::dynamic().translation(vector![x, y]).build();
-
-		let indices: Vec<[u32; 2]> = (0..final_edge.len() - 1).map(|i| [i as u32, i as u32 + 1]).collect();
-
-		let mut params = VHACDParameters::default();
-		params.concavity = 0.01;
-		
-		let collider = ColliderBuilder::convex_decomposition_with_params(&final_edge, &indices, &params).build();
-
-		let rigid_body_handle = rigid_body_set.insert(rigid_body);
-		collider_set.insert_with_parent(collider, rigid_body_handle, rigid_body_set);
-
-		let mut bytes = vec![0; body_elements.len() * body_elements[0].len() * 4];
-	    for i in 0..bytes.len() / 4 {
-			if let Some(element) = &body_elements[i % body_elements[0].len()][i / body_elements.len()] {
-		        bytes[i * 4..i * 4 + 4].copy_from_slice(&element.color);
-			}
-	    }
-		
-		let texture = gfx
-			.create_texture()
-			.from_bytes(&bytes, body_elements.len() as u32, body_elements[0].len() as u32)
-			.with_filter(TextureFilter::Nearest, TextureFilter::Nearest)
-			.build()
-			.unwrap();
 
 		Self {
 			body_elements,
 			body_elements_in_chunks: vec![],
 			rigid_body_handle,
 			body_edge: final_edge,
-			bytes,
-			texture
 		}
 	}
 
@@ -142,17 +111,8 @@ impl RigidSandBody {
 		draw.transform().pop();
 	}
 
-	pub fn update_texture(&mut self, gfx: &mut Graphics) {
-	    for i in 0..self.bytes.len() / 4 {
-			if let Some(element) = &self.body_elements[i % self.body_elements[0].len()][i / self.body_elements.len()] {
-		        self.bytes[i * 4..i * 4 + 4].copy_from_slice(&element.color);
-			}
-	    }
+	pub fn remove_from_rapier(&mut self, ) {
 		
-		gfx.update_texture(&mut self.texture)
-			.with_data(&self.bytes)
-			.update()
-			.unwrap()
 	}
 }
 
@@ -211,4 +171,33 @@ pub fn get_edge_from_body_map(body_map: Vec<f64>, body_elements: &Vec<Vec<Option
 	}
 
 	simplified_formated
+}
+
+// INFO: Here we place the rigid sand body into the rapier world
+fn create_rigid_body_handle(
+		x: f32, y: f32,
+		body_elements: &Vec<Vec<Option<Cell>>>, 
+		rigid_body_set: &mut RigidBodySet,
+		collider_set: &mut ColliderSet) -> (RigidBodyHandle, RSBodyEdge)
+{
+	// INFO: Create the body map
+	let body_map = gen_body_map(&body_elements);
+
+	// INFO: Get edges from the body map
+	let final_edge = get_edge_from_body_map(body_map, &body_elements)[0].to_owned();
+	
+	let rigid_body = RigidBodyBuilder::dynamic().translation(vector![x, y]).build();
+
+	let indices: Vec<[u32; 2]> = (0..final_edge.len() - 1).map(|i| [i as u32, i as u32 + 1]).collect();
+
+	// INFO: Here we set the accuracy of the generated shape
+	let mut params = VHACDParameters::default();
+	params.concavity = 0.01;
+	
+	let collider = ColliderBuilder::convex_decomposition_with_params(&final_edge, &indices, &params).build();
+
+	let rigid_body_handle = rigid_body_set.insert(rigid_body);
+	collider_set.insert_with_parent(collider, rigid_body_handle, rigid_body_set);
+
+	(rigid_body_handle, final_edge)
 }
