@@ -91,6 +91,7 @@ pub fn handle_actions(future_grid: &mut Grid, i: usize, j: usize, mov_dt: &mut M
                         }
                     }
                 },
+                // INFO: For grass
                 Action::Grow => {
                     let up = get(i as i32, j as i32 - 1,  future_grid, mov_dt);
                     let down = get(i as i32, j as i32 + 1,  future_grid, mov_dt);

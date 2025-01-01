@@ -177,6 +177,9 @@ pub fn debug_editor(
                 if ui.button(RichText::new("Ice").color(Color32::from_rgb(154, 176, 221))).clicked() {
                     physics_manager.chunk_manager.selected_element = ice_element();
                 }
+                if ui.button(RichText::new("Fireworks").color(Color32::from_rgb(243, 46, 161))).clicked() {
+                    physics_manager.chunk_manager.selected_element = firework_shell_element();
+                }
             });
             ui.add_space(5.);
 

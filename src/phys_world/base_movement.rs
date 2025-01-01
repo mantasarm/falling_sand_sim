@@ -187,6 +187,10 @@ pub fn get(i: i32, j: i32, f_grid: &mut Grid, mov_dt: &mut MovData) -> Cell {
 pub fn set(i: i32, j: i32, f_grid: &mut Grid, mov_dt: &mut MovData, cell: Cell) {
 	if in_bound(i, j) {
 		f_grid[i as usize][j as usize] = cell;
+
+		*mov_dt.keep_active = true;
+		mov_dt.dirty_rect.set_temp(i as usize, j as usize);
+		
         chunk::update_byte(&mut mov_dt.bytes, i as usize, j as usize, &f_grid[i as usize][j as usize].color);
 	} else {
 		let wanted_chunk = get_wanted_chunk(mov_dt.index, i, j);

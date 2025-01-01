@@ -144,6 +144,12 @@ pub fn update_chunk(chunk: &mut Chunk, chunks: &mut WorldChunks, frame_count: u1
                     Element::Fire => {
                         fire_movement(&mut chunk.future_grid, i, j, &mut mov_dt);
                     }
+                    Element::FireworkShell => {
+                        firework_shell_movement(&mut chunk.future_grid, i, j, &mut mov_dt);
+                    }
+                    Element::FireworkEmber => {
+                        firework_ember_movement(&mut chunk.future_grid, i, j, &mut mov_dt);
+                    }
                     Element::Wood | Element::Coal | Element::Source | Element::Grass | Element::Ice => {
                         handle_actions(&mut chunk.future_grid, i, j, &mut mov_dt, frame_count);
                     }

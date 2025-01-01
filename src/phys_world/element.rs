@@ -308,6 +308,37 @@ pub fn ice_element() -> Cell {
     }
 }
 
+pub fn firework_shell_element() -> Cell {
+    Cell {
+        element: Element::FireworkShell,
+        action: None,
+        density: 30.,
+        state: State::Powder,
+        color: [200, 200, 200, 255],
+        velocity: Vec2::ZERO,
+        drag: 0.,
+        lifetime: 150,
+        collider_type: ElColliderType::None
+    }
+}
+
+pub fn firework_ember_element() -> Cell {
+    Cell {
+        element: Element::FireworkEmber,
+        action: None,
+        density: 4.,
+        state: State::Plasma,
+        color: [14, 8, 184, 0],
+        velocity: Vec2::ZERO,
+        drag: 1.,
+        lifetime: 100,
+        collider_type: ElColliderType::None
+    }
+}
+
+
+
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Element {
     Air,
@@ -330,7 +361,9 @@ pub enum Element {
     Grass,
     Brick,
     Snow,
-    Ice
+    Ice,
+    FireworkShell,
+    FireworkEmber
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -369,7 +402,9 @@ pub fn el_from_enum(element: Element) -> Cell {
         Element::Grass => grass_element(),
         Element::Brick => brick_element(),
         Element::Snow => snow_element(),
-        Element::Ice => ice_element()
+        Element::Ice => ice_element(),
+        Element::FireworkShell => firework_shell_element(),
+        Element::FireworkEmber => firework_ember_element(),
     }
 }
 
