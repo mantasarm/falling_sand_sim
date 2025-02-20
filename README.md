@@ -14,6 +14,7 @@ IN PROGRESS:
 
 TODO:
 * Bug fixes and code clean up
+* Implement scripting with rhai
 
 Progression:
 
