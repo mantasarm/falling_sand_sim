@@ -186,6 +186,7 @@ pub fn debug_editor(
             let brush_slider = Slider::new(&mut physics_manager.chunk_manager.brush_size, 1..=200).clamp_to_range(false);
             ui.add(brush_slider);
             ui.checkbox(&mut physics_manager.chunk_manager.replace_air, "Replace only air");
+            ui.checkbox(&mut physics_manager.chunk_manager.edit_body_elements, "Editable body elements");
             ui.checkbox(&mut physics_manager.pause_all_phys, "Pause all");
 
             if ui.button("Next phys step").clicked() {

@@ -11,7 +11,8 @@ pub struct PhysicsManager {
 	pub rapier_handler: RapierHandler,
     pub update_time: f64,
 	pub pause_all_phys: bool,
-	pub next_step: bool
+	pub next_step: bool,
+	pub bodies_placed_paused: bool
 }
 
 impl PhysicsManager {
@@ -21,12 +22,18 @@ impl PhysicsManager {
 			rapier_handler: RapierHandler::new(),
             update_time: 0.,
 			pause_all_phys: false,
-			next_step: false
+			next_step: false,
+			bodies_placed_paused: false
 		}
 	}
 
 	pub fn update(&mut self, app: &mut App, camera: &Camera2D) {
-		self.chunk_manager.update(app, camera);
+		self.chunk_manager.update_brush(app);
+		if self.pause_all_phys && !self.next_step {
+			self.rsbodies_to_chunks();
+			self.chunk_manager.update_chunk_edit(app, camera);
+			self.retrieve_els_to_rsbodies();
+		}
 		self.rapier_handler.update(app, camera);
 
 		// INFO: Update the physics simulations at 60 FPS
@@ -42,6 +49,7 @@ impl PhysicsManager {
 
 		
 				self.rsbodies_to_chunks();
+				self.chunk_manager.update_chunk_edit(app, camera);
 				self.chunk_manager.update_chunks_fixed();
 				self.retrieve_els_to_rsbodies();
 			
@@ -126,10 +134,10 @@ impl PhysicsManager {
 					    el_world.1.div_euclid((ROWS as f32 * UPSCALE_FACTOR) as i32);
 
 					// INFO: Compute cell indices within the chunk
-					let mut cell_index_x =
+					let cell_index_x =
 					    ((el_world.0 as f32 - el_chunk_x as f32 * COLS as f32 * UPSCALE_FACTOR) / UPSCALE_FACTOR).floor() as i32 % COLS as i32;
 					
-					let mut cell_index_y =
+					let cell_index_y =
 					    ((el_world.1 as f32 - el_chunk_y as f32 * ROWS as f32 * UPSCALE_FACTOR) / UPSCALE_FACTOR).floor() as i32 % ROWS as i32;
 
 					if let Some(chunk) = self.chunk_manager.chunks.get_mut(&(el_chunk_x, el_chunk_y)) {

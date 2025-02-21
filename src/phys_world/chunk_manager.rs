@@ -39,7 +39,8 @@ pub struct ChunkManager {
     pub num_of_threads: [usize; 4],
     font: Font,
     pub chunk_frame_count: u128,
-    pub tex_handler: ElementTexHandler
+    pub tex_handler: ElementTexHandler,
+    pub edit_body_elements: bool,
 }
 
 impl ChunkManager {
@@ -72,17 +73,12 @@ impl ChunkManager {
                 .create_font(include_bytes!("../assets/UbuntuMono.ttf"))
                 .unwrap(),
             chunk_frame_count: 0,
-            tex_handler: ElementTexHandler::new()
+            tex_handler: ElementTexHandler::new(),
+            edit_body_elements: true
         }
     }
-
-    pub fn update(&mut self, app: &mut App, camera: &Camera2D) {
-        let mouse_world = get_mouse_in_world(
-            &(app.mouse.x, app.mouse.y),
-            (app.window().width() as i32, app.window().height() as i32),
-            camera,
-        );
-
+    
+    pub fn update_brush(&mut self, app: &mut App) {
         if app.mouse.is_scrolling() {
             self.brush_size += app.mouse.wheel_delta.y as i32 / 6;
 
@@ -90,6 +86,14 @@ impl ChunkManager {
                 self.brush_size = 1;
             }
         }
+    }
+
+    pub fn update_chunk_edit(&mut self, app: &mut App, camera: &Camera2D) {
+        let mouse_world = get_mouse_in_world(
+            &(app.mouse.x, app.mouse.y),
+            (app.window().width() as i32, app.window().height() as i32),
+            camera,
+        );
 
         for i in self.range_x.0..=self.range_x.1 {
             for j in (self.range_y.0..=self.range_y.1).rev() {
@@ -106,7 +110,8 @@ impl ChunkManager {
                             self.brush_size,
                             &self.selected_element,
                             self.replace_air,
-                            &self.tex_handler
+                            self.edit_body_elements,
+                            &self.tex_handler,
                         );
                     }
 
@@ -119,22 +124,6 @@ impl ChunkManager {
                             4. * app.timer.delta_f32() * 90.,
                         );
                     }
-
-                    // let mouse_in_chunk_x = 
-                    //     (mouse_world.0 / (COLS as f32 * UPSCALE_FACTOR)) as i32 - if mouse_world.0 < 0. { 1 } else { 0 };
-                    // let mouse_in_chunk_y = 
-                    //     (mouse_world.1 / (ROWS as f32 * UPSCALE_FACTOR)) as i32 - if mouse_world.1 < 0. { 1 } else { 0 };
-
-                    // let mut cell_index_x =
-                    //     ((mouse_world.0 + mouse_in_chunk_x as f32 * UPSCALE_FACTOR) / UPSCALE_FACTOR).round() as i32 % COLS as i32 - mouse_in_chunk_x;
-                    // if cell_index_x < 0 {
-                    //     cell_index_x = COLS as i32 + cell_index_x - 1;
-                    // }
-                    // let mut cell_index_y =
-                    //     ((mouse_world.1 + mouse_in_chunk_y as f32 * UPSCALE_FACTOR) / UPSCALE_FACTOR).round() as i32 % ROWS as i32 - mouse_in_chunk_y;
-                    // if cell_index_y < 0 {
-                    //     cell_index_y = ROWS as i32 + cell_index_y - 1;
-                    // }
 
                     if let Some(c) = chunk::get_chunk_cell(chunk, mouse.0, mouse.1) {
                         self.hovering_cell.0 = c.to_owned();

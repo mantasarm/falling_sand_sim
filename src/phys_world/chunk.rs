@@ -183,6 +183,7 @@ pub fn modify_chunk_elements(
     brush_size: i32,
     cell: &Cell,
     empty_only: bool,
+    edit_bodies: bool,
     element_texs: &ElementTexHandler
 ) {
     if brush_size != 1 {
@@ -192,11 +193,11 @@ pub fn modify_chunk_elements(
                     if empty_only && cell.element != Element::Air {
                         if in_bound(i - x, j - y) {
                             if chunk.grid[(i - x) as usize][(j - y) as usize].element == Element::Air {
-                                modify_chunk_element(chunk, i - x, j - y, cell, element_texs);
+                                modify_chunk_element(chunk, i - x, j - y, cell, element_texs, edit_bodies);
                             }
                         }
                     } else {
-                        modify_chunk_element(chunk, i - x, j - y, cell, element_texs);
+                        modify_chunk_element(chunk, i - x, j - y, cell, element_texs, edit_bodies);
                     }
                 }
             }
@@ -205,16 +206,16 @@ pub fn modify_chunk_elements(
         if in_bound(i, j) {
             if empty_only && cell.element != Element::Air {
                 if chunk.grid[i as usize][j as usize].element == Element::Air {
-                    modify_chunk_element(chunk, i, j, cell, element_texs);
+                    modify_chunk_element(chunk, i, j, cell, element_texs, edit_bodies);
                 }
             } else {
-                modify_chunk_element(chunk, i, j, cell, element_texs);
+                modify_chunk_element(chunk, i, j, cell, element_texs, edit_bodies);
             }
         }
     }
 }
 
-pub fn modify_chunk_element(chunk: &mut Chunk, i: i32, j: i32, cell: &Cell, element_texs: &ElementTexHandler) {
+pub fn modify_chunk_element(chunk: &mut Chunk, i: i32, j: i32, cell: &Cell, element_texs: &ElementTexHandler, edit_bodies: bool) {
     if in_bound(i, j) {
         let mut c_cell = cell.to_owned();
 
@@ -225,6 +226,14 @@ pub fn modify_chunk_element(chunk: &mut Chunk, i: i32, j: i32, cell: &Cell, elem
         if let Some(tex_data) = element_texs.get_texture(cell.element) {
             c_cell.color = tex_data[i as usize % (EL_TEX_WIDTH)][j as usize % (EL_TEX_HEIGHT)];
         }
+
+        if chunk.grid[i as usize][j as usize].collider_type == ElColliderType::Body {
+            if !edit_bodies {
+                return;
+            }
+            c_cell.collider_type = ElColliderType::Body;
+        }
+       
         chunk.grid[i as usize][j as usize] = c_cell;
 
         update_byte(&mut chunk.bytes, i as usize, j as usize, &c_cell.color);
