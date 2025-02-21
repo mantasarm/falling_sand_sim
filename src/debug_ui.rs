@@ -188,6 +188,12 @@ pub fn debug_editor(
             ui.checkbox(&mut physics_manager.chunk_manager.replace_air, "Replace only air");
             ui.checkbox(&mut physics_manager.pause_all_phys, "Pause all");
 
+            if ui.button("Next phys step").clicked() {
+                if physics_manager.pause_all_phys {
+                    physics_manager.next_step = true;
+                }
+            }
+
             ui.label("Press Y to modify sky color");
             ui.label("Press T for debug info");
             ui.label("Press M for metrics");

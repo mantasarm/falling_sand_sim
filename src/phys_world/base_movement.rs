@@ -51,7 +51,7 @@ pub fn apply_velocity(f_grid: &mut Grid, i: usize, j: usize, mov_dt: &mut MovDat
 	let dist = f_grid[i][j].velocity.length();
 
 	if dist < 0.5 {
-		return false;
+		// return false;
 	}
 
 	// INFO: Clamp the elements speed to the maximum velocity
@@ -238,7 +238,7 @@ pub fn swap(grid: &mut Grid, i1: usize, j1: usize, i2: i32, j2: i32, mov_dt: &mu
 			wake_up_chunk(mov_dt.chunks, mov_dt.index, (0, 1), (i1, 0));
 		}
 
-		true
+		return true;
 	} else { // INFO: Element swap happening between two chunks
 		let wanted_chunk = get_wanted_chunk(mov_dt.index, i2, j2);
 
@@ -259,9 +259,9 @@ pub fn swap(grid: &mut Grid, i1: usize, j1: usize, i2: i32, j2: i32, mov_dt: &mu
 					chunk.dirty_rect.set_temp(x as usize, y as usize);
 				}
 				
-				true
+				return true;
 			},
-			_ => false
+			_ => return false
 		}
 	}
 }

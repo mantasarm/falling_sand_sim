@@ -10,7 +10,8 @@ pub struct PhysicsManager {
     pub chunk_manager: ChunkManager,
 	pub rapier_handler: RapierHandler,
     pub update_time: f64,
-	pub pause_all_phys: bool
+	pub pause_all_phys: bool,
+	pub next_step: bool
 }
 
 impl PhysicsManager {
@@ -19,7 +20,8 @@ impl PhysicsManager {
 			chunk_manager: ChunkManager::new(gfx),
 			rapier_handler: RapierHandler::new(),
             update_time: 0.,
-			pause_all_phys: false
+			pause_all_phys: false,
+			next_step: false
 		}
 	}
 
@@ -28,21 +30,28 @@ impl PhysicsManager {
 		self.rapier_handler.update(app, camera);
 
 		// INFO: Update the physics simulations at 60 FPS
-        self.update_time += app.timer.delta_f32() as f64;
-        if self.update_time >= PHYSICS_UPDATE_DELTA {
-            self.update_time = 0.;
 
-			if self.pause_all_phys {
-				return;
-			}
+		if self.next_step || !self.pause_all_phys {
+	        self.update_time += app.timer.delta_f32() as f64;
+	        if self.update_time >= PHYSICS_UPDATE_DELTA || self.next_step {
+	            self.update_time = 0.;
+
+				if self.pause_all_phys && !self.next_step {
+					return;
+				}
 
 		
-			self.rsbodies_to_chunks();
-			self.chunk_manager.update_chunks_fixed();
-			self.retrieve_els_to_rsbodies();
+				self.rsbodies_to_chunks();
+				self.chunk_manager.update_chunks_fixed();
+				self.retrieve_els_to_rsbodies();
 			
-			self.rapier_handler.create_chunk_colliders(&mut self.chunk_manager.chunks);
-			self.rapier_handler.update_fixed();
+				self.rapier_handler.create_chunk_colliders(&mut self.chunk_manager.chunks);
+				self.rapier_handler.update_fixed();
+
+				if self.pause_all_phys {
+					self.next_step = false;
+				}
+			}
 		}
 	}
 
@@ -89,8 +98,8 @@ impl PhysicsManager {
 			let body_world = Vec2::new(body_pos.x, body_pos.y) * PHYS_SCALE;
 
 			// INFO: I don't know why x and y are switched
-			let body_world_x = body_world.x.round() as i32 as f32 - off_y as f32;
-			let body_world_y = body_world.y.round() as i32 as f32 - off_x as f32;
+			let body_world_x = (body_world.x - off_y as f32).floor();
+			let body_world_y = (body_world.y - off_x as f32).floor();
 
 			let translation = Mat3::from_translation(Vec2::new(body_world_x, body_world_y));
 			let rotation = Mat3::from_angle(body_angle);
@@ -106,8 +115,8 @@ impl PhysicsManager {
 
 					// INFO: Element coordinates in world space
 					let el_world = (
-					    (body_world.x + (i as f32 * UPSCALE_FACTOR)) as i32,
-					    (body_world.y + (j as f32 * UPSCALE_FACTOR)) as i32
+					    (body_world.x + (i as f32 * UPSCALE_FACTOR)).round() as i32,
+					    (body_world.y + (j as f32 * UPSCALE_FACTOR)).round() as i32
 					);
 
 					// INFO: Compute chunk coordinates
@@ -119,15 +128,9 @@ impl PhysicsManager {
 					// INFO: Compute cell indices within the chunk
 					let mut cell_index_x =
 					    ((el_world.0 as f32 - el_chunk_x as f32 * COLS as f32 * UPSCALE_FACTOR) / UPSCALE_FACTOR).floor() as i32 % COLS as i32;
-					if cell_index_x < 0 {
-					    cell_index_x += COLS as i32;
-					}
-
+					
 					let mut cell_index_y =
 					    ((el_world.1 as f32 - el_chunk_y as f32 * ROWS as f32 * UPSCALE_FACTOR) / UPSCALE_FACTOR).floor() as i32 % ROWS as i32;
-					if cell_index_y < 0 {
-					    cell_index_y += ROWS as i32;
-					}
 
 					if let Some(chunk) = self.chunk_manager.chunks.get_mut(&(el_chunk_x, el_chunk_y)) {
 						if let Some(element) = body_els_rotated[i][j] {
@@ -137,7 +140,6 @@ impl PhysicsManager {
 							if !chunk.active {
 								chunk::activate(chunk);
 							}
-							// chunk.dirty_rect.set_temp(cell_index_x as usize, cell_index_y as usize);
 							
 							rsbody.body_elements_in_chunks.push(
 								ElInWorldInfo {
@@ -159,8 +161,6 @@ impl PhysicsManager {
 
 			for el_info in &rsbody.body_elements_in_chunks {
 				if let Some(chunk) = self.chunk_manager.chunks.get_mut(&el_info.chunk) {
-
-					// TODO: This will work when elements are properly placed
 					let retrieved_element = chunk.grid[el_info.index_chunk.0][el_info.index_chunk.1];
 					rsbody.body_elements[el_info.index_body.0][el_info.index_body.1] = Some(retrieved_element);
 
@@ -178,8 +178,8 @@ fn rotate_arbitrary(body_elements: &Vec<Vec<Option<Cell>>>, angle_radians: f32) 
     let sin_angle = angle_radians.sin();
 
     // Determine new image dimensions
-    let new_width = ((width * cos_angle.abs()) + (height * sin_angle.abs())).ceil() as usize;
-    let new_height = ((width * sin_angle.abs()) + (height * cos_angle.abs())).ceil() as usize;
+	let new_width = ((width * cos_angle.abs()) + (height * sin_angle.abs())).round() as usize;
+	let new_height = ((width * sin_angle.abs()) + (height * cos_angle.abs())).round() as usize;
 
     let mut rotated = vec![vec![None; new_width]; new_height];
 

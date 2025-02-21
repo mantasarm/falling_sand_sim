@@ -110,7 +110,7 @@ pub fn update_chunk(chunk: &mut Chunk, chunks: &mut WorldChunks, frame_count: u1
             };
 
             /* TODO: Bug: Elements when moving into other chunk sometimes do not activate the chunk and get stuck.
-            This affects all elements, happens only sometimes, issue unknown */
+            This affects all elements, happens only sometimes, issue unknown, happens on the very edge of the chunk */
 
             let mut mov_dt = MovData {
                 chunks,

@@ -17,7 +17,7 @@ pub struct RigidSandBody {
 	pub body_elements: Vec<Vec<Option<Cell>>>,
 	pub body_elements_in_chunks: Vec<ElInWorldInfo>,
 	pub rigid_body_handle: RigidBodyHandle,
-	pub body_edge: RSBodyEdge ,
+	pub body_edge: RSBodyEdge
 }
 
 impl RigidSandBody {
@@ -49,9 +49,9 @@ impl RigidSandBody {
 				}
 			},
 		    SelectBody::SandBodySquare =>  {
-				for i in 0..100 {
+				for i in 0..10 {
 					let mut row = vec![];
-					for j in 0..100 {
+					for j in 0..10 {
 						let mut element = wood_element();
 						element.collider_type = ElColliderType::Body;
 				        if let Some(tex_data) = element_texs.get_texture(element.element) {
