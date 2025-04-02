@@ -6,7 +6,7 @@ edition = "2021"
 [dependencies]
 ahash = "0.8.11"
 fastrand = "2.1.1"
-notan = { version = "0.12.1", features = ["egui"] }
+notan = { version = "0.13.0", features = ["egui"] }
 memory-stats = "1.2.0"
 image = "0.25.2"
 rapier2d = "0.22.0"
